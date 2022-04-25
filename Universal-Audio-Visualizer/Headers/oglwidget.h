@@ -9,6 +9,7 @@
 #include <QOpenGLBuffer>
 #include <gl/GLU.h>
 #include <gl/GL.h>
+#include "Shape.h"
 
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
@@ -24,9 +25,11 @@ protected:
     void initShaders();
 
 private:
-    unsigned int m_vao;
-    unsigned int m_vbo;
+    unsigned int VAO;
+    unsigned int VBO;
+    unsigned int EBO;
     QOpenGLShaderProgram m_program;
+    Shape* shape;
 };
 
 #endif // OGLWIDGET_H

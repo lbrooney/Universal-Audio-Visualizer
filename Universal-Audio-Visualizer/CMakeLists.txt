@@ -18,17 +18,21 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGLWidgets Gui Core)
 
 include_directories(Headers/
                     Shaders/
-                    Sources/)
+                    Sources/
+					lib/)
 
 set(PROJECT_SOURCES
         Sources/main.cpp
         Sources/mainwindow.cpp
         Headers/mainwindow.h
+        Headers/Shape.h
         Sources/mainwindow.ui
         Headers/oglwidget.h
         Sources/oglwidget.cpp
         Shaders/vertex.glsl
         Shaders/fragment.glsl
+        Headers/Square.h
+        Headers/Triangle.h
         Shaders.qrc
 )
 
