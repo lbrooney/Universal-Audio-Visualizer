@@ -6,10 +6,10 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLBuffer>
 #include <gl/GLU.h>
 #include <gl/GL.h>
 #include "Shape.h"
+#include <vector>
 
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
@@ -29,7 +29,7 @@ private:
     unsigned int VBO;
     unsigned int EBO;
     QOpenGLShaderProgram m_program;
-    Shape* shape;
+    std::vector<Shape*> objList;
 };
 
 #endif // OGLWIDGET_H
