@@ -33,6 +33,7 @@ set(PROJECT_SOURCES
         Shaders/fragment.glsl
         Headers/Square.h
         Headers/Triangle.h
+        Headers/Circle.h
         Shaders.qrc
 )
 

@@ -1,6 +1,7 @@
 #include "oglwidget.h"
 #include "Triangle.h"
 #include "Square.h"
+#include "Circle.h"
 #include <QVector3D>
 #include <iostream>
 
@@ -21,10 +22,13 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    Triangle t = Triangle();
+    //Triangle t = Triangle();
     Square s = Square();
+    Circle c = Circle();
+    shape = &c;
+    std::cout << shape->indices.size();
 
-    //s.SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
+    s.SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -33,16 +37,16 @@ void OGLWidget::initializeGL()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, s.vertexCount * sizeof(float), s.vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, c.vertices.size() * sizeof(QVector3D), c.vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, c.indices.size() * sizeof(unsigned int), c.indices.data(), GL_STATIC_DRAW);
+
+    unsigned int transformLoc = glGetUniformLocation(m_program.programId(), "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(c.transformMatrix));
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, s.indexCount * sizeof(unsigned int), s.indices, GL_STATIC_DRAW);
-
-    unsigned int transformLoc = glGetUniformLocation(m_program.programId(), "transform");
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(s.transformMatrix));
 }
 
 void OGLWidget::paintGL()
@@ -52,7 +56,7 @@ void OGLWidget::paintGL()
     glUseProgram(m_program.programId());
     glBindVertexArray(VAO);
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, shape->indices.size(), GL_UNSIGNED_INT, 0);
 }
 
 void OGLWidget::resizeGL(int w, int h)

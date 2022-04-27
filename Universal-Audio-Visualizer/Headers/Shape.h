@@ -5,6 +5,8 @@
 #include <lib/glm/glm/glm.hpp>
 #include <lib/glm/glm/gtc/matrix_transform.hpp>
 #include <lib/glm/glm/gtc/type_ptr.hpp>
+#include <vector>
+#include <QVector3D>
 
 class Shape
 {
@@ -29,9 +31,8 @@ public:
     {
         transformMatrix = glm::scale(transformMatrix, scale);
     }
-
-    unsigned int* indices;
-    float* vertices;
+    std::vector<unsigned int> indices;
+    std::vector<QVector3D> vertices;
     glm::mat4 transformMatrix;
 };
 
