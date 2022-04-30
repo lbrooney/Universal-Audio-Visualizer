@@ -2,6 +2,7 @@
 #include "Triangle.h"
 #include "Square.h"
 #include "Circle.h"
+#include "Cube.h"
 #include <QVector3D>
 #include <iostream>
 
@@ -21,59 +22,51 @@ OGLWidget::~OGLWidget()
 void OGLWidget::initializeGL()
 {
     initializeOpenGLFunctions();
+    glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f,0.0f,0.0f,1.0f);
 
     initShaders();
 
-    Triangle* t = new Triangle();
+    /*Triangle* t = new Triangle(QVector3D(1.0f, 1.0f, 0.0f));
     t->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
     t->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
-    Square* s = new Square();
-    s->SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
+    Square* s = new Square(QVector3D(1.0f, 1.0f, 0.0f));
+    s->SetTranslation(glm::vec3(-0.5f, -0.5f, 0.0f));
     s->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
-    Circle* c = new Circle();
-    c->SetTranslation(glm::vec3(0.0f, -0.5f, 0.0f));
-    c->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
+    Circle* c = new Circle(QVector3D(1.0f, 1.0f, 0.0f));
+    c->SetTranslation(glm::vec3(0.5f, -0.5f, 0.0f));
+    c->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));*/
 
 
-    objList.push_back(t);
-    objList.push_back(s);
-    objList.push_back(c);
+    //objList.push_back(t);
+    //objList.push_back(s);
+    //objList.push_back(c);
 
+    Cube* cube = new Cube(QVector3D(1.0f, 1.0f, 0.0f));
+    cube->SetRotation(15, glm::vec3(1.0f, 1.0f, 0.0f));
+    cube->SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
+    cube->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
+    objList.push_back(cube);
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
 }
 
 void OGLWidget::paintGL()
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(m_program.programId());
-    glBindVertexArray(VAO);
+    unsigned int u_lightColor = glGetUniformLocation(m_program.programId(), "u_lightColor");
+    glUniform3f(u_lightColor, 1.0f, 1.0f, 1.0f);
+    unsigned int u_lightDirection = glGetUniformLocation(m_program.programId(), "u_lightDirection");
+    glUniform3f(u_lightDirection, 1.0f, 1.0f, -1.0f);
 
     for(int i = 0; i < objList.size(); i++)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, objList[i]->vertices.size() * sizeof(QVector3D), objList[i]->vertices.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, objList[i]->indices.size() * sizeof(unsigned int), objList[i]->indices.data(), GL_STATIC_DRAW);
-
-        unsigned int transformLoc = glGetUniformLocation(m_program.programId(), "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(objList[i]->transformMatrix));
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        glDrawElements(GL_TRIANGLES, objList[i]->indices.size(), GL_UNSIGNED_INT, 0);
+        objList[i]->DrawShape(&m_program);
     }
+
 }
 
 void OGLWidget::resizeGL(int w, int h)

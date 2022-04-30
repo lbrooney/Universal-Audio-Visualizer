@@ -5,28 +5,31 @@
 class Square : public Shape
 {
 public:
-    Square()
+    Square(QVector3D color) : Shape(color)
     {
-        Square::CreateVertexArray();
-        Square::CreateIndexArray();
+        Square::InitGeometry();
     }
 
-    void CreateIndexArray()
+    void InitGeometry()
     {
-        indices.push_back(0);
-        indices.push_back(1);
-        indices.push_back(3);
-        indices.push_back(1);
-        indices.push_back(2);
-        indices.push_back(3);
-    }
+        QVector3D vertices[] = {
+            QVector3D(0.5f, 0.5f, 0.0f),
+            QVector3D(0.5f, -0.5f, 0.0f),
+            QVector3D(-0.5f, -0.5f, 0.0f),
+            QVector3D(-0.5f, 0.5f, 0.0f)
+        };
 
-    void CreateVertexArray()
-    {
-        vertices.push_back(QVector3D(0.5f, 0.5f, 0.0f));
-        vertices.push_back(QVector3D(0.5f, -0.5f, 0.0f));
-        vertices.push_back(QVector3D(-0.5f, -0.5f, 0.0f));
-        vertices.push_back(QVector3D(-0.5f, 0.5f, 0.0f));
+        GLushort indices[] = {
+            0, 1, 3,
+            1, 2, 3
+        };
+        indexCount = 6;
+
+        arrayBuf.bind();
+        arrayBuf.allocate(vertices, 4 * sizeof(QVector3D));
+
+        indexBuf.bind();
+        indexBuf.allocate(indices, indexCount * sizeof(GLushort));
     }
 };
 

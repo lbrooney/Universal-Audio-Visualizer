@@ -25,9 +25,6 @@ protected:
     void initShaders();
 
 private:
-    unsigned int VAO;
-    unsigned int VBO;
-    unsigned int EBO;
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
 };

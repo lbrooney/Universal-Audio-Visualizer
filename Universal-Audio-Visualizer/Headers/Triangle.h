@@ -5,24 +5,29 @@
 class Triangle : public Shape
 {
 public:
-    Triangle()
+    Triangle(QVector3D color) : Shape(color)
     {
-        Triangle::CreateVertexArray();
-        Triangle::CreateIndexArray();
+        Triangle::InitGeometry();
     }
 
-    void CreateIndexArray()
+    void InitGeometry()
     {
-        indices.push_back(0);
-        indices.push_back(1);
-        indices.push_back(3);
-    }
+        QVector3D vertices[] = {
+            QVector3D(-0.5f, -0.5f, 0.0f),
+            QVector3D(0.5f, -0.5f, 0.0f),
+            QVector3D(0.0f, 0.5f, 0.0f)
+        };
 
-    void CreateVertexArray()
-    {
-        vertices.push_back(QVector3D(-0.5f, -0.5f, 0.0f));
-        vertices.push_back(QVector3D(0.5f, -0.5f, 0.0f));
-        vertices.push_back(QVector3D(0.0f, 0.5f, 0.0f));
+        GLushort indices[] = {
+            0, 1, 2
+        };
+        indexCount = 3;
+
+        arrayBuf.bind();
+        arrayBuf.allocate(vertices, 3 * sizeof(QVector3D));
+
+        indexBuf.bind();
+        indexBuf.allocate(indices, indexCount * sizeof(GLushort));
     }
 };
 

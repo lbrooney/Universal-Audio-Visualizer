@@ -20,24 +20,11 @@
    <widget class="OGLWidget" name="openGLWidget">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>60</y>
-      <width>300</width>
-      <height>200</height>
+      <x>190</x>
+      <y>20</y>
+      <width>400</width>
+      <height>400</height>
      </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>40</y>
-      <width>101</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Temp label</string>
     </property>
    </widget>
   </widget>
