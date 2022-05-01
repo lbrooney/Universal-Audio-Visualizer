@@ -19,7 +19,9 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGLWidgets Gui Core)
 include_directories(Headers/
                     Shaders/
                     Sources/
-					lib/)
+                    lib/
+                    lib/fftw/include)
+link_directories(lib/fftw/lib)
 
 set(PROJECT_SOURCES
         Sources/main.cpp
@@ -39,6 +41,8 @@ set(PROJECT_SOURCES
         Headers/Cylinder.h
         Shaders.qrc
 )
+
+set(EXECUTABLE_OUTPUT_PATH ${RUNTIME_OUTPUT_DIRECTORY})
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Universal-Audio-Visualizer
@@ -63,7 +67,11 @@ else()
     endif()
 endif()
 
-target_link_libraries(Universal-Audio-Visualizer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets PRIVATE Qt${QT_VERSION_MAJOR}::OpenGLWidgets PRIVATE Qt${QT_VERSION_MAJOR}::Gui PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(Universal-Audio-Visualizer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
+    PRIVATE libfftw3-3
+    PRIVATE Qt${QT_VERSION_MAJOR}::OpenGLWidgets
+    PRIVATE Qt${QT_VERSION_MAJOR}::Gui
+    PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 
 set_target_properties(Universal-Audio-Visualizer PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
@@ -72,6 +80,11 @@ set_target_properties(Universal-Audio-Visualizer PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
+
+add_custom_command(TARGET Universal-Audio-Visualizer POST_BUILD
+               COMMAND ${CMAKE_COMMAND} -E copy_if_different
+               "${PROJECT_SOURCE_DIR}/lib/fftw/bin/libfftw3-3.dll"
+                $<TARGET_FILE_DIR:Universal-Audio-Visualizer>)
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(Universal-Audio-Visualizer)

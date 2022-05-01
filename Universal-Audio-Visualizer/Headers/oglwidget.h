@@ -10,7 +10,7 @@
 #include <gl/GL.h>
 #include "Shape.h"
 #include <vector>
-
+#include <fftw3.h>
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {

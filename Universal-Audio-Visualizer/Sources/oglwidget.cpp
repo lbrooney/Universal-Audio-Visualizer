@@ -64,6 +64,14 @@ void OGLWidget::initializeGL()
     //objList.push_back((sphere));
     objList.push_back(cyl);
 
+    int NUM_SAMPLES = 100;
+    fftw_plan mFftPlan;
+    double *mFftIn;
+    double *mFftOut;
+
+    mFftIn  = fftw_alloc_real(NUM_SAMPLES);
+    mFftOut = fftw_alloc_real(NUM_SAMPLES);
+    mFftPlan = fftw_plan_r2r_1d(NUM_SAMPLES, mFftIn, mFftOut, FFTW_R2HC,FFTW_ESTIMATE);
 }
 
 void OGLWidget::paintGL()
