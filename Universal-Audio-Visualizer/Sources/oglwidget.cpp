@@ -1,6 +1,7 @@
 #include "oglwidget.h"
 #include "Triangle.h"
 #include "Square.h"
+#include "Sphere.h"
 #include "Circle.h"
 #include "Cube.h"
 #include <QVector3D>
@@ -27,29 +28,35 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    /*Triangle* t = new Triangle(QVector3D(1.0f, 1.0f, 0.0f));
-    t->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
+    Triangle* t = new Triangle(QVector3D(1.0f, 0.0f, 0.0f));
+    //t->SetRotation(-45, glm::vec3(0.0f, 1.0f, 0.0f));
+    t->SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
     t->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
-    Square* s = new Square(QVector3D(1.0f, 1.0f, 0.0f));
+    Square* s = new Square(QVector3D(0.0f, 1.0f, 0.0f));
     s->SetTranslation(glm::vec3(-0.5f, -0.5f, 0.0f));
     s->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
-    Circle* c = new Circle(QVector3D(1.0f, 1.0f, 0.0f));
+    Circle* c = new Circle(QVector3D(0.0f, 0.0f, 1.0f));
     c->SetTranslation(glm::vec3(0.5f, -0.5f, 0.0f));
-    c->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));*/
+    c->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 
-    //objList.push_back(t);
-    //objList.push_back(s);
-    //objList.push_back(c);
+    objList.push_back(t);
+    objList.push_back(s);
+    objList.push_back(c);
 
     Cube* cube = new Cube(QVector3D(1.0f, 1.0f, 0.0f));
     cube->SetRotation(15, glm::vec3(1.0f, 1.0f, 0.0f));
-    cube->SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
+    cube->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
     cube->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
+    Sphere* sphere = new Sphere(QVector3D(1.0f, 0.0f, 0.0f));
+    //sphere->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
+    sphere->SetScale(glm::vec3(0.25f, 0.25f, 0.25f));
+
     objList.push_back(cube);
+    objList.push_back((sphere));
 
 }
 

@@ -25,11 +25,21 @@ public:
         };
         indexCount = 6;
 
+        QVector3D normals[] = {
+            QVector3D(0.0f, 0.0f, -1.0f),
+            QVector3D(0.0f, 0.0f, -1.0f),
+            QVector3D(0.0f, 0.0f, -1.0f),
+            QVector3D(0.0f, 0.0f, -1.0f)
+        };
+
         arrayBuf.bind();
         arrayBuf.allocate(vertices, 4 * sizeof(QVector3D));
 
         indexBuf.bind();
         indexBuf.allocate(indices, indexCount * sizeof(GLushort));
+
+        normalBuf.bind();
+        normalBuf.allocate(normals, 4 * sizeof(QVector3D));
     }
 };
 

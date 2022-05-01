@@ -16,17 +16,19 @@ public:
         int segmentCount = 50;
         indexCount = segmentCount * 3;
         QVector3D vertices[segmentCount];
+        QVector3D normals[segmentCount];
         GLushort indices[indexCount];
 
         //calculate vertices
         float angle = 2 * 3.1416f / segmentCount;
         float radius = 0.5f;
         vertices[0] = QVector3D(0, 0, 0);
-        for(int i = 0; i <= segmentCount; i++)
+        for(int i = 0; i < segmentCount; i++)
         {
             float x = radius * cos(i * angle);
             float y = radius * sin(i * angle);
             vertices[i] = QVector3D(x, y, 0.0f);
+            normals[i] = QVector3D(0.0f, 0.0f, -1.0f);
         }
 
         //calculate indices
@@ -43,6 +45,9 @@ public:
 
         indexBuf.bind();
         indexBuf.allocate(indices, indexCount * sizeof(GLushort));
+
+        normalBuf.bind();
+        normalBuf.allocate(normals, segmentCount * sizeof(QVector3D));
     }
 };
 #endif // CIRCLE_H

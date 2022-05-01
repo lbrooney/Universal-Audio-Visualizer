@@ -21,6 +21,13 @@ public:
         GLushort indices[] = {
             0, 1, 2
         };
+
+        QVector3D normals[] = {
+            QVector3D(0.0f, 0.0f, -1.0f),
+            QVector3D(0.0f, 0.0f, -1.0f),
+            QVector3D(0.0f, 0.0f, -1.0f)
+        };
+
         indexCount = 3;
 
         arrayBuf.bind();
@@ -28,6 +35,9 @@ public:
 
         indexBuf.bind();
         indexBuf.allocate(indices, indexCount * sizeof(GLushort));
+
+        normalBuf.bind();
+        normalBuf.allocate(normals, 3 * sizeof(QVector3D));
     }
 };
 
