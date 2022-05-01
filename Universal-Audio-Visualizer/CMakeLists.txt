@@ -36,6 +36,7 @@ set(PROJECT_SOURCES
         Headers/Circle.h
         Headers/Cube.h
         Headers/Sphere.h
+        Headers/Cylinder.h
         Shaders.qrc
 )
 

@@ -26,7 +26,7 @@ public:
         indexBuf.create();
         normalBuf.create();
     }
-    ~Shape()
+    virtual ~Shape()
     {
         arrayBuf.destroy();
         indexBuf.destroy();

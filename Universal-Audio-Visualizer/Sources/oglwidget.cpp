@@ -4,6 +4,7 @@
 #include "Sphere.h"
 #include "Circle.h"
 #include "Cube.h"
+#include "Cylinder.h"
 #include <QVector3D>
 #include <iostream>
 
@@ -14,10 +15,10 @@ OGLWidget::OGLWidget(QWidget *parent)
 
 OGLWidget::~OGLWidget()
 {
-    /*for(int i = objList.size() - 1; i >= 0; i--)
+    for(int i = objList.size() - 1; i >= 0; i--)
     {
         delete objList[i];
-    }*/
+    }
 }
 
 void OGLWidget::initializeGL()
@@ -42,9 +43,9 @@ void OGLWidget::initializeGL()
     c->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 
-    objList.push_back(t);
-    objList.push_back(s);
-    objList.push_back(c);
+    //objList.push_back(t);
+    //objList.push_back(s);
+    //objList.push_back(c);
 
     Cube* cube = new Cube(QVector3D(1.0f, 1.0f, 0.0f));
     cube->SetRotation(15, glm::vec3(1.0f, 1.0f, 0.0f));
@@ -55,8 +56,13 @@ void OGLWidget::initializeGL()
     //sphere->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
     sphere->SetScale(glm::vec3(0.25f, 0.25f, 0.25f));
 
-    objList.push_back(cube);
-    objList.push_back((sphere));
+    Cylinder* cyl = new Cylinder(QVector3D(0.0f, 1.0f, 1.0f), 3);
+    cyl->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
+    cyl->SetRotation(-45, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    //objList.push_back(cube);
+    //objList.push_back((sphere));
+    objList.push_back(cyl);
 
 }
 

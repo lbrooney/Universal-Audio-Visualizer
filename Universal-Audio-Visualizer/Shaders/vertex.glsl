@@ -24,5 +24,6 @@ void main()
     vec3 ambient = vec3(0.2, 0.2, 0.2) * u_Color;
 
     v_Color = vec4(clamp(diffuse + ambient, 0.0, 1.0), 1.0);
+    //v_Color = vec4(1.0, 1.0, 1.0, 1.0);
 
 }
