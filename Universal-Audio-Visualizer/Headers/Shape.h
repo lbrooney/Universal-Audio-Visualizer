@@ -25,6 +25,12 @@ public:
         arrayBuf.create();
         indexBuf.create();
         normalBuf.create();
+
+        m_Scale = QVector3D(1.0f, 1.0f, 1.0f);
+        //m_Rotation = QVector3D(1.0f, 1.0f, 1.0f);
+        m_Position = QVector3D(0.0f, 0.0f, 0.0f);
+
+        scaleFactor = 1.05f;
     }
     virtual ~Shape()
     {
@@ -64,6 +70,9 @@ public:
 
     void SetTranslation(glm::vec3 translation)
     {
+        m_Position.setX(m_Position.x() + translation.x);
+        m_Position.setY(m_Position.y() + translation.y);
+        m_Position.setZ(m_Position.z() + translation.z);
         m_ModelMatrix = glm::translate(m_ModelMatrix, translation);
     }
     void SetRotation(float rotDegree, glm::vec3 axis)
@@ -72,12 +81,19 @@ public:
     }
     void SetScale(glm::vec3 scale)
     {
+        m_Scale.setX(scale.x * m_Scale.x());
+        m_Scale.setY(scale.y * m_Scale.y());
+        m_Scale.setZ(scale.z * m_Scale.z());
         m_ModelMatrix = glm::scale(m_ModelMatrix, scale);
     }
 
     glm::mat4 m_ModelMatrix;
     glm::mat4 m_NormalMatrix;
     QVector3D m_Color;
+    //QVector3D m_Rotation;
+    QVector3D m_Scale;
+    QVector3D m_Position;
+    float scaleFactor;
 
 protected:
     QOpenGLBuffer arrayBuf;

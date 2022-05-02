@@ -1,16 +1,12 @@
 #include "oglwidget.h"
-#include "Triangle.h"
-#include "Square.h"
-#include "Sphere.h"
-#include "Circle.h"
-#include "Cube.h"
-#include "Cylinder.h"
-#include <QVector3D>
-#include <iostream>
-
+using namespace std;
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
+    rotation = 0;
+    QTimer* timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    timer->start(100);
 }
 
 OGLWidget::~OGLWidget()
@@ -29,49 +25,23 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    Triangle* t = new Triangle(QVector3D(1.0f, 0.0f, 0.0f));
-    //t->SetRotation(-45, glm::vec3(0.0f, 1.0f, 0.0f));
-    t->SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
-    t->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
-
-    Square* s = new Square(QVector3D(0.0f, 1.0f, 0.0f));
-    s->SetTranslation(glm::vec3(-0.5f, -0.5f, 0.0f));
-    s->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
-
-    Circle* c = new Circle(QVector3D(0.0f, 0.0f, 1.0f));
-    c->SetTranslation(glm::vec3(0.5f, -0.5f, 0.0f));
-    c->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
-
-
-    //objList.push_back(t);
-    //objList.push_back(s);
-    //objList.push_back(c);
-
     Cube* cube = new Cube(QVector3D(1.0f, 1.0f, 0.0f));
     cube->SetRotation(15, glm::vec3(1.0f, 1.0f, 0.0f));
     cube->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
-    cube->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
+    //cube->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
     Sphere* sphere = new Sphere(QVector3D(1.0f, 0.0f, 0.0f));
-    //sphere->SetTranslation(glm::vec3(0.5f, 0.5f, 0.0f));
+    sphere->SetTranslation(glm::vec3(0.0f, -0.5f, 0.0f));
     sphere->SetScale(glm::vec3(0.25f, 0.25f, 0.25f));
 
     Cylinder* cyl = new Cylinder(QVector3D(0.0f, 1.0f, 1.0f), 3);
-    cyl->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
     cyl->SetRotation(-45, glm::vec3(0.0f, 1.0f, 0.0f));
+    cyl->SetTranslation(glm::vec3(-0.5f, 0.5f, 0.0f));
+    cyl->SetScale(glm::vec3(0.35f, 0.35f, 0.35f));
 
-    //objList.push_back(cube);
-    //objList.push_back((sphere));
+    objList.push_back(cube);
+    objList.push_back((sphere));
     objList.push_back(cyl);
-
-    int NUM_SAMPLES = 100;
-    fftw_plan mFftPlan;
-    double *mFftIn;
-    double *mFftOut;
-
-    mFftIn  = fftw_alloc_real(NUM_SAMPLES);
-    mFftOut = fftw_alloc_real(NUM_SAMPLES);
-    mFftPlan = fftw_plan_r2r_1d(NUM_SAMPLES, mFftIn, mFftOut, FFTW_R2HC,FFTW_ESTIMATE);
 }
 
 void OGLWidget::paintGL()
@@ -85,9 +55,23 @@ void OGLWidget::paintGL()
 
     for(int i = 0; i < objList.size(); i++)
     {
+        /*if(objList[i]->m_Scale.x() >= 1.0f)
+            objList[i]->scaleFactor = 0.95f;
+        else if(objList[i]->m_Scale.x() <= 0.25f)
+            objList[i]->scaleFactor = 1.05f;*/
+
+        std::random_device rd; // obtain a random number from hardware
+        std::mt19937 gen(rd()); // seed the generator
+        std::uniform_real_distribution<float> distr(0.25, 2); //define range
+        objList[i]->scaleFactor = distr(gen);
+
+        //clamp scale factor
+        if(objList[i]->scaleFactor * objList[i]->m_Scale.x() > 1.25f || objList[i]->scaleFactor * objList[i]->m_Scale.x() < 0.25f)
+            objList[i]->scaleFactor = 1.0f;
+
+        objList[i]->SetScale(glm::vec3(objList[i]->scaleFactor, objList[i]->scaleFactor, objList[i]->scaleFactor));
         objList[i]->DrawShape(&m_program);
     }
-
 }
 
 void OGLWidget::resizeGL(int w, int h)

@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QBuffer>
+#include <fftw3.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,5 +19,15 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    QBuffer  mInputBuffer;
+
+    QVector<double> mSamples;
+    QVector<double> mIndices;
+    QVector<double> mFftIndices;
+
+    fftw_plan mFftPlan;
+    double *mFftIn;
+    double *mFftOut;
 };
 #endif // MAINWINDOW_H

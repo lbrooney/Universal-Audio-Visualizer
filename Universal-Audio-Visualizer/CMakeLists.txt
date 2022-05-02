@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS OpenGLWidgets Gui Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGLWidgets Gui Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGLWidgets Gui Core Multimedia)
 
 include_directories(Headers/
                     Shaders/
@@ -71,7 +71,8 @@ target_link_libraries(Universal-Audio-Visualizer PRIVATE Qt${QT_VERSION_MAJOR}::
     PRIVATE libfftw3-3
     PRIVATE Qt${QT_VERSION_MAJOR}::OpenGLWidgets
     PRIVATE Qt${QT_VERSION_MAJOR}::Gui
-    PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+    PRIVATE Qt${QT_VERSION_MAJOR}::Core
+    PRIVATE Qt${QT_VERSION_MAJOR}::Multimedia)
 
 set_target_properties(Universal-Audio-Visualizer PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
