@@ -6,7 +6,7 @@
 class Circle : public Shape
 {
 public:
-    Circle(QVector3D color) : Shape(color)
+    Circle(float r, float g, float b) : Shape(r, g, b)
     {
         Circle::InitGeometry();
     }
@@ -15,9 +15,9 @@ public:
     {
         int segmentCount = 50;
         indexCount = segmentCount * 3;
-        QVector3D vertices[segmentCount];
-        QVector3D normals[segmentCount];
-        GLushort indices[indexCount];
+        QVector3D* vertices = new QVector3D[segmentCount];
+        QVector3D* normals = new QVector3D[segmentCount];
+        GLushort* indices = new GLushort[indexCount];
 
         //calculate vertices
         float angle = 2 * 3.1416f / segmentCount;
@@ -48,6 +48,10 @@ public:
 
         normalBuf.bind();
         normalBuf.allocate(normals, segmentCount * sizeof(QVector3D));
+
+        delete[] vertices;
+        delete[] indices;
+        delete[] normals;
     }
 };
 #endif // CIRCLE_H

@@ -6,7 +6,7 @@
 class Sphere : public Shape
 {
 public:
-    Sphere(QVector3D color) : Shape(color)
+    Sphere(float r, float g, float b) : Shape(r, g, b)
     {
         Sphere::InitGeometry();
     }
@@ -30,7 +30,7 @@ public:
                     float si = sin(ai);
                     float ci = cos(ai);
 
-                    vertices.push_back(QVector3D(si * sj, cj, ci * sj));
+                    vertices.push_back(QVector3D(si * sj / 2, cj / 2, ci * sj / 2));
                 }
         }
 

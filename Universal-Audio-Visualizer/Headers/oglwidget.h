@@ -11,34 +11,38 @@
 #include <QVector3D>
 #include <vector>
 #include <QTimer>
+#include <windows.h>
+#include <mmsystem.h>
+#include <mmdeviceapi.h>
+#include <audioclient.h>
+#include <time.h>
+#include <iostream>
+
 #include <fftw3.h>
 #include "Shape.h"
-#include "Triangle.h"
-#include "Square.h"
 #include "Sphere.h"
-#include "Circle.h"
 #include "Cube.h"
 #include "Cylinder.h"
 
-#include <iostream>
+#define N 10000
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
 public:
     OGLWidget(QWidget *parent = 0);
     ~OGLWidget();
-
+double mag[N/2];
 protected:
     void initializeGL();
     void resizeGL(int w, int h);
     void paintGL();
     void initShaders();
+    HRESULT RecordAudioStream();
+    HRESULT ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone);
 
 private:
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
-    int rotation;
-
 };
 
 #endif // OGLWIDGET_H

@@ -5,7 +5,7 @@
 class Cube : public Shape
 {
 public:
-    Cube(QVector3D color) : Shape(color)
+    Cube(float r, float g, float b) : Shape(r, g, b)
     {
         Cube::InitGeometry();
         indexCount = 36;

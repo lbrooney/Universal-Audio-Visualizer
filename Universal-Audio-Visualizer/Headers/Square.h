@@ -5,7 +5,7 @@
 class Square : public Shape
 {
 public:
-    Square(QVector3D color) : Shape(color)
+    Square(float r, float g, float b) : Shape(r, g, b)
     {
         Square::InitGeometry();
     }

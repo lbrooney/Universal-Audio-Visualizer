@@ -6,7 +6,7 @@
 class Cylinder : public Shape
 {
 public:
-    Cylinder(QVector3D color, int sideCount) : Shape(color)
+    Cylinder(float r, float g, float b, int sideCount) : Shape(r, g, b)
     {
         m_SideCount = sideCount;
         Cylinder::InitGeometry();
@@ -17,8 +17,8 @@ public:
         int vertexCount = (m_SideCount * 6 + 2) * 3;
         //float vertices[vertexCount];
         //QVector3D vertices[vertexCount];
-        float vertices[vertexCount];
-        memset(vertices, 0, sizeof(vertices));
+        float* vertices = new float[vertexCount];
+        memset(vertices, 0, sizeof(float) * vertexCount);
         //calculate inner angle of cylinder
         float angle = 2 * 3.1416f / m_SideCount;
         int j = 0;
@@ -70,7 +70,7 @@ public:
 
 
         indexCount = m_SideCount * 12;
-        GLushort indices[indexCount];
+        GLushort* indices = new GLushort[indexCount];
         j = 0;
         int i = 0;
         //indices for the side polygons
@@ -107,8 +107,8 @@ public:
         indices[indexCount - 1] = 4 * m_SideCount + m_SideCount;
 
 
-        float normals[vertexCount];
-        memset(normals, 0, sizeof(normals));
+        float* normals = new float[vertexCount];
+        memset(normals, 0, sizeof(float) * vertexCount);
         j = 0;
         i = 0;
 
@@ -161,6 +161,10 @@ public:
 
         normalBuf.bind();
         normalBuf.allocate(normals, vertexCount * sizeof(float));
+
+        delete[] vertices;
+        delete[] indices;
+        delete[] normals;
     }
 
 private:

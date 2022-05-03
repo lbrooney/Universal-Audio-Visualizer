@@ -5,7 +5,7 @@
 class Triangle : public Shape
 {
 public:
-    Triangle(QVector3D color) : Shape(color)
+    Triangle(float r, float g, float b) : Shape(r, g, b)
     {
         Triangle::InitGeometry();
     }
