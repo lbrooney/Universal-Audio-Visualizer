@@ -25,6 +25,11 @@ const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 
+IMMDeviceEnumerator* pEnumerator = NULL;
+IMMDevice* pDevice = NULL;
+IAudioClient* pAudioClient = NULL;
+IAudioCaptureClient* pCaptureClient = NULL;
+
 DWORD WINAPI AudioThread(void* audio_semaphore);
 
 OGLWidget::OGLWidget(QWidget *parent)
@@ -32,18 +37,44 @@ OGLWidget::OGLWidget(QWidget *parent)
 {
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(10);
+    timer->start(50);
 
     clock();
 
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+
     HANDLE audio_sema = CreateSemaphore(NULL, 0, 10, NULL);
     HANDLE thread = CreateThread(NULL, 0, AudioThread, &audio_sema, NULL, NULL);
 
-    // Calls function to start recording
-    RecordAudioStream();
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
 
-    CoUninitialize();
+    hr = CoCreateInstance(
+        CLSID_MMDeviceEnumerator, NULL,
+        CLSCTX_ALL, IID_IMMDeviceEnumerator,
+        (void**)&pEnumerator);
+
+    hr = pEnumerator->GetDefaultAudioEndpoint(
+            eRender, eConsole, &pDevice);
+
+    hr = pDevice->Activate(
+            IID_IAudioClient, CLSCTX_ALL,
+            NULL, (void**)&pAudioClient);
+
+    hr = pAudioClient->GetMixFormat(&pwfx);
+
+    hr = pAudioClient->Initialize(
+            AUDCLNT_SHAREMODE_SHARED,
+            AUDCLNT_STREAMFLAGS_LOOPBACK,
+            hnsRequestedDuration,
+            0,
+            pwfx,
+            NULL);
+
+    hr = pAudioClient->GetService(
+            IID_IAudioCaptureClient,
+            (void**)&pCaptureClient);
+
+    pAudioClient->Start();
 }
 
 OGLWidget::~OGLWidget()
@@ -52,6 +83,8 @@ OGLWidget::~OGLWidget()
     {
         delete objList[i];
     }
+    pAudioClient->Stop();  // Stop recording.
+    CoUninitialize();
 }
 
 void OGLWidget::initializeGL()
@@ -62,49 +95,49 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    Square* sphere = new Square(1.0f, 0.0f, 0.0f);
+    Sphere* sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(-0.75f, 0.75f, 0.0f);
-    sphere->freqBin = 400;
+    sphere->freqBin = 10;
     objList.push_back((sphere));
 
-    sphere = new Square(1.0f, 0.0f, 0.0f);
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.0f, 0.75f, 0.0f);
-    sphere->freqBin = 350;
+    sphere->freqBin = 75;
     objList.push_back((sphere));
 
-    sphere = new Square(1.0f, 0.0f, 0.0f);
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, 0.75f, 0.0f);
     sphere->freqBin = 250;
     objList.push_back((sphere));
 
-    sphere = new Square(1.0f, 0.0f, 0.0f);
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(-0.75f, 0.0f, 0.0f);
-    sphere->freqBin = 100;
-    objList.push_back((sphere));
-
-    sphere = new Square(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, 0.0f, 0.0f);
-    sphere->freqBin = 75;
-    objList.push_back((sphere));
-
-    sphere = new Square(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.75f, 0.0f, 0.0f);
-    sphere->freqBin = 50;
-    objList.push_back((sphere));
-
-    sphere = new Square(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(-0.75f, -0.75f, 0.0f);
     sphere->freqBin = 20;
     objList.push_back((sphere));
 
-    sphere = new Square(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, -0.75f, 0.0f);
-    sphere->freqBin = 15;
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(0.0f, 0.0f, 0.0f);
+    sphere->freqBin = 150;
     objList.push_back((sphere));
 
-    sphere = new Square(1.0f, 0.0f, 0.0f);
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(0.75f, 0.0f, 0.0f);
+    sphere->freqBin = 300;
+    objList.push_back((sphere));
+
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(-0.75f, -0.75f, 0.0f);
+    sphere->freqBin = 30;
+    objList.push_back((sphere));
+
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(0.0f, -0.75f, 0.0f);
+    sphere->freqBin = 200;
+    objList.push_back((sphere));
+
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, -0.75f, 0.0f);
-    sphere->freqBin = 10;
+    sphere->freqBin = 400;
     objList.push_back((sphere));
 }
 
@@ -119,7 +152,9 @@ void OGLWidget::paintGL()
 
     for(int i = 0; i < objList.size(); i++)
     {
-        objList[i]->scaleFactor = mag[objList[i]->freqBin] / 200;
+        float scale = mag[objList[i]->freqBin] / 200;
+        scale = clamp(scale, 0.1f, 2.0f);
+        objList[i]->scaleFactor = scale;
 
         objList[i]->SetScale(objList[i]->scaleFactor, objList[i]->scaleFactor, objList[i]->scaleFactor);
         objList[i]->DrawShape(&m_program);
@@ -146,72 +181,33 @@ void OGLWidget::initShaders()
 
 HRESULT OGLWidget::RecordAudioStream()
 {
-    HRESULT hr;
-    REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
+
     REFERENCE_TIME hnsActualDuration;
     UINT32 bufferFrameCount;
     UINT32 numFramesAvailable;
-    IMMDeviceEnumerator* pEnumerator = NULL;
-    IMMDevice* pDevice = NULL;
-    IAudioClient* pAudioClient = NULL;
-    IAudioCaptureClient* pCaptureClient = NULL;
-    // WAVEFORMATEX* pwfx = NULL;
+
     UINT32 packetLength = 0;
 
     BYTE* pData;
     DWORD flags;
+    HRESULT hr;
 
-    hr = CoCreateInstance(
-        CLSID_MMDeviceEnumerator, NULL,
-        CLSCTX_ALL, IID_IMMDeviceEnumerator,
-        (void**)&pEnumerator);
-    EXIT_ON_ERROR(hr)
 
-        hr = pEnumerator->GetDefaultAudioEndpoint(
-            eRender, eConsole, &pDevice);
-    EXIT_ON_ERROR(hr)
-
-        hr = pDevice->Activate(
-            IID_IAudioClient, CLSCTX_ALL,
-            NULL, (void**)&pAudioClient);
-    EXIT_ON_ERROR(hr)
-
-        hr = pAudioClient->GetMixFormat(&pwfx);
-    EXIT_ON_ERROR(hr)
-
-        hr = pAudioClient->Initialize(
-            AUDCLNT_SHAREMODE_SHARED,
-            AUDCLNT_STREAMFLAGS_LOOPBACK,
-            hnsRequestedDuration,
-            0,
-            pwfx,
-            NULL);
-    EXIT_ON_ERROR(hr)
-
-        // Get the size of the allocated buffer.
-        hr = pAudioClient->GetBufferSize(&bufferFrameCount);
-    EXIT_ON_ERROR(hr)
-
-        hr = pAudioClient->GetService(
-            IID_IAudioCaptureClient,
-            (void**)&pCaptureClient);
-    EXIT_ON_ERROR(hr)
+    // Get the size of the allocated buffer.
+    hr = pAudioClient->GetBufferSize(&bufferFrameCount);
 
     // Calculate the actual duration of the allocated buffer.
     hnsActualDuration = (double)REFTIMES_PER_SEC *
         bufferFrameCount / pwfx->nSamplesPerSec;
 
-    hr = pAudioClient->Start();  // Start recording.
-    EXIT_ON_ERROR(hr)
-
         // Each loop fills about half of the shared buffer.
         while (bDone == FALSE)
         {
             // Sleep for half the buffer duration.
-            Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
+            //Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
+            Sleep(50);
 
             hr = pCaptureClient->GetNextPacketSize(&packetLength);
-            EXIT_ON_ERROR(hr)
 
                 while (packetLength != 0)
                 {
@@ -220,12 +216,11 @@ HRESULT OGLWidget::RecordAudioStream()
                         &pData,
                         &numFramesAvailable,
                         &flags, NULL, NULL);
-                    EXIT_ON_ERROR(hr)
 
-                        if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
-                        {
-                            pData = NULL;  // Tell CopyData to write silence.
-                        }
+                    if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
+                    {
+                        pData = NULL;  // Tell CopyData to write silence.
+                    }
 
                     // create buffers for FFT
                     in = (double*) fftw_malloc(sizeof(double) * numFramesAvailable);
@@ -238,36 +233,14 @@ HRESULT OGLWidget::RecordAudioStream()
                     // free resources
                     fftw_destroy_plan(p);
                     fftw_free(in); fftw_free(out);
+                    hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
 
-                        // pData, numFramesAvailable, &bDone, pwfx, (HMMIO)hFile);
-                    EXIT_ON_ERROR(hr)
-
-                        hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-                    EXIT_ON_ERROR(hr)
-
-                        hr = pCaptureClient->GetNextPacketSize(&packetLength);
-                    EXIT_ON_ERROR(hr)
+                    hr = pCaptureClient->GetNextPacketSize(&packetLength);
                 }
+
         }
 
-    hr = pAudioClient->Stop();  // Stop recording.
-    //framePointer = 0;
-    EXIT_ON_ERROR(hr)
-
-        //hr = FinishWaveFile((HMMIO)hFile, &ckData, &ckRIFF);
-    if (FAILED(hr)) {
-        // FinishWaveFile does it's own logging
-        return hr;
-    }
-
-Exit:
-    CoTaskMemFree(pwfx);
-    SAFE_RELEASE(pEnumerator)
-        SAFE_RELEASE(pDevice)
-        SAFE_RELEASE(pAudioClient)
-        SAFE_RELEASE(pCaptureClient)
-
-        return hr;
+    return hr;
 }
 
 HRESULT OGLWidget::ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone)
@@ -283,6 +256,7 @@ HRESULT OGLWidget::ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone)
     }
     //run FFT on data
     fftw_execute(p);
+
 
     //calculate log magnitude on transformed data
     for(int i = 0; i < NumFrames / 2; i++)
