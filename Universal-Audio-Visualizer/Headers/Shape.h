@@ -40,6 +40,7 @@ public:
     }
 
     virtual void InitGeometry() = 0;
+
     void DrawShape(QOpenGLShaderProgram *program)
     {
         glUseProgram(program->programId());
@@ -78,23 +79,18 @@ public:
     void SetTranslation(float x, float y, float z)
     {
         m_Position = glm::vec3(x, y, z);
-        /*m_Position.setX(m_Position.x() + translation.x);
-        m_Position.setY(m_Position.y() + translation.y);
-        m_Position.setZ(m_Position.z() + translation.z);
-        m_ModelMatrix = glm::translate(m_ModelMatrix, translation);*/
     }
     void SetRotation(float x, float y, float z)
     {
-        //m_ModelMatrix = glm::rotate(m_ModelMatrix, glm::radians(rotDegree), axis);
         m_Rotation = glm::vec3(x, y, z);
     }
     void SetScale(float x, float y, float z)
     {
         m_Scale = glm::vec3(x, y, z);
-        //m_Scale.setX(scale.x * m_Scale.x());
-        //m_Scale.setY(scale.y * m_Scale.y());
-        //m_Scale.setZ(scale.z * m_Scale.z());
-        //m_ModelMatrix = glm::scale(m_ModelMatrix, scale);
+    }
+    void SetColor(float r, float g, float b)
+    {
+        m_Color = QVector3D(r, g, b);
     }
 
     glm::mat4 m_ModelMatrix;

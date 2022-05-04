@@ -22,7 +22,10 @@
 #include "Shape.h"
 #include "Sphere.h"
 #include "Cube.h"
-#include "Cylinder.h"
+#include "Triangle.h"
+#include "Square.h"
+#include "Circle.h"
+
 
 #define N 10000
 

@@ -32,27 +32,16 @@ OGLWidget::OGLWidget(QWidget *parent)
 {
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(100);
-    //PlaySound(TEXT("C:\\Users\\Josh\\Downloads\\song.wav"), NULL, SND_FILENAME | SND_ASYNC);
-    //read part of audio file
-    //store into a buffer
-    //run buffer through fftw
-    //use PlaySound(buffer, GetModuleHandle(NULL), SND_MEMORY); to play buffer
-
-
-
+    timer->start(10);
 
     clock();
 
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-
     HANDLE audio_sema = CreateSemaphore(NULL, 0, 10, NULL);
-
     HANDLE thread = CreateThread(NULL, 0, AudioThread, &audio_sema, NULL, NULL);
 
     // Calls function to start recording
     RecordAudioStream();
-
 
     CoUninitialize();
 }
@@ -63,8 +52,6 @@ OGLWidget::~OGLWidget()
     {
         delete objList[i];
     }
-    fftw_destroy_plan(p);
-    fftw_free(in); fftw_free(out);
 }
 
 void OGLWidget::initializeGL()
@@ -75,47 +62,47 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    Sphere* sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    Square* sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(-0.75f, 0.75f, 0.0f);
     sphere->freqBin = 400;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.0f, 0.75f, 0.0f);
     sphere->freqBin = 350;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, 0.75f, 0.0f);
     sphere->freqBin = 250;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(-0.75f, 0.0f, 0.0f);
     sphere->freqBin = 100;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.0f, 0.0f, 0.0f);
     sphere->freqBin = 75;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, 0.0f, 0.0f);
     sphere->freqBin = 50;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(-0.75f, -0.75f, 0.0f);
     sphere->freqBin = 20;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.0f, -0.75f, 0.0f);
     sphere->freqBin = 15;
     objList.push_back((sphere));
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere = new Square(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, -0.75f, 0.0f);
     sphere->freqBin = 10;
     objList.push_back((sphere));
@@ -210,12 +197,6 @@ HRESULT OGLWidget::RecordAudioStream()
             (void**)&pCaptureClient);
     EXIT_ON_ERROR(hr)
 
-        //hr = WriteWaveHeader((HMMIO)hFile, pwfx, &ckRIFF, &ckData);
-    if (FAILED(hr)) {
-        // WriteWaveHeader does its own logging
-        return hr;
-    }
-
     // Calculate the actual duration of the allocated buffer.
     hnsActualDuration = (double)REFTIMES_PER_SEC *
         bufferFrameCount / pwfx->nSamplesPerSec;
@@ -246,11 +227,15 @@ HRESULT OGLWidget::RecordAudioStream()
                             pData = NULL;  // Tell CopyData to write silence.
                         }
 
-                    // Copy the available capture data to the audio sink.
+                    // create buffers for FFT
                     in = (double*) fftw_malloc(sizeof(double) * numFramesAvailable);
                     out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numFramesAvailable);
                     p = fftw_plan_dft_r2c_1d(numFramesAvailable, in, out, FFTW_ESTIMATE);
+
+                    // send captured audio data to be processed
                     hr = ProcessData(pData, numFramesAvailable, &bDone);
+
+                    // free resources
                     fftw_destroy_plan(p);
                     fftw_free(in); fftw_free(out);
 
@@ -287,21 +272,25 @@ Exit:
 
 HRESULT OGLWidget::ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone)
 {
-
+    //apply Hann window to data and put into in buffer for FFT
     for(int j = 0; j < NumFrames; j++)
     {
-        //double multiplier = 0.5 * (1 - cos(2 * 3.1416 * j) / (N - 1));
-        in[j] = pData[j];
+        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * j) / (NumFrames - 1));
+        if(pData != NULL)
+            in[j] = pData[j] * multiplier;
+        else
+            in[j] = 0;
     }
-
+    //run FFT on data
     fftw_execute(p);
 
+    //calculate log magnitude on transformed data
     for(int i = 0; i < NumFrames / 2; i++)
     {
         mag[i] = log(sqrt((out[i][0] * out[i][0]) + (out[i][1] * out[i][1]))) * 10;
     }
 
-    if (clock() > 0.01 * CLOCKS_PER_SEC) //Record 10 seconds. From the first time call clock() at the beginning of the main().
+    if (clock() > 0.01 * CLOCKS_PER_SEC) //Record 0.01 seconds. From the first time call clock().
         *pDone = true;
 
     return S_OK;
