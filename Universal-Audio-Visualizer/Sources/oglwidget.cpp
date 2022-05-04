@@ -5,10 +5,7 @@ using namespace std;
 BOOL bDone = FALSE;
 WAVEFORMATEX* pwfx = NULL;
 int framePointer = 0;
-double* in;
-double mag[N/2];
-fftw_complex* out;
-fftw_plan p;
+
 
 // REFERENCE_TIME time units per second and per millisecond
 #define REFTIMES_PER_SEC  10000000
@@ -37,7 +34,7 @@ OGLWidget::OGLWidget(QWidget *parent)
 {
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(50);
+    timer->start(150);
 
     clock();
 
@@ -95,50 +92,58 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    Sphere* sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    /*Sphere* sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(-0.75f, 0.75f, 0.0f);
-    sphere->freqBin = 10;
+    sphere->freqBin = 1;
+    objList.push_back((sphere));
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(-0.75f, 0.0f, 0.0f);
+    sphere->freqBin = 3;
+    objList.push_back((sphere));
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(-0.75f, -0.75f, 0.0f);
+    sphere->freqBin = 5;
     objList.push_back((sphere));
 
     sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.0f, 0.75f, 0.0f);
-    sphere->freqBin = 75;
+    sphere->freqBin = 8;
+    objList.push_back((sphere));
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(0.0f, 0.0f, 0.0f);
+    sphere->freqBin = 16;
+    objList.push_back((sphere));
+    sphere = new Sphere(1.0f, 0.0f, 0.0f);
+    sphere->SetTranslation(0.0f, -0.75f, 0.0f);
+    sphere->freqBin = 32;
     objList.push_back((sphere));
 
     sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, 0.75f, 0.0f);
-    sphere->freqBin = 250;
+    sphere->freqBin = 86;
     objList.push_back((sphere));
-
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(-0.75f, 0.0f, 0.0f);
-    sphere->freqBin = 20;
-    objList.push_back((sphere));
-
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, 0.0f, 0.0f);
-    sphere->freqBin = 150;
-    objList.push_back((sphere));
-
     sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, 0.0f, 0.0f);
-    sphere->freqBin = 300;
+    sphere->freqBin = 130;
     objList.push_back((sphere));
-
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(-0.75f, -0.75f, 0.0f);
-    sphere->freqBin = 30;
-    objList.push_back((sphere));
-
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, -0.75f, 0.0f);
-    sphere->freqBin = 200;
-    objList.push_back((sphere));
-
     sphere = new Sphere(1.0f, 0.0f, 0.0f);
     sphere->SetTranslation(0.75f, -0.75f, 0.0f);
-    sphere->freqBin = 400;
-    objList.push_back((sphere));
+    sphere->freqBin = 200;
+    objList.push_back((sphere));*/
+    int binCounter = 0;
+    float xPos = -1.0f;
+    for(int i = 0; i < 200; i++)
+    {
+       Cube* s = new Cube(1.0f, 0.0f, 0.0f);
+
+       s->SetTranslation(xPos, 0.0f, 0.0f);
+       s->SetScale(0.01f, 0.01f, 0.01f);
+       objList.push_back(s);
+       s->freqBin = binCounter;
+       binCounter += 4;
+       xPos += 0.01f;
+
+    }
 }
 
 void OGLWidget::paintGL()
@@ -152,11 +157,11 @@ void OGLWidget::paintGL()
 
     for(int i = 0; i < objList.size(); i++)
     {
-        float scale = mag[objList[i]->freqBin] / 200;
-        scale = clamp(scale, 0.1f, 2.0f);
-        objList[i]->scaleFactor = scale;
+        float magnitude = mag[objList[i]->freqBin];
+        magnitude = clamp(magnitude, 0.01f, 1.0f);
+        //objList[i]->SetTranslation(objList[i]->m_Position.x, magnitude, objList[i]->m_Position.z);
+        objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
 
-        objList[i]->SetScale(objList[i]->scaleFactor, objList[i]->scaleFactor, objList[i]->scaleFactor);
         objList[i]->DrawShape(&m_program);
     }
     bDone = false;
@@ -198,47 +203,45 @@ HRESULT OGLWidget::RecordAudioStream()
 
     // Calculate the actual duration of the allocated buffer.
     hnsActualDuration = (double)REFTIMES_PER_SEC *
-        bufferFrameCount / pwfx->nSamplesPerSec;
+    bufferFrameCount / pwfx->nSamplesPerSec;
 
-        // Each loop fills about half of the shared buffer.
-        while (bDone == FALSE)
+    while(!bDone)
+    {
+        hr = pCaptureClient->GetNextPacketSize(&packetLength);
+        while (packetLength != 0)
         {
-            // Sleep for half the buffer duration.
-            //Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
-            Sleep(50);
+            // Get the available data in the shared buffer.
+            hr = pCaptureClient->GetBuffer(
+                &pData,
+                &numFramesAvailable,
+                &flags, NULL, NULL);
 
-            hr = pCaptureClient->GetNextPacketSize(&packetLength);
+           if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
+           {
+                pData = NULL;  // Tell CopyData to write silence.
+           }
 
-                while (packetLength != 0)
-                {
-                    // Get the available data in the shared buffer.
-                    hr = pCaptureClient->GetBuffer(
-                        &pData,
-                        &numFramesAvailable,
-                        &flags, NULL, NULL);
+           // create buffers for FFT
+           //in = (double*) fftw_malloc(sizeof(double) * numFramesAvailable);
+           complexIn = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numFramesAvailable);
+           out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numFramesAvailable);
+           //p = fftw_plan_dft_r2c_1d(numFramesAvailable, in, out, FFTW_ESTIMATE);
+           p = fftw_plan_dft_1d(numFramesAvailable, complexIn, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
-                    if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
-                    {
-                        pData = NULL;  // Tell CopyData to write silence.
-                    }
+           // send captured audio data to be processed
+           hr = ProcessData(pData, numFramesAvailable, &bDone);
 
-                    // create buffers for FFT
-                    in = (double*) fftw_malloc(sizeof(double) * numFramesAvailable);
-                    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numFramesAvailable);
-                    p = fftw_plan_dft_r2c_1d(numFramesAvailable, in, out, FFTW_ESTIMATE);
+           // free resources
+           fftw_destroy_plan(p);
+           fftw_free(complexIn); fftw_free(out);
+           hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
 
-                    // send captured audio data to be processed
-                    hr = ProcessData(pData, numFramesAvailable, &bDone);
-
-                    // free resources
-                    fftw_destroy_plan(p);
-                    fftw_free(in); fftw_free(out);
-                    hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-
-                    hr = pCaptureClient->GetNextPacketSize(&packetLength);
-                }
-
+           hr = pCaptureClient->GetNextPacketSize(&packetLength);
         }
+        // Sleep for half the buffer duration.
+        //Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
+        Sleep(10);
+    }
 
     return hr;
 }
@@ -249,24 +252,33 @@ HRESULT OGLWidget::ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone)
     for(int j = 0; j < NumFrames; j++)
     {
         double multiplier = 0.5 * (1 - cos(2 * 3.1416 * j) / (NumFrames - 1));
-        if(pData != NULL)
-            in[j] = pData[j] * multiplier;
-        else
-            in[j] = 0;
+        if(pData != NULL){
+            //in[j] = pData[j];
+            //in[j] = pData[j] * multiplier;
+            complexIn[j][0] = pData[j] * multiplier;
+            complexIn[j][1] = 0;
+        }
+        //else
+//        {
+//            complexIn[j][0] = 0;
+//            complexIn[j][1] = 0;
+//        }
+
     }
     //run FFT on data
     fftw_execute(p);
 
-
+    //cout << out[0][0] << " " << out[0][1] << endl;
     //calculate log magnitude on transformed data
-    for(int i = 0; i < NumFrames / 2; i++)
+    for(int j = 0; j < NumFrames / 2; j++)
     {
-        mag[i] = log(sqrt((out[i][0] * out[i][0]) + (out[i][1] * out[i][1]))) * 10;
+        float r = out[j][0] / NumFrames;
+        float i = out[j][1] / NumFrames;
+        mag[j] = log(sqrt((r * r) + (i * i))) / 3;
+        //mag[i] = sqrt((out[i][0] * out[i][0]) + (out[i][1] * out[i][1])) / 1000;
     }
-
-    if (clock() > 0.01 * CLOCKS_PER_SEC) //Record 0.01 seconds. From the first time call clock().
-        *pDone = true;
-
+    //cout << mag[0] << " ";
+    *pDone = true;
     return S_OK;
 }
 

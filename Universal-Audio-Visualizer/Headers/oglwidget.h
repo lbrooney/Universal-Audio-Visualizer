@@ -34,7 +34,6 @@ class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 public:
     OGLWidget(QWidget *parent = 0);
     ~OGLWidget();
-double mag[N/2];
 protected:
     void initializeGL();
     void resizeGL(int w, int h);
@@ -46,6 +45,11 @@ protected:
 private:
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
+    double* in;
+    double mag[N/2];
+    fftw_complex* complexIn;
+    fftw_complex* out;
+    fftw_plan p;
 };
 
 #endif // OGLWIDGET_H
