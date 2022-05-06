@@ -2,11 +2,6 @@
 #pragma comment(lib, "winmm.lib")
 using namespace std;
 
-BOOL bDone = FALSE;
-WAVEFORMATEX* pwfx = NULL;
-int framePointer = 0;
-
-
 // REFERENCE_TIME time units per second and per millisecond
 #define REFTIMES_PER_SEC  10000000
 #define REFTIMES_PER_MILLISEC  10000
@@ -27,6 +22,10 @@ IMMDevice* pDevice = NULL;
 IAudioClient* pAudioClient = NULL;
 IAudioCaptureClient* pCaptureClient = NULL;
 
+BOOL bDone = FALSE;
+WAVEFORMATEX* pwfx = NULL;
+int framePointer = 0;
+
 DWORD WINAPI AudioThread(void* audio_semaphore);
 
 OGLWidget::OGLWidget(QWidget *parent)
@@ -34,32 +33,29 @@ OGLWidget::OGLWidget(QWidget *parent)
 {
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(150);
-
-    clock();
-
+    timer->start(100);
 
     HANDLE audio_sema = CreateSemaphore(NULL, 0, 10, NULL);
     HANDLE thread = CreateThread(NULL, 0, AudioThread, &audio_sema, NULL, NULL);
 
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
     REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
 
-    hr = CoCreateInstance(
+    CoCreateInstance(
         CLSID_MMDeviceEnumerator, NULL,
         CLSCTX_ALL, IID_IMMDeviceEnumerator,
         (void**)&pEnumerator);
 
-    hr = pEnumerator->GetDefaultAudioEndpoint(
+    pEnumerator->GetDefaultAudioEndpoint(
             eRender, eConsole, &pDevice);
 
-    hr = pDevice->Activate(
+    pDevice->Activate(
             IID_IAudioClient, CLSCTX_ALL,
             NULL, (void**)&pAudioClient);
 
-    hr = pAudioClient->GetMixFormat(&pwfx);
+    pAudioClient->GetMixFormat(&pwfx);
 
-    hr = pAudioClient->Initialize(
+    pAudioClient->Initialize(
             AUDCLNT_SHAREMODE_SHARED,
             AUDCLNT_STREAMFLAGS_LOOPBACK,
             hnsRequestedDuration,
@@ -67,7 +63,7 @@ OGLWidget::OGLWidget(QWidget *parent)
             pwfx,
             NULL);
 
-    hr = pAudioClient->GetService(
+    pAudioClient->GetService(
             IID_IAudioCaptureClient,
             (void**)&pCaptureClient);
 
@@ -86,6 +82,10 @@ OGLWidget::~OGLWidget()
 
 void OGLWidget::initializeGL()
 {
+    float apsectRatio = (float)width() / (float)height();
+    m_PerspectiveMatrix = glm::perspective(glm::radians(60.0f), apsectRatio, 0.1f, 1000.0f);
+    m_ViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
     initializeOpenGLFunctions();
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f,0.0f,0.0f,1.0f);
@@ -93,15 +93,15 @@ void OGLWidget::initializeGL()
     initShaders();
 
     /*Sphere* sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(-0.75f, 0.75f, 0.0f);
+    sphere->SetTranslation(0.0f, 0.75f, 0.0f);
     sphere->freqBin = 1;
     objList.push_back((sphere));
     sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(-0.75f, 0.0f, 0.0f);
+    sphere->SetTranslation(0.0f, 0.0f, -1.0f);
     sphere->freqBin = 3;
     objList.push_back((sphere));
     sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(-0.75f, -0.75f, 0.0f);
+    sphere->SetTranslation(0.0f, -0.75f, 1.0f);
     sphere->freqBin = 5;
     objList.push_back((sphere));
 
@@ -140,10 +140,10 @@ void OGLWidget::initializeGL()
        s->SetScale(0.01f, 0.01f, 0.01f);
        objList.push_back(s);
        s->freqBin = binCounter;
-       binCounter += 4;
+       binCounter += 2;
        xPos += 0.01f;
-
     }
+    objList[0]->freqBin = 1;
 }
 
 void OGLWidget::paintGL()
@@ -153,13 +153,18 @@ void OGLWidget::paintGL()
     unsigned int u_lightColor = glGetUniformLocation(m_program.programId(), "u_lightColor");
     glUniform3f(u_lightColor, 1.0f, 1.0f, 1.0f);
     unsigned int u_lightDirection = glGetUniformLocation(m_program.programId(), "u_lightDirection");
-    glUniform3f(u_lightDirection, 1.0f, 1.0f, -1.0f);
+    glUniform3f(u_lightDirection, 1.0f, 1.0f, 1.0f);
+
+    unsigned int u_projMatrix = glGetUniformLocation(m_program.programId(), "u_ProjMatrix");
+    glUniformMatrix4fv(u_projMatrix, 1, GL_FALSE, glm::value_ptr(m_PerspectiveMatrix));
+
+    unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
+    glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
     for(int i = 0; i < objList.size(); i++)
     {
         float magnitude = mag[objList[i]->freqBin];
-        magnitude = clamp(magnitude, 0.01f, 1.0f);
-        //objList[i]->SetTranslation(objList[i]->m_Position.x, magnitude, objList[i]->m_Position.z);
+        magnitude = clamp(magnitude, 0.01f, 10.0f);
         objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
 
         objList[i]->DrawShape(&m_program);
@@ -184,34 +189,31 @@ void OGLWidget::initShaders()
 }
 
 
-HRESULT OGLWidget::RecordAudioStream()
+void OGLWidget::RecordAudioStream()
 {
-
-    REFERENCE_TIME hnsActualDuration;
     UINT32 bufferFrameCount;
     UINT32 numFramesAvailable;
-
     UINT32 packetLength = 0;
-
     BYTE* pData;
     DWORD flags;
-    HRESULT hr;
-
 
     // Get the size of the allocated buffer.
-    hr = pAudioClient->GetBufferSize(&bufferFrameCount);
+    pAudioClient->GetBufferSize(&bufferFrameCount);
 
-    // Calculate the actual duration of the allocated buffer.
-    hnsActualDuration = (double)REFTIMES_PER_SEC *
-    bufferFrameCount / pwfx->nSamplesPerSec;
+    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
+    int frameCounter = 0;
     while(!bDone)
     {
-        hr = pCaptureClient->GetNextPacketSize(&packetLength);
-        while (packetLength != 0)
+        pCaptureClient->GetNextPacketSize(&packetLength);
+        while (packetLength != 0 && !bDone)
         {
+            // Sleep for half the buffer duration.
+            Sleep(25);
             // Get the available data in the shared buffer.
-            hr = pCaptureClient->GetBuffer(
+            pCaptureClient->GetBuffer(
                 &pData,
                 &numFramesAvailable,
                 &flags, NULL, NULL);
@@ -221,65 +223,51 @@ HRESULT OGLWidget::RecordAudioStream()
                 pData = NULL;  // Tell CopyData to write silence.
            }
 
-           // create buffers for FFT
-           //in = (double*) fftw_malloc(sizeof(double) * numFramesAvailable);
-           complexIn = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numFramesAvailable);
-           out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * numFramesAvailable);
-           //p = fftw_plan_dft_r2c_1d(numFramesAvailable, in, out, FFTW_ESTIMATE);
-           p = fftw_plan_dft_1d(numFramesAvailable, complexIn, out, FFTW_FORWARD, FFTW_ESTIMATE);
+           //copy data the in buffer
+           for(int j = 0; j < numFramesAvailable && frameCounter < 1024; j++, frameCounter++)
+           {
+               //apply Hann window function to captured data
+               double multiplier = 0.5 * (1 - cos(2 * 3.1416 * j) / (numFramesAvailable - 1));
+               if(pData != NULL){
+                   in[frameCounter][0] = pData[j] * multiplier;
+                   in[frameCounter][1] = 0;
+               }
+               else
+               {
+                   in[frameCounter][0] = 0;
+                   in[frameCounter][1] = 0;
+               }
+           }
 
-           // send captured audio data to be processed
-           hr = ProcessData(pData, numFramesAvailable, &bDone);
+           // if in buffer is full, exit out of capture loop
+           if(frameCounter == N)
+               bDone = true;
 
-           // free resources
-           fftw_destroy_plan(p);
-           fftw_free(complexIn); fftw_free(out);
-           hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-
-           hr = pCaptureClient->GetNextPacketSize(&packetLength);
+           pCaptureClient->ReleaseBuffer(numFramesAvailable);
+           pCaptureClient->GetNextPacketSize(&packetLength);
         }
-        // Sleep for half the buffer duration.
-        //Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
-        Sleep(10);
     }
 
-    return hr;
+    //process capture audio data
+    ProcessData(pData);
+
+    // free resources
+    fftw_destroy_plan(p);
+    fftw_free(in); fftw_free(out);
 }
 
-HRESULT OGLWidget::ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone)
+void OGLWidget::ProcessData(BYTE* pData)
 {
-    //apply Hann window to data and put into in buffer for FFT
-    for(int j = 0; j < NumFrames; j++)
-    {
-        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * j) / (NumFrames - 1));
-        if(pData != NULL){
-            //in[j] = pData[j];
-            //in[j] = pData[j] * multiplier;
-            complexIn[j][0] = pData[j] * multiplier;
-            complexIn[j][1] = 0;
-        }
-        //else
-//        {
-//            complexIn[j][0] = 0;
-//            complexIn[j][1] = 0;
-//        }
-
-    }
     //run FFT on data
     fftw_execute(p);
 
-    //cout << out[0][0] << " " << out[0][1] << endl;
     //calculate log magnitude on transformed data
-    for(int j = 0; j < NumFrames / 2; j++)
+    for(int j = 0; j < N / 2; j++)
     {
-        float r = out[j][0] / NumFrames;
-        float i = out[j][1] / NumFrames;
-        mag[j] = log(sqrt((r * r) + (i * i))) / 3;
-        //mag[i] = sqrt((out[i][0] * out[i][0]) + (out[i][1] * out[i][1])) / 1000;
+        float r = out[j][0] / N;
+        float i = out[j][1] / N;
+        mag[j] = log(sqrt((r * r) + (i * i))) / 2;
     }
-    //cout << mag[0] << " ";
-    *pDone = true;
-    return S_OK;
 }
 
 DWORD WINAPI AudioThread(void *audio_semaphore) {

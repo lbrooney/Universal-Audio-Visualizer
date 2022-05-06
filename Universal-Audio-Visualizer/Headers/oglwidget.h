@@ -8,6 +8,9 @@
 #include <QOpenGLShaderProgram>
 #include <gl/GLU.h>
 #include <gl/GL.h>
+#include <lib/glm/glm/glm.hpp>
+#include <lib/glm/glm/gtc/matrix_transform.hpp>
+#include <lib/glm/glm/gtc/type_ptr.hpp>
 #include <QVector3D>
 #include <vector>
 #include <QTimer>
@@ -27,7 +30,7 @@
 #include "Circle.h"
 
 
-#define N 10000
+#define N 1024
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
@@ -39,17 +42,19 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void initShaders();
-    HRESULT RecordAudioStream();
-    HRESULT ProcessData(BYTE* pData, UINT32 NumFrames, BOOL* pDone);
+    void RecordAudioStream();
+    void ProcessData(BYTE* pData);
 
 private:
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
-    double* in;
     double mag[N/2];
-    fftw_complex* complexIn;
+    fftw_complex* in;
     fftw_complex* out;
     fftw_plan p;
+
+    glm::mat4 m_PerspectiveMatrix;
+    glm::mat4 m_ViewMatrix;
 };
 
 #endif // OGLWIDGET_H

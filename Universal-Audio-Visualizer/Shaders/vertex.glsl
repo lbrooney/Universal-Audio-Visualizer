@@ -5,6 +5,8 @@ layout (location = 1) in vec4 a_Normal;
 
 uniform mat4 u_ModelMatrix;
 uniform mat4 u_NormalMatrix;
+uniform mat4 u_ProjMatrix;
+uniform mat4 u_ViewMatrix;
 
 uniform vec3 u_Color;
 uniform vec3 u_lightColor;
@@ -13,7 +15,7 @@ uniform vec3 u_lightDirection;
 out vec4 v_Color;
 void main()
 {
-    gl_Position = u_ModelMatrix * vec4(aPos, 1.0);
+    gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModelMatrix * vec4(aPos, 1.0);
 
     vec3 lightDir = normalize(u_lightDirection);
     vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
@@ -24,6 +26,4 @@ void main()
     vec3 ambient = vec3(0.2, 0.2, 0.2) * u_Color;
 
     v_Color = vec4(clamp(diffuse + ambient, 0.0, 1.0), 1.0);
-    //v_Color = vec4(1.0, 1.0, 1.0, 1.0);
-
 }
