@@ -21,45 +21,29 @@ void OGLWidget::initializeGL()
 {
     float apsectRatio = (float)width() / (float)height();
     m_PerspectiveMatrix = glm::perspective(glm::radians(60.0f), apsectRatio, 0.1f, 1000.0f);
-    m_ViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    m_ViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     initializeOpenGLFunctions();
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f,0.0f,0.0f,1.0f);
 
     initShaders();
-    Prism* p = new Prism(1.0f, 0.0f, 0.0f, 3);
-    objList.push_back(p);
+
+    objList.push_back(new Prism(1.0f, 0.0f, 0.0f, 3));
     objList.push_back(new Cube(0.0f, 1.0f, 0.0f));
     objList.push_back(new Sphere(0.0f, 0.0f, 1.0f));
 
-    objList[0]->SetTranslation(-0.5f, 0.0f, 0.0f);
+    objList[0]->SetTranslation(-0.75f, 0.0f, 0.0f);
     objList[1]->SetTranslation(0.0f, 0.0f, 0.0f);
-    objList[2]->SetTranslation(0.5f, 0.0f, 0.0f);
+    objList[2]->SetTranslation(0.75f, 0.0f, 0.0f);
 
-    objList[0]->SetScale(0.5f, 0.5f, 0.5f);
-    objList[1]->SetScale(0.5f, 0.5f, 0.5f);
-    objList[2]->SetScale(0.5f, 0.5f, 0.5f);
+    objList[0]->SetScale(0.2f, 0.2f, 0.2f);
+    objList[1]->SetScale(0.2f, 0.2f, 0.2f);
+    objList[2]->SetScale(0.2f, 0.2f, 0.2f);
 
     objList[0]->AssignFrequencyBin(500, m_Recorder->sampleRate, N);
     objList[1]->AssignFrequencyBin(5000, m_Recorder->sampleRate, N);
     objList[2]->AssignFrequencyBin(10000, m_Recorder->sampleRate, N);
-
-    /*int binCounter = 0;
-    float xPos = -1.0f;
-    for(int i = 0; i < 200; i++)
-    {
-       Cube* s = new Cube(1.0f, 0.0f, 0.0f);
-
-       s->SetTranslation(xPos, 0.0f, 0.0f);
-       s->SetScale(0.01f, 0.01f, 0.01f);
-       objList.push_back(s);
-       s->freqBin = binCounter;
-       binCounter += 2;
-       xPos += 0.01f;
-    }
-    objList[0]->freqBin = 1;*/
-
 }
 
 void OGLWidget::paintGL()
@@ -79,11 +63,20 @@ void OGLWidget::paintGL()
 
     for(int i = 0; i < objList.size(); i++)
     {
-        float magnitude = m_Recorder->mag[objList[i]->freqBin];
-        cout << m_Recorder->mag[objList[0]->freqBin] << " ";
-        magnitude = clamp(magnitude, 0.0f, 15.0f);
-        objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
-        objList[i]->DrawShape(&m_program);
+        int magnitude = m_Recorder->mag[objList[i]->freqBin];
+        magnitude = clamp(magnitude, 0, 10);
+
+        //draw shapes based on magnitude of assigned frequency
+        for(int j = 0; j < magnitude; j++)
+        {
+            //generate random y/z positions for the shapes
+            float y = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
+            float z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            z *= -2;
+
+            objList[i]->SetTranslation(objList[i]->m_Position.x, y, z);
+            objList[i]->DrawShape(&m_program);
+        }
     }
     m_Recorder->bDone = false;
     m_Recorder->Record();

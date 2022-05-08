@@ -44,7 +44,6 @@ public:
         m_Rotation = source.m_Rotation;
         m_Position = source.m_Position;
         freqBin = source.freqBin;
-        std::cout << "Copy constructor called\n";
     }
 
     virtual ~Shape()
