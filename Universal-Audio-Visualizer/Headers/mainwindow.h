@@ -19,15 +19,5 @@ public:
 
 private:
     Ui::MainWindow *ui;
-
-    QBuffer  mInputBuffer;
-
-    QVector<double> mSamples;
-    QVector<double> mIndices;
-    QVector<double> mFftIndices;
-
-    fftw_plan mFftPlan;
-    double *mFftIn;
-    double *mFftOut;
 };
 #endif // MAINWINDOW_H

@@ -39,6 +39,8 @@ set(PROJECT_SOURCES
         Headers/Cube.h
         Headers/Sphere.h
         Headers/Cylinder.h
+        Headers/AudioRecorder.h
+        Sources/AudioRecorder.cpp
         Shaders.qrc
 )
 

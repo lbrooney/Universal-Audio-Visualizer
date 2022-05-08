@@ -14,23 +14,14 @@
 #include <QVector3D>
 #include <vector>
 #include <QTimer>
-#include <windows.h>
-#include <mmsystem.h>
-#include <mmdeviceapi.h>
-#include <audioclient.h>
-#include <time.h>
-#include <iostream>
 
-#include <fftw3.h>
 #include "Shape.h"
 #include "Sphere.h"
 #include "Cube.h"
 #include "Triangle.h"
 #include "Square.h"
 #include "Circle.h"
-
-
-#define N 1024
+#include "AudioRecorder.h"
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
@@ -42,16 +33,11 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void initShaders();
-    void RecordAudioStream();
-    void ProcessData(BYTE* pData);
 
 private:
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
-    double mag[N/2];
-    fftw_complex* in;
-    fftw_complex* out;
-    fftw_plan p;
+    AudioRecorder* m_Recorder;
 
     glm::mat4 m_PerspectiveMatrix;
     glm::mat4 m_ViewMatrix;
