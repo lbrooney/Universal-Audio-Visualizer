@@ -18,6 +18,7 @@
 #include "Shape.h"
 #include "Sphere.h"
 #include "Cube.h"
+#include "Prism.h"
 #include "Triangle.h"
 #include "Square.h"
 #include "Circle.h"

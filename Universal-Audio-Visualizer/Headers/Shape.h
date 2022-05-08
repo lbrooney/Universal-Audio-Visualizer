@@ -29,9 +29,24 @@ public:
         m_Scale = glm::vec3(1.0f, 1.0f, 1.0f);
         m_Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
-
-        scaleFactor = 1.05f;
     }
+
+    Shape(const Shape &source)
+    {
+        initializeOpenGLFunctions();
+        m_Color = source.m_Color;
+        m_ModelMatrix = source.m_ModelMatrix;
+        arrayBuf = source.arrayBuf;
+        indexBuf = source.indexBuf;
+        normalBuf = source.normalBuf;
+        indexCount = source.indexCount;
+        m_Scale = source.m_Scale;
+        m_Rotation = source.m_Rotation;
+        m_Position = source.m_Position;
+        freqBin = source.freqBin;
+        std::cout << "Copy constructor called\n";
+    }
+
     virtual ~Shape()
     {
         arrayBuf.destroy();
@@ -92,6 +107,11 @@ public:
     {
         m_Color = QVector3D(r, g, b);
     }
+    void AssignFrequencyBin(int freq, DWORD sampleRate, int blockSize)
+    {
+        float freqStep = sampleRate / (float)blockSize;
+        freqBin = round(freq / freqStep);
+    }
 
     glm::mat4 m_ModelMatrix;
     glm::mat4 m_NormalMatrix;
@@ -99,14 +119,12 @@ public:
     glm::vec3 m_Rotation;
     glm::vec3 m_Scale;
     glm::vec3 m_Position;
-    float scaleFactor;
     int freqBin = 0;
 
 protected:
     QOpenGLBuffer arrayBuf;
     QOpenGLBuffer indexBuf;
     QOpenGLBuffer normalBuf;
-
     int indexCount;
 };
 

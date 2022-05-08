@@ -13,11 +13,8 @@ OGLWidget::OGLWidget(QWidget *parent)
 
 OGLWidget::~OGLWidget()
 {
-    for(int i = objList.size() - 1; i >= 0; i--)
-    {
-        delete objList[i];
-    }
-
+    objList.clear();
+    delete m_Recorder;
 }
 
 void OGLWidget::initializeGL()
@@ -31,46 +28,24 @@ void OGLWidget::initializeGL()
     glClearColor(0.0f,0.0f,0.0f,1.0f);
 
     initShaders();
+    Prism* p = new Prism(1.0f, 0.0f, 0.0f, 3);
+    objList.push_back(p);
+    objList.push_back(new Cube(0.0f, 1.0f, 0.0f));
+    objList.push_back(new Sphere(0.0f, 0.0f, 1.0f));
 
-    /*Sphere* sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, 0.75f, 0.0f);
-    sphere->freqBin = 1;
-    objList.push_back((sphere));
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, 0.0f, -1.0f);
-    sphere->freqBin = 3;
-    objList.push_back((sphere));
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, -0.75f, 1.0f);
-    sphere->freqBin = 5;
-    objList.push_back((sphere));
+    objList[0]->SetTranslation(-0.5f, 0.0f, 0.0f);
+    objList[1]->SetTranslation(0.0f, 0.0f, 0.0f);
+    objList[2]->SetTranslation(0.5f, 0.0f, 0.0f);
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, 0.75f, 0.0f);
-    sphere->freqBin = 8;
-    objList.push_back((sphere));
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, 0.0f, 0.0f);
-    sphere->freqBin = 16;
-    objList.push_back((sphere));
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.0f, -0.75f, 0.0f);
-    sphere->freqBin = 32;
-    objList.push_back((sphere));
+    objList[0]->SetScale(0.5f, 0.5f, 0.5f);
+    objList[1]->SetScale(0.5f, 0.5f, 0.5f);
+    objList[2]->SetScale(0.5f, 0.5f, 0.5f);
 
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.75f, 0.75f, 0.0f);
-    sphere->freqBin = 86;
-    objList.push_back((sphere));
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.75f, 0.0f, 0.0f);
-    sphere->freqBin = 130;
-    objList.push_back((sphere));
-    sphere = new Sphere(1.0f, 0.0f, 0.0f);
-    sphere->SetTranslation(0.75f, -0.75f, 0.0f);
-    sphere->freqBin = 200;
-    objList.push_back((sphere));*/
-    int binCounter = 0;
+    objList[0]->AssignFrequencyBin(500, m_Recorder->sampleRate, N);
+    objList[1]->AssignFrequencyBin(5000, m_Recorder->sampleRate, N);
+    objList[2]->AssignFrequencyBin(10000, m_Recorder->sampleRate, N);
+
+    /*int binCounter = 0;
     float xPos = -1.0f;
     for(int i = 0; i < 200; i++)
     {
@@ -83,7 +58,8 @@ void OGLWidget::initializeGL()
        binCounter += 2;
        xPos += 0.01f;
     }
-    objList[0]->freqBin = 1;
+    objList[0]->freqBin = 1;*/
+
 }
 
 void OGLWidget::paintGL()
@@ -104,9 +80,9 @@ void OGLWidget::paintGL()
     for(int i = 0; i < objList.size(); i++)
     {
         float magnitude = m_Recorder->mag[objList[i]->freqBin];
-        magnitude = clamp(magnitude, 0.01f, 10.0f);
+        cout << m_Recorder->mag[objList[0]->freqBin] << " ";
+        magnitude = clamp(magnitude, 0.0f, 15.0f);
         objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
-
         objList[i]->DrawShape(&m_program);
     }
     m_Recorder->bDone = false;

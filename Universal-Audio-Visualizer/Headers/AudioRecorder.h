@@ -32,6 +32,7 @@ public:
 
     BOOL bDone = FALSE;
     double mag[N/2];
+    DWORD sampleRate;
 
 private:
     IMMDeviceEnumerator* pEnumerator = NULL;

@@ -1,22 +1,26 @@
-#ifndef CYLINDER_H
-#define CYLINDER_H
+#ifndef PRISM_H
+#define PRISM_H
 #include "Headers/Shape.h"
 #include <vector>
 
-class Cylinder : public Shape
+class Prism : public Shape
 {
 public:
-    Cylinder(float r, float g, float b, int sideCount) : Shape(r, g, b)
+    Prism(float r, float g, float b, int sideCount) : Shape(r, g, b)
     {
         m_SideCount = sideCount;
-        Cylinder::InitGeometry();
+        Prism::InitGeometry();
     }
+
+    /*Prism(const Prism &p) : Shape(p)
+    {
+        m_SideCount = p.m_SideCount;
+        Prism::InitGeometry();
+    }*/
 
     void InitGeometry()
     {
         int vertexCount = (m_SideCount * 6 + 2) * 3;
-        //float vertices[vertexCount];
-        //QVector3D vertices[vertexCount];
         float* vertices = new float[vertexCount];
         memset(vertices, 0, sizeof(float) * vertexCount);
         //calculate inner angle of cylinder
@@ -43,11 +47,6 @@ public:
             vertices[(i + 3) * 3] = float(cos(angle * j));
             vertices[(i + 3) * 3 + 1] = float(sin(angle * j));
             vertices[(i + 3) * 3 + 2] = 1.0f;
-            /*vertices[i] = QVector3D(cos(angle * j), sin(angle * j), -0.5f);
-            vertices[i+1] = QVector3D(cos(angle * j), sin(angle * (j+1)), -0.5f);
-            vertices[i+2] = QVector3D(cos(angle * j), sin(angle * (j+1)), 0.5f);
-            vertices[i+3] = QVector3D(cos(angle * j), sin(angle * j), 0.5f);*/
-
 
             j++;
         }
@@ -61,13 +60,11 @@ public:
             vertices[i * 3] = float(cos(angle * j));
             vertices[i * 3 + 1] = float(sin(angle * j));
             vertices[i * 3 + 2] = zVal;
-            //vertices[i] = QVector3D(cos(angle * j), sin(angle * j), zVal);
 
             j++;
         }
         //second to last coord will be center for bottom cap, last coord center for top cap
         vertices[vertexCount - 1] = 1.0f;
-
 
         indexCount = m_SideCount * 12;
         GLushort* indices = new GLushort[indexCount];
@@ -150,9 +147,6 @@ public:
         normals[vertexCount - 4] = -1.0f;
         normals[vertexCount - 1] = 1.0f;
 
-
-
-
         arrayBuf.bind();
         arrayBuf.allocate(vertices, vertexCount * sizeof(float));
 
@@ -170,4 +164,4 @@ public:
 private:
     int m_SideCount;
 };
-#endif // CYLINDER_H
+#endif // PRISM_H

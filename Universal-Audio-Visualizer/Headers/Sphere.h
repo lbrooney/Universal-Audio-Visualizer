@@ -13,7 +13,7 @@ public:
 
     void InitGeometry()
     {
-        int segmentCount = 50;
+        int segmentCount = 25;
         indexCount = segmentCount * 3;
         std::vector<QVector3D> vertices;
         std::vector<GLushort> indices;

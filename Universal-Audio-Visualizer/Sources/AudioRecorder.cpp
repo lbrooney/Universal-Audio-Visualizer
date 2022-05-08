@@ -25,6 +25,8 @@ AudioRecorder::AudioRecorder()
 
     pAudioClient->GetMixFormat(&pwfx);
 
+    sampleRate = pwfx->nSamplesPerSec;
+
     pAudioClient->Initialize(
             AUDCLNT_SHAREMODE_SHARED,
             AUDCLNT_STREAMFLAGS_LOOPBACK,
@@ -123,6 +125,6 @@ void AudioRecorder::ProcessData(BYTE* pData)
     {
         float r = out[j][0] / N;
         float i = out[j][1] / N;
-        mag[j] = log(sqrt((r * r) + (i * i))) / 2;
+        mag[j] = log(sqrt((r * r) + (i * i))) * 20;
     }
 }
