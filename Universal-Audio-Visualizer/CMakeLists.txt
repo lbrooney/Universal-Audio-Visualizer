@@ -20,8 +20,11 @@ include_directories(Headers/
                     Shaders/
                     Sources/
                     lib/
-                    lib/fftw/include)
-link_directories(lib/fftw/lib)
+                    lib/fftw/include
+                    lib/aubio/include)
+
+link_directories(lib/fftw/lib
+                 lib/aubio/lib)
 
 set(PROJECT_SOURCES
         Sources/main.cpp
@@ -70,11 +73,15 @@ else()
 endif()
 
 target_link_libraries(Universal-Audio-Visualizer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets
-    PRIVATE libfftw3-3
+    PRIVATE "libfftw3-3"
     PRIVATE Qt${QT_VERSION_MAJOR}::OpenGLWidgets
     PRIVATE Qt${QT_VERSION_MAJOR}::Gui
     PRIVATE Qt${QT_VERSION_MAJOR}::Core
     PRIVATE Qt${QT_VERSION_MAJOR}::Multimedia)
+
+unset(CMAKE_LINK_LIBRARY_SUFFIX)
+target_link_libraries(Universal-Audio-Visualizer PRIVATE "libaubio.a")
+
 
 set_target_properties(Universal-Audio-Visualizer PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
@@ -87,6 +94,11 @@ set_target_properties(Universal-Audio-Visualizer PROPERTIES
 add_custom_command(TARGET Universal-Audio-Visualizer POST_BUILD
                COMMAND ${CMAKE_COMMAND} -E copy_if_different
                "${PROJECT_SOURCE_DIR}/lib/fftw/bin/libfftw3-3.dll"
+                $<TARGET_FILE_DIR:Universal-Audio-Visualizer>)
+
+add_custom_command(TARGET Universal-Audio-Visualizer POST_BUILD
+               COMMAND ${CMAKE_COMMAND} -E copy_if_different
+               "${PROJECT_SOURCE_DIR}/lib/aubio/bin/libaubio-5.dll"
                 $<TARGET_FILE_DIR:Universal-Audio-Visualizer>)
 
 if(QT_VERSION_MAJOR EQUAL 6)

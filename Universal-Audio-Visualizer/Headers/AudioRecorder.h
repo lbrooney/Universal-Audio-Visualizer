@@ -1,6 +1,7 @@
 #ifndef AUDIORECORDER_H
 #define AUDIORECORDER_H
 
+#include <cmath>
 #include <windows.h>
 #include <mmsystem.h>
 #include <mmdeviceapi.h>
@@ -8,6 +9,7 @@
 #include <time.h>
 #include <fftw3.h>
 #include <iostream>
+#include <aubio/aubio.h>
 #pragma comment(lib, "winmm.lib")
 
 // REFERENCE_TIME time units per second and per millisecond
