@@ -34,6 +34,7 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void initShaders();
+    void loadPreset(int preset);
 
 private:
     QOpenGLShaderProgram m_program;

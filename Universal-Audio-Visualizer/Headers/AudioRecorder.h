@@ -13,7 +13,7 @@
 #pragma comment(lib, "winmm.lib")
 
 // REFERENCE_TIME time units per second and per millisecond
-#define REFTIMES_PER_SEC  10000000
+#define REFTIMES_PER_SEC  500000
 #define REFTIMES_PER_MILLISEC  10000
 
 #define EXIT_ON_ERROR(hres)  \
@@ -31,10 +31,12 @@ public:
     ~AudioRecorder();
     void Record();
     void ProcessData(BYTE* pData);
+    void Test();
 
     BOOL bDone = FALSE;
     double mag[N/2];
     DWORD sampleRate;
+    smpl_t bpm = 0;
 
 private:
     IMMDeviceEnumerator* pEnumerator = NULL;
@@ -43,6 +45,9 @@ private:
     IAudioCaptureClient* pCaptureClient = NULL;
     WAVEFORMATEX* pwfx = NULL;
 
+    fvec_t* aubioIn;
+    fvec_t* aubioOut;
+    aubio_tempo_t* aubioTempo;
 
     fftw_complex* in;
     fftw_complex* out;

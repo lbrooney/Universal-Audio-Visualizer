@@ -29,6 +29,9 @@ public:
         m_Scale = glm::vec3(1.0f, 1.0f, 1.0f);
         m_Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        enabled = false;
+        intensityScale = 1.0f;
     }
 
     Shape(const Shape &source)
@@ -98,6 +101,10 @@ public:
     {
         m_Rotation = glm::vec3(x, y, z);
     }
+    void SetScale(int scale)
+    {
+        m_Scale = glm::vec3(scale, scale, scale);
+    }
     void SetScale(float x, float y, float z)
     {
         m_Scale = glm::vec3(x, y, z);
@@ -119,6 +126,8 @@ public:
     glm::vec3 m_Scale;
     glm::vec3 m_Position;
     int freqBin = 0;
+    bool enabled;
+    float intensityScale;
 
 protected:
     QOpenGLBuffer arrayBuf;
