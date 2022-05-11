@@ -31,7 +31,7 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    loadPreset(0);
+    loadPreset(1);
 }
 
 void OGLWidget::paintGL()
@@ -50,6 +50,7 @@ void OGLWidget::paintGL()
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
     if(!showSpectrum){
+        float volume = m_Recorder->GetVolume();
         for(int i = 0; i < objList.size(); i++)
         {
             if(objList[i]->enabled)
@@ -72,6 +73,7 @@ void OGLWidget::paintGL()
                     float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
                     zPos *= -2;
                     objList[i]->SetTranslation(xPos, yPos, zPos);
+                    objList[i]->SetScale(volume);
 
                     objList[i]->DrawShape(&m_program);
                 }

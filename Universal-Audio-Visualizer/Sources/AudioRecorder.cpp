@@ -4,6 +4,8 @@ const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
+const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
+const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
 AudioRecorder::AudioRecorder()
 {
@@ -22,6 +24,10 @@ AudioRecorder::AudioRecorder()
                 IID_IAudioClient, CLSCTX_ALL,
                 NULL, (void**)&pAudioClient);
 
+    pDevice->Activate(
+                IID_IAudioEndpointVolume, CLSCTX_ALL,
+                NULL, (void**)&pEndpointVolume);
+
     pAudioClient->GetMixFormat(&pwfx);
 
     sampleRate = pwfx->nSamplesPerSec;
@@ -33,8 +39,6 @@ AudioRecorder::AudioRecorder()
                 0,
                 pwfx,
                 NULL);
-    UINT32 bufferFrameCount;
-    pAudioClient->GetBufferSize(&bufferFrameCount);
 
     pAudioClient->GetService(
                 IID_IAudioCaptureClient,
@@ -139,6 +143,13 @@ void AudioRecorder::ProcessData(BYTE* pData)
         float i = out[j][1] / N;
         mag[j] = log(sqrt((r * r) + (i * i))) * 20;
     }
+}
+
+float AudioRecorder::GetVolume()
+{
+    float vol = 0.0f;
+    pEndpointVolume->GetMasterVolumeLevelScalar(&vol);
+    return vol;
 }
 
 

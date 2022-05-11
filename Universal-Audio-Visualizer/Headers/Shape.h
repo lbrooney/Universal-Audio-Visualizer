@@ -101,7 +101,7 @@ public:
     {
         m_Rotation = glm::vec3(x, y, z);
     }
-    void SetScale(int scale)
+    void SetScale(float scale)
     {
         m_Scale = glm::vec3(scale, scale, scale);
     }

@@ -6,6 +6,7 @@
 #include <mmsystem.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
+#include <endpointvolume.h>
 #include <time.h>
 #include <fftw3.h>
 #include <iostream>
@@ -31,6 +32,7 @@ public:
     ~AudioRecorder();
     void Record();
     void ProcessData(BYTE* pData);
+    float GetVolume();
     void Test();
 
     BOOL bDone = FALSE;
@@ -44,6 +46,7 @@ private:
     IAudioClient* pAudioClient = NULL;
     IAudioCaptureClient* pCaptureClient = NULL;
     WAVEFORMATEX* pwfx = NULL;
+    IAudioEndpointVolume* pEndpointVolume = NULL;
 
     fvec_t* aubioIn;
     fvec_t* aubioOut;
