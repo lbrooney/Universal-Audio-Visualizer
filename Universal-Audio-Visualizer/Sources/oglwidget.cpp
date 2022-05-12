@@ -7,7 +7,7 @@ OGLWidget::OGLWidget(QWidget *parent)
 {
     QTimer* timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(100);
+    timer->start(75);
 
     m_Recorder = new AudioRecorder();
     //m_Recorder->Test();
