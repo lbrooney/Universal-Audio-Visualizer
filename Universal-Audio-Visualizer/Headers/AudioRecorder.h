@@ -14,7 +14,7 @@
 #pragma comment(lib, "winmm.lib")
 
 // REFERENCE_TIME time units per second and per millisecond
-#define REFTIMES_PER_SEC  500000
+#define REFTIMES_PER_SEC  1000000
 #define REFTIMES_PER_MILLISEC  10000
 
 #define EXIT_ON_ERROR(hres)  \

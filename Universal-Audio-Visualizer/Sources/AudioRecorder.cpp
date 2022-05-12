@@ -74,7 +74,7 @@ void AudioRecorder::Record()
     while(!bDone)
     {
         pCaptureClient->GetNextPacketSize(&packetLength);
-        while (packetLength != 0 && !bDone)
+        while (packetLength != 0)
         {
             // Sleep for half the buffer duration.
             //Sleep(25);
@@ -105,14 +105,14 @@ void AudioRecorder::Record()
             }
 
             //tempo stuff
-//            for(int i = 0; i < 256; i++)
-//            {
-//                fvec_set_sample(aubioIn, pData[i], i);
-//            }
-//            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
-//            if (aubioOut->data[0] != 0) {
-//                std::cout << "Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
-//            }
+            for(int i = 0; i < 256; i++)
+            {
+                fvec_set_sample(aubioIn, pData[i], i);
+            }
+            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
+            if (aubioOut->data[0] != 0) {
+                std::cout << "Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+            }
 
             // if in buffer is full, exit out of capture loop
             if(frameCounter == N)
