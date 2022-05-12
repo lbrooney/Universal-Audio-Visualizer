@@ -10,6 +10,7 @@
 #include <time.h>
 #include <fftw3.h>
 #include <iostream>
+#include <vector>
 #include <aubio/aubio.h>
 #pragma comment(lib, "winmm.lib")
 
@@ -55,6 +56,8 @@ private:
     fftw_complex* in;
     fftw_complex* out;
     fftw_plan p;
+
+    std::vector<float> v;
 };
 
 

@@ -57,6 +57,26 @@ AudioRecorder::~AudioRecorder()
     pAudioClient->Stop();  // Stop recording.
     CoUninitialize();
 
+    //memset(aubioIn->data, 0, 256 * sizeof(smpl_t));
+    int j = 0;
+    for(int i= 0;i < v.size(); i++)
+    {
+        fvec_set_sample(aubioIn, v[i], j);
+        if(j == 264)
+        {
+            j = -1;
+            //cout << aubioIn->data[0] << " ";
+            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
+            if (aubioOut->data[0] != 0) {
+                std::cout << "Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+            }
+        }
+        j++;
+    }
+
+    del_aubio_tempo(aubioTempo);
+    del_fvec(aubioIn);
+    del_fvec(aubioOut);
 }
 
 void AudioRecorder::Record()
@@ -93,7 +113,7 @@ void AudioRecorder::Record()
             {
                 //apply Hann window function to captured data
                 double multiplier = 0.5 * (1 - cos(2 * 3.1416 * i) / (numFramesAvailable - 1));
-                if(pData != NULL){         
+                if(pData != NULL){
                     in[frameCounter][0] = pData[i] * multiplier;
                     in[frameCounter][1] = 0;
                 }
@@ -104,15 +124,26 @@ void AudioRecorder::Record()
                 }
             }
 
-            //tempo stuff
-            for(int i = 0; i < 256; i++)
+            //maybe need to cast audio data to a float?
+            //*reinterpret_cast<const float*>v[i]
+            const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
+
+            for(int i = 0; i < numFramesAvailable; i++)
             {
-                fvec_set_sample(aubioIn, pData[i], i);
+                float sample = *reinterpret_cast<const float*>(ptr);
+                v.push_back(sample);
+                ptr += sizeof(float);
             }
-            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
-            if (aubioOut->data[0] != 0) {
-                std::cout << "Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
-            }
+
+            //tempo stuff
+            //            for(int i = 0; i < 256; i++)
+            //            {
+            //                fvec_set_sample(aubioIn, pData[i], i);
+            //            }
+            //            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
+            //            if (aubioOut->data[0] != 0) {
+            //                std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+            //            }
 
             // if in buffer is full, exit out of capture loop
             if(frameCounter == N)
@@ -124,7 +155,7 @@ void AudioRecorder::Record()
     }
 
     //process capture audio data
-    ProcessData(pData);
+    //ProcessData(pData);
 
     // free resources
     fftw_destroy_plan(p);
@@ -169,7 +200,7 @@ void AudioRecorder::Test()
         aubio_tempo_do(aubioTempo,aubioIn,aubioOut);
         // do something with the beats
         if (aubioOut->data[0] != 0) {
-            std::cout << aubio_tempo_get_bpm(aubioTempo) << std::endl;
+            std::cout << "Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
         }
     } while (read == hop_size);
 }
