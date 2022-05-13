@@ -1,0 +1,5 @@
+D:/QT/build-untitled-Desktop_Qt_6_3_0_MSVC2019_64bit-Debug/CMakeFiles/edit_cache.dir
+D:/QT/build-untitled-Desktop_Qt_6_3_0_MSVC2019_64bit-Debug/CMakeFiles/untitled.dir
+D:/QT/build-untitled-Desktop_Qt_6_3_0_MSVC2019_64bit-Debug/CMakeFiles/rebuild_cache.dir
+D:/QT/build-untitled-Desktop_Qt_6_3_0_MSVC2019_64bit-Debug/CMakeFiles/untitled_autogen_timestamp_deps.dir
+D:/QT/build-untitled-Desktop_Qt_6_3_0_MSVC2019_64bit-Debug/CMakeFiles/untitled_autogen.dir
