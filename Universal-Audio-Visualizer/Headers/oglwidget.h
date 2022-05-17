@@ -15,6 +15,9 @@
 #include <vector>
 #include <QTimer>
 
+#include <thread>
+#include <atomic>
+
 #include "Shape.h"
 #include "Sphere.h"
 #include "Cube.h"
@@ -40,6 +43,9 @@ private:
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
     AudioRecorder* m_Recorder;
+
+    std::thread recording_thread;
+    std::atomic_bool exit_recording_thread_flag = false;
 
     glm::mat4 m_PerspectiveMatrix;
     glm::mat4 m_ViewMatrix;

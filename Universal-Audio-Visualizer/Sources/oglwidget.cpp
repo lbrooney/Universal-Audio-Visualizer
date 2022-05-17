@@ -6,15 +6,22 @@ OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
     QTimer* timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    timer->start(75);
+    //connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    //timer->start(75);
 
     m_Recorder = new AudioRecorder();
+    recording_thread = m_Recorder->RecordThread(exit_recording_thread_flag);
     //m_Recorder->Test();
 }
 
 OGLWidget::~OGLWidget()
 {
+    if(recording_thread.joinable())
+    {
+        exit_recording_thread_flag = true;
+        recording_thread.join();
+    }
+
     objList.clear();
     delete m_Recorder;
 }
@@ -31,7 +38,7 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    loadPreset(1);
+    loadPreset(0);
 }
 
 void OGLWidget::paintGL()
@@ -49,7 +56,11 @@ void OGLWidget::paintGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
-    if(!showSpectrum){
+    while(m_Recorder->dataQueue.empty());
+    m_Recorder->ProcessData();
+
+    if(!showSpectrum)
+    {
         float volume = m_Recorder->GetVolume();
         for(int i = 0; i < objList.size(); i++)
         {
@@ -91,10 +102,7 @@ void OGLWidget::paintGL()
             objList[i]->DrawShape(&m_program);
         }
     }
-
-    m_Recorder->bDone = false;
-    m_Recorder->Record();
-
+    update();
 }
 
 void OGLWidget::resizeGL(int w, int h)

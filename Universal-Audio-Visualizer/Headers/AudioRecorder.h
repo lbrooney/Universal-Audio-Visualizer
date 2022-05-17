@@ -12,6 +12,11 @@
 #include <iostream>
 #include <vector>
 #include <aubio/aubio.h>
+
+#include <thread>
+#include <atomic>
+#include <queue>
+
 #pragma comment(lib, "winmm.lib")
 
 // REFERENCE_TIME time units per second and per millisecond
@@ -31,15 +36,20 @@ class AudioRecorder
 public:
     AudioRecorder();
     ~AudioRecorder();
-    void Record();
-    void ProcessData(BYTE* pData);
+    void Record(std::atomic_bool &exit_flag);
+    void ProcessData();
     float GetVolume();
-    void Test();
+    std::thread RecordThread(std::atomic_bool &exit_flag)
+    {
+        return std::thread(&AudioRecorder::Record, this, std::ref(exit_flag));
+    }
 
     BOOL bDone = FALSE;
     double mag[N/2];
     DWORD sampleRate;
     smpl_t bpm = 0;
+    std::queue<BYTE*> dataQueue;
+    std::queue<float> tempoQueue;
 
 private:
     IMMDeviceEnumerator* pEnumerator = NULL;
@@ -56,8 +66,6 @@ private:
     fftw_complex* in;
     fftw_complex* out;
     fftw_plan p;
-
-    std::vector<float> v;
 };
 
 
