@@ -51,20 +51,18 @@ void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //m_Recorder->dataSemaphore.acquire();
-    if(!m_Recorder->dataQueue.empty())
-    m_Recorder->ProcessData();
+    m_Recorder->dataSemaphore.acquire();
+    //if(!m_Recorder->dataQueue.empty())
+        m_Recorder->ProcessData();
 
     if(!showSpectrum)
     {
-
-
         float volume = m_Recorder->GetVolume();
         for(int i = 0; i < objList.size(); i++)
         {
             if(objList[i]->enabled)
             {
-                drawCyclesSkipped = 0;
+                drawCycleCount = 0;
                 objList[i]->m_Magnitude = clamp(m_Recorder->mag[objList[i]->freqBin], 0.0, 10.0) * objList[i]->intensityScale;
 
 
@@ -94,10 +92,11 @@ void OGLWidget::paintGL()
     }
     else
     {
+        int updateCycle = 3;
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
-            if(drawCyclesSkipped == 5)
+            if(drawCycleCount == updateCycle)
             {
                 magnitude = m_Recorder->mag[objList[i]->freqBin] / 30;
             }
@@ -111,10 +110,11 @@ void OGLWidget::paintGL()
 
             objList[i]->DrawShape(&m_program);
         }
+        if(drawCycleCount == updateCycle)
+            drawCycleCount = 0;
     }
-    if(drawCyclesSkipped == 5)
-        drawCyclesSkipped = 0;
-    drawCyclesSkipped++;
+
+    drawCycleCount++;
     update();
 }
 
