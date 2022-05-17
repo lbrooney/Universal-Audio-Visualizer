@@ -113,8 +113,16 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
             const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
             for(int i = 0; i < numFramesAvailable; i++)
             {
-                float sample = *reinterpret_cast<const float*>(ptr);
-                tempoQueue.push(sample);
+                if(pData)
+                {
+                    float sample = *reinterpret_cast<const float*>(ptr);
+                    tempoQueue.push(sample);
+                }
+                else
+                {
+                    tempoQueue.push(0);
+                }
+
                 ptr += sizeof(float);
             }
 
