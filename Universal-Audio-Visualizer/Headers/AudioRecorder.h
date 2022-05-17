@@ -16,6 +16,7 @@
 #include <thread>
 #include <atomic>
 #include <queue>
+#include <semaphore>
 
 #pragma comment(lib, "winmm.lib")
 
@@ -48,8 +49,10 @@ public:
     double mag[N/2];
     DWORD sampleRate;
     smpl_t bpm = 0;
-    std::queue<BYTE*> dataQueue;
+    std::queue<double*> dataQueue;
     std::queue<float> tempoQueue;
+
+    std::counting_semaphore<100> dataSemaphore;
 
 private:
     IMMDeviceEnumerator* pEnumerator = NULL;

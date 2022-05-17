@@ -7,7 +7,7 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
-AudioRecorder::AudioRecorder()
+AudioRecorder::AudioRecorder() : dataSemaphore(0)
 {
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
     REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
@@ -78,14 +78,14 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
     DWORD flags;
 
     int frameCounter = 0;
-    BYTE* byteArray = new BYTE[N];
+    double* byteArray = new double[N];
 
     while(!exit_flag)
     {
         pCaptureClient->GetNextPacketSize(&packetLength);
         while (packetLength != 0 && !exit_flag)
         {
-            pCaptureClient->GetBuffer(
+            HRESULT hr = pCaptureClient->GetBuffer(
                         &pData,
                         &numFramesAvailable,
                         &flags, NULL, NULL);
@@ -93,20 +93,31 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
             if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
             {
                 pData = NULL;  // Tell CopyData to write silence.
+                cout << numFramesAvailable << endl;
+            }
+
+            if(hr == AUDCLNT_S_BUFFER_EMPTY)
+            {
+                cout << "EMPTY\n";
             }
             //copy data the in buffer
             for(int i = 0; i < numFramesAvailable; i++, frameCounter++)
             {
                 if(pData)
-                    byteArray[frameCounter] = pData[i];
+                    byteArray[frameCounter] = static_cast<double>(pData[i]);
                 else
+                {
                     byteArray[frameCounter] = 0;
+                    //cout <<frameCounter << endl;
+                }
+
 
                 if(frameCounter == N - 1)
                 {
                     frameCounter = 0;
                     dataQueue.push(byteArray);
-                    byteArray = new BYTE[N];
+                    dataSemaphore.release();
+                    byteArray = new double[N];
                 }
             }
 
@@ -134,7 +145,7 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
 
 void AudioRecorder::ProcessData()
 {
-    BYTE* data = dataQueue.front();
+    double* data = dataQueue.front();
     int aubioIndex = 0;
     for(int dataIndex = 0; dataIndex < N; dataIndex++)
     {

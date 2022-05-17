@@ -128,6 +128,7 @@ public:
     int freqBin = 0;
     bool enabled;
     float intensityScale;
+    float m_Magnitude = 0.0f;
 
 protected:
     QOpenGLBuffer arrayBuf;

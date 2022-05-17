@@ -5,13 +5,8 @@ bool showSpectrum = false;
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
-    QTimer* timer = new QTimer(this);
-    //connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-    //timer->start(75);
-
     m_Recorder = new AudioRecorder();
     recording_thread = m_Recorder->RecordThread(exit_recording_thread_flag);
-    //m_Recorder->Test();
 }
 
 OGLWidget::~OGLWidget()
@@ -38,13 +33,6 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    loadPreset(0);
-}
-
-void OGLWidget::paintGL()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     unsigned int u_lightColor = glGetUniformLocation(m_program.programId(), "u_lightColor");
     glUniform3f(u_lightColor, 1.0f, 1.0f, 1.0f);
     unsigned int u_lightDirection = glGetUniformLocation(m_program.programId(), "u_lightDirection");
@@ -56,21 +44,32 @@ void OGLWidget::paintGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
-    while(m_Recorder->dataQueue.empty());
+    loadPreset(0);
+}
+
+void OGLWidget::paintGL()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //m_Recorder->dataSemaphore.acquire();
+    if(!m_Recorder->dataQueue.empty())
     m_Recorder->ProcessData();
 
     if(!showSpectrum)
     {
+
+
         float volume = m_Recorder->GetVolume();
         for(int i = 0; i < objList.size(); i++)
         {
             if(objList[i]->enabled)
             {
-                float magnitude = m_Recorder->mag[objList[i]->freqBin];
-                magnitude = clamp(magnitude, 0.0f, 10.0f) * objList[i]->intensityScale;
+                drawCyclesSkipped = 0;
+                objList[i]->m_Magnitude = clamp(m_Recorder->mag[objList[i]->freqBin], 0.0, 10.0) * objList[i]->intensityScale;
+
 
                 //draw shapes based on magnitude of assigned frequency
-                for(int j = 0; j < magnitude; j++)
+                for(int j = 0; j < objList[i]->m_Magnitude; j++)
                 {
                     //generate random rotation
                     float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -84,24 +83,38 @@ void OGLWidget::paintGL()
                     float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
                     zPos *= -2;
                     objList[i]->SetTranslation(xPos, yPos, zPos);
+
                     objList[i]->SetScale(volume);
 
                     objList[i]->DrawShape(&m_program);
                 }
             }
         }
+
     }
     else
     {
         for(int i = 0; i < objList.size(); i++)
         {
-            float magnitude = m_Recorder->mag[objList[i]->freqBin] / 60;
+            float magnitude;
+            if(drawCyclesSkipped == 5)
+            {
+                magnitude = m_Recorder->mag[objList[i]->freqBin] / 30;
+            }
+            else
+            {
+                magnitude = objList[i]->m_Scale.y;
+            }
+
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
 
             objList[i]->DrawShape(&m_program);
         }
     }
+    if(drawCyclesSkipped == 5)
+        drawCyclesSkipped = 0;
+    drawCyclesSkipped++;
     update();
 }
 
