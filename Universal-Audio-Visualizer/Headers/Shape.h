@@ -12,9 +12,29 @@
 #include <QVector3D>
 #include <iostream>
 
+class Prism;
+
 class Shape : public QOpenGLFunctions
 {
 public:
+    Shape()
+    {
+        m_ModelMatrix = glm::mat4(1.0f);
+        indexBuf = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+        m_Color = QVector3D(1.0f, 1.0f, 1.0f);
+        initializeOpenGLFunctions();
+
+        arrayBuf.create();
+        indexBuf.create();
+        normalBuf.create();
+
+        m_Scale = glm::vec3(1.0f, 1.0f, 1.0f);
+        m_Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        intensityScale = 1.0f;
+    }
+
     Shape(float r, float g, float b)
     {
         m_ModelMatrix = glm::mat4(1.0f);
@@ -30,11 +50,10 @@ public:
         m_Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
 
-        enabled = false;
         intensityScale = 1.0f;
     }
 
-    Shape(const Shape &source)
+    /*Shape(const Shape &source)
     {
         initializeOpenGLFunctions();
         m_Color = source.m_Color;
@@ -47,7 +66,9 @@ public:
         m_Rotation = source.m_Rotation;
         m_Position = source.m_Position;
         freqBin = source.freqBin;
-    }
+        intensityScale = source.intensityScale;
+        m_Magnitude = source.m_Magnitude;
+    }*/
 
     virtual ~Shape()
     {
@@ -55,6 +76,32 @@ public:
         indexBuf.destroy();
         normalBuf.destroy();
     }
+
+    /*virtual Shape& operator=(const Shape &source)
+    {
+        if(this == &source)
+           return *this;
+
+        initializeOpenGLFunctions();
+        m_Color = source.m_Color;
+        m_ModelMatrix = source.m_ModelMatrix;
+        arrayBuf = source.arrayBuf;
+        indexBuf = source.indexBuf;
+        normalBuf = source.normalBuf;
+        indexCount = source.indexCount;
+        m_Scale = source.m_Scale;
+        m_Rotation = source.m_Rotation;
+        m_Position = source.m_Position;
+        freqBin = source.freqBin;
+        intensityScale = source.intensityScale;
+        m_Magnitude = source.m_Magnitude;
+
+        return *this;
+    }
+    virtual Shape& operator=(const Prism &source)
+    {
+        return *this;
+    }*/
 
     virtual void InitGeometry() = 0;
 
@@ -130,7 +177,6 @@ public:
     glm::vec3 m_Scale;
     glm::vec3 m_Position;
     int freqBin = 0;
-    bool enabled;
     float intensityScale;
     float m_Magnitude = 0.0f;
 

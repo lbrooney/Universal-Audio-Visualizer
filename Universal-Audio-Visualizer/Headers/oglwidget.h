@@ -48,6 +48,7 @@ private:
     std::thread recording_thread;
     std::atomic_bool exit_recording_thread_flag = false;
     int drawCycleCount = 0;
+    double maxMagnitude = 10.0;
 
     glm::mat4 m_PerspectiveMatrix;
     glm::mat4 m_ViewMatrix;

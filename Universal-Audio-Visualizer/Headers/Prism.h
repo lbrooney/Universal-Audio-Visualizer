@@ -6,6 +6,12 @@
 class Prism : public Shape
 {
 public:
+    Prism() : Shape()
+    {
+        m_SideCount = 3;
+        Prism::InitGeometry();
+    }
+
     Prism(float r, float g, float b, int sideCount) : Shape(r, g, b)
     {
         m_SideCount = sideCount;
@@ -16,6 +22,21 @@ public:
     {
         m_SideCount = p.m_SideCount;
         Prism::InitGeometry();
+    }
+
+    virtual Prism& operator=(const Prism& source) override
+    {
+        if(this == &source)
+           return *this;
+
+        m_SideCount = source.m_SideCount;
+        Prism::InitGeometry();
+
+        const Shape* base = this;
+
+        Shape::operator=(*base);
+
+        return *this;
     }*/
 
     void InitGeometry()
@@ -114,15 +135,15 @@ public:
         //that make up that polygon
         for (i = 0; i < m_SideCount * 4; i += 4) {
             QVector3D a = QVector3D(
-                vertices[(i + 1) * 3] - vertices[i * 3],
-                vertices[(i + 1) * 3 + 1] - vertices[i * 3 + 1],
-                vertices[(i + 1) * 3 + 2] - vertices[i * 3 + 2]
-            );
+                        vertices[(i + 1) * 3] - vertices[i * 3],
+                    vertices[(i + 1) * 3 + 1] - vertices[i * 3 + 1],
+                    vertices[(i + 1) * 3 + 2] - vertices[i * 3 + 2]
+                    );
             QVector3D b = QVector3D(
-                vertices[(i + 2) * 3] - vertices[i * 3],
-                vertices[(i + 2) * 3 + 1] - vertices[i * 3 + 1],
-                vertices[(i + 2) * 3 + 2] - vertices[i * 3 + 2]
-            );
+                        vertices[(i + 2) * 3] - vertices[i * 3],
+                    vertices[(i + 2) * 3 + 1] - vertices[i * 3 + 1],
+                    vertices[(i + 2) * 3 + 2] - vertices[i * 3 + 2]
+                    );
 
             QVector3D c = QVector3D::crossProduct(a, b);
             for (int k = 0; k < 4; k++) {
