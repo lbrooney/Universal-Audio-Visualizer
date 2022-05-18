@@ -85,60 +85,71 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
         pCaptureClient->GetNextPacketSize(&packetLength);
         while (packetLength != 0 && !exit_flag)
         {
-            HRESULT hr = pCaptureClient->GetBuffer(
+            pCaptureClient->GetBuffer(
                         &pData,
                         &numFramesAvailable,
                         &flags, NULL, NULL);
-
             if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
             {
                 pData = NULL;  // Tell CopyData to write silence.
-                cout << numFramesAvailable << endl;
             }
-
-            if(hr == AUDCLNT_S_BUFFER_EMPTY)
+            else
             {
-                cout << "EMPTY\n";
-            }
-            //copy data the in buffer
-            for(int i = 0; i < numFramesAvailable; i++, frameCounter++)
-            {
-                if(pData)
-                    byteArray[frameCounter] = static_cast<double>(pData[i]);
-                else
+                //copy data the in buffer
+                for(int i = 0; i < numFramesAvailable; i++, frameCounter++)
                 {
-                    byteArray[frameCounter] = 0;
-                    //cout <<frameCounter << endl;
+                    if(pData)
+                    {
+                        byteArray[frameCounter] = static_cast<double>(pData[i]);
+                    }
+                    else
+                    {
+                        byteArray[frameCounter] = 0;
+                    }
+
+                    if(frameCounter == N - 1)
+                    {
+                        frameCounter = 0;
+                        dataQueue.push(byteArray);
+                        dataSemaphore.release();
+                        byteArray = new double[N];
+                    }
                 }
 
-
-                if(frameCounter == N - 1)
+                const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
+                for(int i = 0; i < numFramesAvailable; i++)
                 {
-                    frameCounter = 0;
-                    dataQueue.push(byteArray);
-                    dataSemaphore.release();
-                    byteArray = new double[N];
-                }
-            }
+                    if(pData)
+                    {
+                        float sample = *reinterpret_cast<const float*>(ptr);
+                        tempoQueue.push(sample);
+                    }
+                    else
+                    {
+                        tempoQueue.push(0.0f);
+                    }
 
-            const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
-            for(int i = 0; i < numFramesAvailable; i++)
-            {
-                if(pData)
-                {
-                    float sample = *reinterpret_cast<const float*>(ptr);
-                    tempoQueue.push(sample);
+                    ptr += sizeof(float);
                 }
-                else
-                {
-                    tempoQueue.push(0);
-                }
-
-                ptr += sizeof(float);
             }
 
             pCaptureClient->ReleaseBuffer(numFramesAvailable);
             pCaptureClient->GetNextPacketSize(&packetLength);
+        }
+        //if no audio is playing, fill data buffers with 0
+        if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
+        {
+            while(frameCounter < N)
+            {
+                byteArray[frameCounter] = 0;
+                tempoQueue.push(0.0f);
+                frameCounter++;
+            }
+            frameCounter = 0;
+            dataQueue.push(byteArray);
+            dataSemaphore.release();
+            byteArray = new double[N];
+            Sleep(25);
         }
     }
 }
@@ -163,6 +174,7 @@ void AudioRecorder::ProcessData()
         {
             aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
             if (aubioOut->data[0] != 0) {
+                bpm = aubio_tempo_get_bpm(aubioTempo);
                 std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
             }
             aubioIndex = -1;

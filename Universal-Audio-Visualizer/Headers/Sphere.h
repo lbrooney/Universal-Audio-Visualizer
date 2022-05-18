@@ -6,10 +6,20 @@
 class Sphere : public Shape
 {
 public:
+    Sphere() : Shape()
+    {
+        Sphere::InitGeometry();
+    }
+
     Sphere(float r, float g, float b) : Shape(r, g, b)
     {
         Sphere::InitGeometry();
     }
+
+    /*Sphere(const Sphere &s) : Shape(s)
+    {
+        Sphere::InitGeometry();
+    }*/
 
     void InitGeometry()
     {
