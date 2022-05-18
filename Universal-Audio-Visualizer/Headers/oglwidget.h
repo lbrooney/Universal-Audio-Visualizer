@@ -38,6 +38,7 @@ protected:
     void paintGL();
     void initShaders();
     void loadPreset(int preset);
+    QVector3D determineColor(float bpm);
 
 private:
     QOpenGLShaderProgram m_program;

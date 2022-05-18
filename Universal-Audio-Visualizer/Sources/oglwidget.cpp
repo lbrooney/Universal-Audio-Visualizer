@@ -44,7 +44,7 @@ void OGLWidget::initializeGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
-    loadPreset(1);
+    loadPreset(0);
 }
 
 void OGLWidget::paintGL()
@@ -64,8 +64,6 @@ void OGLWidget::paintGL()
             {
                 drawCycleCount = 0;
                 objList[i]->m_Magnitude = clamp(m_Recorder->mag[objList[i]->freqBin], 0.0, 10.0) * objList[i]->intensityScale;
-
-
                 //draw shapes based on magnitude of assigned frequency
                 for(int j = 0; j < objList[i]->m_Magnitude; j++)
                 {
@@ -107,6 +105,7 @@ void OGLWidget::paintGL()
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
+            objList[i]->SetColor(determineColor(m_Recorder->bpm));
 
             objList[i]->DrawShape(&m_program);
         }
@@ -130,6 +129,22 @@ void OGLWidget::initShaders()
     m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
     m_program.link();
     m_program.bind();
+}
+
+QVector3D OGLWidget::determineColor(float bpm)
+{
+    QVector3D color = QVector3D(1, 1 , 1);
+    if(bpm < 100.0f)
+        color = QVector3D(0, 1, 0);
+    else if(bpm < 125.0f)
+        color = QVector3D(0, 1, 1);
+    else if(bpm < 150.0f)
+        color = QVector3D(0, 0, 1);
+    else if(bpm < 175.0f)
+        color = QVector3D(1, 0, 1);
+    else if(bpm < 200.0f)
+        color = QVector3D(1, 0, 0);
+    return color;
 }
 
 void OGLWidget::loadPreset(int preset)

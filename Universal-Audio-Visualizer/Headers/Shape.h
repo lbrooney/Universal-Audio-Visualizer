@@ -113,6 +113,10 @@ public:
     {
         m_Color = QVector3D(r, g, b);
     }
+    void SetColor(QVector3D color)
+    {
+        m_Color = color;
+    }
     void AssignFrequencyBin(int freq, DWORD sampleRate, int blockSize)
     {
         float freqStep = sampleRate / (float)blockSize;
