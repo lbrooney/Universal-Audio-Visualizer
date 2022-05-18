@@ -91,6 +91,7 @@ void OGLWidget::paintGL()
             else
             {
                 objList[i]->SetScale(volume);
+                objList[i]->SetColor(determineColor(m_Recorder->bpm));
                 objList[i]->DrawShape(&m_program);
                 objCount++;
             }
