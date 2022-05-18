@@ -5,11 +5,23 @@
 class Cube : public Shape
 {
 public:
+    Cube() : Shape()
+    {
+        Cube::InitGeometry();
+        indexCount = 36;
+    }
+
     Cube(float r, float g, float b) : Shape(r, g, b)
     {
         Cube::InitGeometry();
         indexCount = 36;
     }
+
+    /*Cube(const Cube &c) : Shape(c)
+    {
+        indexCount = 36;
+        Cube::InitGeometry();
+    }*/
 
     void InitGeometry()
     {
