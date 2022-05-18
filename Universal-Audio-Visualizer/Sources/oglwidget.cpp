@@ -44,7 +44,7 @@ void OGLWidget::initializeGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
-    loadPreset(0);
+    loadPreset(1);
 }
 
 void OGLWidget::paintGL()
