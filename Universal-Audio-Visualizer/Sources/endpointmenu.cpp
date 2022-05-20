@@ -1,4 +1,4 @@
-#include "Audio/endpointmenu.h"
+#include "endpointmenu.h"
 // https://stackoverflow.com/questions/9773822/how-to-fix-a-linker-error-with-pkey-device-friendlyname
 #include <initguid.h>  // Put this in to get rid of linker errors.
 #include <devpkey.h>  // Property keys defined here are now defined inline.
@@ -6,6 +6,7 @@
 #include <vector>
 #include <mmdeviceapi.h>
 #include "Audio/AudioMacros.h"
+#include <QActionGroup>
 
 EndpointMenu::EndpointMenu(QWidget *parent, AudioInterface *p)
     : QMenu{parent}
@@ -24,12 +25,21 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioInterface
 
 EndpointMenu::~EndpointMenu()
 {
+    if(endpointGroup != nullptr)
+    {
+        delete endpointGroup;
+    }
     return;
 }
 
 void EndpointMenu::showEvent(QShowEvent *event)
 {
     this->clear();
+    if(endpointGroup != nullptr)
+    {
+        delete endpointGroup;
+    }
+    endpointGroup = new QActionGroup(this);
     IMMDevice* pDevice = nullptr;
     const std::vector<LPWSTR> endpoints = pInterface->getEndpoints();
     for(auto it : endpoints)

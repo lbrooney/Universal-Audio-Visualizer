@@ -3,14 +3,14 @@
 
 #include "Audio/audiointerface.h"
 #include <QMenu>
-#include <QAction>
+#include <QActionGroup>
 
 class EndpointMenu : public QMenu
 {
 private:
     Q_OBJECT
+    QActionGroup* endpointGroup = nullptr;
     AudioInterface* pInterface = nullptr;
-    QActionGroup* group = nullptr;
 
 protected:
     void showEvent(QShowEvent *event) override;
