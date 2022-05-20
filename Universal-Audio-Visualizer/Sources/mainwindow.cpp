@@ -1,8 +1,9 @@
-#include "./ui_mainwindow.h"
+    #include "./ui_mainwindow.h"
 #include <QMessageBox>
 #include <QProcess>
 #include "oglwidget.h"
 #include "mainwindow.h"
+#include <QGraphicsView>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -34,11 +35,13 @@ void MainWindow::fullscreen()
 {
     if(isFullscreen == false)
     {
-        setWindowState(Qt::WindowFullScreen);
+        setStyleSheet("background:transparent;");
+        showFullScreen();
         isFullscreen = true;
     }
     else
     {
+        setStyleSheet("");
         showNormal();
         isFullscreen = false;
     }

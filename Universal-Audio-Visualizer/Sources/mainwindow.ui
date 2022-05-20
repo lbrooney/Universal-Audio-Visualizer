@@ -65,10 +65,16 @@
    <property name="text">
     <string>Full Screen</string>
    </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
   </action>
   <action name="actionRestart">
    <property name="text">
     <string>Restart</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
    </property>
   </action>
   <action name="actionClose">
