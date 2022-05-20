@@ -37,6 +37,8 @@
      <string>File</string>
     </property>
     <addaction name="actionFull_Screen"/>
+    <addaction name="actionRestart"/>
+    <addaction name="actionClose"/>
    </widget>
    <widget class="QMenu" name="menuFullScreen">
     <property name="title">
@@ -55,6 +57,16 @@
   <action name="actionFull_Screen">
    <property name="text">
     <string>Full Screen</string>
+   </property>
+  </action>
+  <action name="actionRestart">
+   <property name="text">
+    <string>Restart</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="text">
+    <string>Close</string>
    </property>
   </action>
  </widget>

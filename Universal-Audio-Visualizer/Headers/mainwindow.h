@@ -20,6 +20,10 @@ public:
 private slots:
     void on_actionFull_Screen_triggered();
 
+    void on_actionClose_triggered();
+
+    void on_actionRestart_triggered();
+
 private:
     Ui::MainWindow *ui;
     void fullscreen();
