@@ -6,6 +6,7 @@
 #include "Audio/audiocommons.h"
 #include "Audio/audiorecorder.h"
 #include "Audio/endpointnotificationclient.h"
+#include <vector>
 
 class AudioInterface
 {
@@ -19,6 +20,10 @@ public:
     AudioInterface();
     ~AudioInterface();
     AudioRecorder* getRecorder(void) const;
+    const std::vector<LPWSTR> getEndpoints(void) const;
+    IMMDeviceEnumerator* getEnumerator(void) const;
+    const LPWSTR getSelectedDeviceID(void) const;
+
 };
 
 #endif // AUDIOINTERFACE_H

@@ -11,17 +11,29 @@ AudioInterface::AudioInterface()
 
 AudioInterface::~AudioInterface()
 {
-    std::cout << "audio interface delete start";
     delete pNotifier;
-    std::cout << "| notifier deleted";
     delete pRecorder;
     delete pCommon;
     CoUninitialize();
-    std::cout << " | audio interface delete end" << std::endl;
     return;
 }
 
 AudioRecorder *AudioInterface::getRecorder(void) const
 {
     return pRecorder;
+}
+
+const std::vector<LPWSTR> AudioInterface::getEndpoints(void) const
+{
+    return pCommon->getEndpoints();
+}
+
+IMMDeviceEnumerator* AudioInterface::getEnumerator(void) const
+{
+    return pCommon->getEnumerator();
+}
+
+const LPWSTR AudioInterface::getSelectedDeviceID(void) const
+{
+    return pCommon->getSelectedDeviceID();
 }

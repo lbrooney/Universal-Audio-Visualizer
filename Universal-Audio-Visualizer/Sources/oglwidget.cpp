@@ -10,9 +10,7 @@ OGLWidget::OGLWidget(QWidget *parent, AudioInterface* p)
 
 OGLWidget::~OGLWidget()
 {
-    std::cout << "ogl delete start";
     objList.clear();
-    std::cout << " | ogl delete end" << std::endl;
 }
 
 void OGLWidget::initializeGL()

@@ -19,11 +19,9 @@ AudioCommons::AudioCommons()
 
 AudioCommons::~AudioCommons()
 {
-    std::cout << " | audio common delete start";
     SAFE_RELEASE(pEnumerator);
     CoTaskMemFree(pSelectedDeviceID);
     clearEndpointVector();
-    std::cout << " | audio common delete end" << std::endl;
 }
 
 void AudioCommons::clearEndpointVector()

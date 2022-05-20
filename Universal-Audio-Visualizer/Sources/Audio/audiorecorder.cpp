@@ -57,7 +57,6 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 
 AudioRecorder::~AudioRecorder()
 {
-    std::cout << "audio record delete start";
     stopRecording();
     pAudioClient->Stop();  // Stop recording.
     CoTaskMemFree(pDeviceID);
@@ -73,7 +72,6 @@ AudioRecorder::~AudioRecorder()
     del_aubio_tempo(aubioTempo);
     del_fvec(aubioIn);
     del_fvec(aubioOut);
-    std::cout << " | audio record delete end" << std::endl;
 }
 
 void AudioRecorder::stopRecording(void)
