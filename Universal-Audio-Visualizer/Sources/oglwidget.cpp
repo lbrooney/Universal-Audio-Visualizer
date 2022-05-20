@@ -1,6 +1,5 @@
 #include "oglwidget.h"
 using namespace std;
-bool showSpectrum = false;
 
 OGLWidget::OGLWidget(QWidget *parent)
     : QOpenGLWidget(parent)

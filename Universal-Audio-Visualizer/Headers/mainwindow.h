@@ -17,7 +17,12 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void on_actionFull_Screen_triggered();
+
 private:
     Ui::MainWindow *ui;
+    void fullscreen();
+    bool isFullscreen = false;
 };
 #endif // MAINWINDOW_H
