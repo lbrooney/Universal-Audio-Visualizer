@@ -19,6 +19,7 @@ AudioCommons::~AudioCommons()
 {
     SAFE_RELEASE(pEnumerator);
     CoTaskMemFree(pSelectedDeviceID);
+    clearEndpointVector();
 }
 
 void AudioCommons::clearEndpointVector()
