@@ -45,8 +45,19 @@
      <string>Edit</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuShapes">
+    <property name="title">
+     <string>Shapes</string>
+    </property>
+    <addaction name="actionWaveform"/>
+    <addaction name="actionAll_shapes"/>
+    <addaction name="actionPrism"/>
+    <addaction name="actionCube"/>
+    <addaction name="actionSphere"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuFullScreen"/>
+   <addaction name="menuShapes"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionEdit">
@@ -67,6 +78,31 @@
   <action name="actionClose">
    <property name="text">
     <string>Close</string>
+   </property>
+  </action>
+  <action name="actionSphere">
+   <property name="text">
+    <string>Sphere</string>
+   </property>
+  </action>
+  <action name="actionPrism">
+   <property name="text">
+    <string>Prism</string>
+   </property>
+  </action>
+  <action name="actionCube">
+   <property name="text">
+    <string>Cube</string>
+   </property>
+  </action>
+  <action name="actionAll_shapes">
+   <property name="text">
+    <string>All shapes</string>
+   </property>
+  </action>
+  <action name="actionWaveform">
+   <property name="text">
+    <string>Waveform</string>
    </property>
   </action>
  </widget>

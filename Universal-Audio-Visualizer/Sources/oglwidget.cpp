@@ -160,6 +160,7 @@ QVector3D OGLWidget::determineColor(float bpm)
 
 void OGLWidget::loadPreset(int preset)
 {
+    objList.clear();
     float defaultIntensity = 0.5f;
     int count = static_cast<int>(maxMagnitude * defaultIntensity);
     switch(preset)
