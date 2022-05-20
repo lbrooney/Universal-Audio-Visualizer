@@ -1,20 +1,28 @@
-#include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QMessageBox>
 #include <QProcess>
 #include "oglwidget.h"
-
+#include "mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    pInterface = new AudioInterface();
     ui->setupUi(this);
+    openGLWidget = new OGLWidget(ui->centralwidget, pInterface);
+    openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
+    ui->verticalLayout->addWidget(openGLWidget);
+    pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pInterface);
+    menuBar()->addMenu(pEndpointMenu);
 }
 
 MainWindow::~MainWindow()
 {
+    delete openGLWidget;
+    delete pEndpointMenu;
     delete ui;
+    delete pInterface;
 }
 
 void MainWindow::on_actionFull_Screen_triggered()
@@ -51,29 +59,28 @@ void MainWindow::on_actionRestart_triggered()
 
 void MainWindow::on_actionAll_shapes_triggered()
 {
-    ui->openGLWidget->loadPreset(1);
+    openGLWidget->loadPreset(1);
 
 }
 
 void MainWindow::on_actionPrism_triggered()
 {
-    ui->openGLWidget->loadPreset(2);
+    openGLWidget->loadPreset(2);
 }
 
 void MainWindow::on_actionCube_triggered()
 {
-    ui->openGLWidget->loadPreset(3);
+    openGLWidget->loadPreset(3);
 }
 
 
 void MainWindow::on_actionSphere_triggered()
 {
-    ui->openGLWidget->loadPreset(4);
+    openGLWidget->loadPreset(4);
 }
 
 
 void MainWindow::on_actionWaveform_triggered()
 {
-    ui->openGLWidget->loadPreset(0);
+    openGLWidget->loadPreset(0);
 }
-

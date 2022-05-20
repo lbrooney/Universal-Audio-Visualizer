@@ -4,6 +4,9 @@
 #include <QMainWindow>
 #include <QBuffer>
 #include <fftw3.h>
+#include "oglwidget.h"
+#include "endpointmenu.h"
+#include "Audio/audiointerface.h"
 
 extern int choose_shape;
 
@@ -13,7 +16,14 @@ QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
+private:
     Q_OBJECT
+    Ui::MainWindow *ui;
+    void fullscreen();
+    bool isFullscreen = false;
+    AudioInterface* pInterface = nullptr;
+    EndpointMenu* pEndpointMenu = nullptr;
+    OGLWidget* openGLWidget;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -36,9 +46,5 @@ private slots:
 
     void on_actionWaveform_triggered();
 
-private:
-    Ui::MainWindow *ui;
-    void fullscreen();
-    bool isFullscreen = false;
 };
 #endif // MAINWINDOW_H

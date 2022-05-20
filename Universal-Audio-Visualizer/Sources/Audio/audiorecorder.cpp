@@ -1,4 +1,6 @@
-#include "AudioRecorder.h"
+#include "Audio/audiorecorder.h"
+#include "Audio/AudioMacros.h"
+#include <iostream>
 using namespace std;
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
@@ -7,18 +9,14 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
-AudioRecorder::AudioRecorder() : dataSemaphore(0)
+AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 {
-    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    pCommons = input;
     REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
 
-    CoCreateInstance(
-                CLSID_MMDeviceEnumerator, NULL,
-                CLSCTX_ALL, IID_IMMDeviceEnumerator,
-                (void**)&pEnumerator);
+    pDeviceID = pCommons->getSelectedDeviceID();
 
-    pEnumerator->GetDefaultAudioEndpoint(
-                eRender, eConsole, &pDevice);
+    pCommons->getEnumerator()->GetDevice(pDeviceID, &pDevice);
 
     pDevice->Activate(
                 IID_IAudioClient, CLSCTX_ALL,
@@ -51,15 +49,21 @@ AudioRecorder::AudioRecorder() : dataSemaphore(0)
     aubioOut = new_fvec(1);
     aubioTempo = new_aubio_tempo("default", 1024, hop_size, sampleRate);
 
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
-    p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * frameCount);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * frameCount);
+    p = fftw_plan_dft_1d(frameCount, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    recordingThread = std::thread(&AudioRecorder::Record, this);
 }
 
 AudioRecorder::~AudioRecorder()
 {
+    stopRecording();
     pAudioClient->Stop();  // Stop recording.
-    CoUninitialize();
+    CoTaskMemFree(pDeviceID);
+    CoTaskMemFree(pwfx);
+    SAFE_RELEASE(pAudioClient)
+    SAFE_RELEASE(pEndpointVolume);
+
 
     fftw_destroy_plan(p);
     fftw_free(in);
@@ -70,7 +74,17 @@ AudioRecorder::~AudioRecorder()
     del_fvec(aubioOut);
 }
 
-void AudioRecorder::Record(std::atomic_bool &exit_flag)
+void AudioRecorder::stopRecording(void)
+{
+    if(recordingThread.joinable())
+    {
+        stopRecordingFlag = true;
+        recordingThread.join();
+    }
+    return;
+}
+
+void AudioRecorder::Record(void)
 {
     UINT32 numFramesAvailable;
     UINT32 packetLength = 0;
@@ -78,12 +92,12 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
     DWORD flags;
 
     int frameCounter = 0;
-    double* byteArray = new double[N];
+    double* byteArray = new double[frameCount];
 
-    while(!exit_flag)
+    while(!stopRecordingFlag)
     {
         pCaptureClient->GetNextPacketSize(&packetLength);
-        while (packetLength != 0 && !exit_flag)
+        while (packetLength != 0 && !stopRecordingFlag)
         {
             pCaptureClient->GetBuffer(
                         &pData,
@@ -107,12 +121,12 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
                         byteArray[frameCounter] = 0;
                     }
 
-                    if(frameCounter == N - 1)
+                    if(frameCounter == frameCount - 1)
                     {
                         frameCounter = 0;
                         dataQueue.push(byteArray);
                         dataSemaphore.release();
-                        byteArray = new double[N];
+                        byteArray = new double[frameCount];
                     }
                 }
 
@@ -139,7 +153,7 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
         //if no audio is playing, fill data buffers with 0
         if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
         {
-            while(frameCounter < N)
+            while(frameCounter < frameCount )
             {
                 byteArray[frameCounter] = 0;
                 tempoQueue.push(0.0f);
@@ -148,7 +162,7 @@ void AudioRecorder::Record(std::atomic_bool &exit_flag)
             frameCounter = 0;
             dataQueue.push(byteArray);
             dataSemaphore.release();
-            byteArray = new double[N];
+            byteArray = new double[frameCount];
             Sleep(25);
         }
     }
@@ -158,15 +172,15 @@ void AudioRecorder::ProcessData()
 {
     double* data = dataQueue.front();
     int aubioIndex = 0;
-    for(int dataIndex = 0; dataIndex < N; dataIndex++)
+    for(int dataIndex = 0; dataIndex < frameCount; dataIndex++)
     {
         //apply Hann window function to captured data
-        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (N - 1));
+        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (frameCount - 1));
         in[dataIndex][0] =  data[dataIndex] * multiplier;
         in[dataIndex][1] = 0;
     }
 
-    for(int i = 0; i < N && !tempoQueue.empty(); i++, aubioIndex++)
+    for(int i = 0; i < frameCount && !tempoQueue.empty(); i++, aubioIndex++)
     {
         fvec_set_sample(aubioIn, tempoQueue.front(), aubioIndex);
         tempoQueue.pop();
@@ -188,10 +202,10 @@ void AudioRecorder::ProcessData()
     fftw_execute(p);
 
     //calculate log magnitude on transformed data
-    for(int j = 0; j < N / 2; j++)
+    for(int j = 0; j < frameCount / 2; j++)
     {
-        float r = out[j][0] / N;
-        float i = out[j][1] / N;
+        float r = out[j][0] / frameCount;
+        float i = out[j][1] / frameCount;
         mag[j] = log(sqrt((r * r) + (i * i))) * 20;
     }
 }

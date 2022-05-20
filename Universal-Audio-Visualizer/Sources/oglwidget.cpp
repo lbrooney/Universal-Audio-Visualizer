@@ -1,23 +1,15 @@
 #include "oglwidget.h"
 using namespace std;
 
-OGLWidget::OGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent)
+OGLWidget::OGLWidget(QWidget *parent, AudioInterface* p)
+    : QOpenGLWidget{parent}
 {
-    m_Recorder = new AudioRecorder();
-    recording_thread = m_Recorder->RecordThread(exit_recording_thread_flag);
+    pInterface = p;
 }
 
 OGLWidget::~OGLWidget()
 {
-    if(recording_thread.joinable())
-    {
-        exit_recording_thread_flag = true;
-        recording_thread.join();
-    }
-
     objList.clear();
-    delete m_Recorder;
 }
 
 void OGLWidget::initializeGL()
@@ -50,13 +42,13 @@ void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_Recorder->dataSemaphore.acquire();
+    pInterface->getRecorder()->dataSemaphore.acquire();
     //if(!m_Recorder->dataQueue.empty())
-    m_Recorder->ProcessData();
+    pInterface->getRecorder()->ProcessData();
 
     if(!showSpectrum)
     {
-        float volume = m_Recorder->GetVolume();
+        float volume = pInterface->getRecorder()->GetVolume();
         int objCount = 0;
         int updateCycle = 5;
         for(int i = 0; i < objList.size(); i++)
@@ -65,8 +57,8 @@ void OGLWidget::paintGL()
             if(drawCycleCount == updateCycle)
             {
                 //update max objects on screen
-                magnitude = clamp(m_Recorder->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
-                objList[i]->m_Magnitude = clamp(m_Recorder->mag[objList[i]->freqBin], 0.0, maxMagnitude);
+                magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
+                objList[i]->m_Magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
                 float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -90,7 +82,7 @@ void OGLWidget::paintGL()
             else
             {
                 objList[i]->SetScale(volume);
-                objList[i]->SetColor(determineColor(m_Recorder->bpm));
+                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
                 objList[i]->DrawShape(&m_program);
                 objCount++;
             }
@@ -107,7 +99,7 @@ void OGLWidget::paintGL()
             float magnitude;
             if(drawCycleCount == updateCycle)
             {
-                magnitude = m_Recorder->mag[objList[i]->freqBin] / 30;
+                magnitude = pInterface->getRecorder()->mag[objList[i]->freqBin] / 30;
             }
             else
             {
@@ -116,7 +108,7 @@ void OGLWidget::paintGL()
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
-            objList[i]->SetColor(determineColor(m_Recorder->bpm));
+            objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
 
             objList[i]->DrawShape(&m_program);
         }
@@ -172,7 +164,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Prism(1.0f, 0.0f, 0.0f, 3));
             objList[i]->SetScale(0.2f);
             objList[i]->intensityScale = defaultIntensity;
-            objList[i]->AssignFrequencyBin(150, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(150, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -180,7 +173,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Cube(0.0f, 1.0f, 0.0f));
             objList[i]->SetScale(0.2f);
             objList[i]->intensityScale = defaultIntensity;
-            objList[i]->AssignFrequencyBin(1000, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -188,7 +182,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Sphere(0.0f, 0.0f, 1.0f));
             objList[i]->SetScale(0.2f);
             objList[i]->intensityScale = defaultIntensity;
-            objList[i]->AssignFrequencyBin(5000, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
 
@@ -202,7 +197,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Prism(1.0f, 0.0f, 0.0f, 3));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(50, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(50, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -210,7 +206,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Prism(0.0f, 1.0f, 0.0f, 3));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(100, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(100, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -218,7 +215,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Prism(0.0f, 0.0f, 1.0f, 3));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(250, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(250, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         showSpectrum = false;
@@ -231,7 +229,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Cube(1.0f, 0.0f, 0.0f));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(500, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(500, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -239,7 +238,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Cube(0.0f, 1.0f, 0.0f));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(1000, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -247,7 +247,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Cube(0.0f, 0.0f, 1.0f));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(3000, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(3000, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         showSpectrum = false;
@@ -260,7 +261,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Sphere(1.0f, 0.0f, 0.0f));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(5000, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -268,7 +270,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Sphere(0.0f, 1.0f, 0.0f));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(7500, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(7500, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         for(int i = 0; i < count; i++)
@@ -276,7 +279,8 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(new Sphere(0.0f, 0.0f, 1.0f));
             objList[i]->intensityScale = 0.5f;
             objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(10000, m_Recorder->sampleRate, N);
+            objList[i]->AssignFrequencyBin(10000, pInterface->getRecorder()->sampleRate,
+                                           frameCount);
         }
 
         showSpectrum = false;
