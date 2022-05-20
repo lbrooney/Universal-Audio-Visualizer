@@ -18,35 +18,27 @@
 #include <queue>
 #include <semaphore>
 
+#include "Audio/audiocommons.h"
+
 #pragma comment(lib, "winmm.lib")
 
 // REFERENCE_TIME time units per second and per millisecond
-#define REFTIMES_PER_SEC  1000000
-#define REFTIMES_PER_MILLISEC  10000
+const REFERENCE_TIME REFTIMES_PER_SEC = 1000000;
+const REFERENCE_TIME REFTIMES_PER_MILLISEC =  10000;
 
-#define EXIT_ON_ERROR(hres)  \
-                  if (FAILED(hres)) { goto Exit; }
-#define SAFE_RELEASE(punk)  \
-                  if ((punk) != NULL)  \
-                    { (punk)->Release(); (punk) = NULL; }
-
-#define N 1024
+const int frameCount = 1024;
 
 class AudioRecorder
 {
 public:
-    AudioRecorder();
+    AudioRecorder(AudioCommons* input = nullptr);
     ~AudioRecorder();
-    void Record(std::atomic_bool &exit_flag);
+    void Record(void);
     void ProcessData();
     float GetVolume();
-    std::thread RecordThread(std::atomic_bool &exit_flag)
-    {
-        return std::thread(&AudioRecorder::Record, this, std::ref(exit_flag));
-    }
 
     BOOL bDone = FALSE;
-    double mag[N/2];
+    double mag[frameCount/2];
     DWORD sampleRate;
     smpl_t bpm = 0;
     std::queue<double*> dataQueue;
@@ -54,13 +46,20 @@ public:
 
     std::counting_semaphore<100> dataSemaphore;
 
+
+
 private:
-    IMMDeviceEnumerator* pEnumerator = NULL;
-    IMMDevice* pDevice = NULL;
-    IAudioClient* pAudioClient = NULL;
-    IAudioCaptureClient* pCaptureClient = NULL;
-    WAVEFORMATEX* pwfx = NULL;
-    IAudioEndpointVolume* pEndpointVolume = NULL;
+
+    AudioCommons* pCommons = nullptr;
+    std::thread recordingThread;
+    std::atomic_bool stopRecordingFlag = false;
+
+    LPWSTR pDeviceID = nullptr;
+    IMMDevice* pDevice = nullptr;
+    IAudioClient* pAudioClient = nullptr;
+    IAudioCaptureClient* pCaptureClient = nullptr;
+    WAVEFORMATEX* pwfx = nullptr;
+    IAudioEndpointVolume* pEndpointVolume = nullptr;
 
     fvec_t* aubioIn;
     fvec_t* aubioOut;
@@ -69,6 +68,8 @@ private:
     fftw_complex* in;
     fftw_complex* out;
     fftw_plan p;
+
+    void stopRecording(void);
 };
 
 

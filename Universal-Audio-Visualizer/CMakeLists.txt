@@ -42,8 +42,17 @@ set(PROJECT_SOURCES
         Headers/Cube.h
         Headers/Sphere.h
         Headers/Prism.h
-        Headers/AudioRecorder.h
-        Sources/AudioRecorder.cpp
+        Headers/Audio/audiointerface.h
+        Sources/Audio/audiointerface.cpp
+        Headers/Audio/AudioRecorder.h
+        Sources/Audio/AudioRecorder.cpp
+        Headers/Audio/audiocommons.h
+        Sources/Audio/audiocommons.cpp
+        Headers/endpointmenu.h
+        Sources/endpointmenu.cpp
+        Headers/Audio/endpointnotificationclient.h
+        Sources/Audio/endpointnotificationclient.cpp
+        Headers/Audio/AudioMacros.h
         Shaders.qrc
 )
 

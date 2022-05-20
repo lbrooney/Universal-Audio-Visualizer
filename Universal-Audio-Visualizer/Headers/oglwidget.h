@@ -25,12 +25,12 @@
 #include "Triangle.h"
 #include "Square.h"
 #include "Circle.h"
-#include "AudioRecorder.h"
+#include "Audio/audiointerface.h"
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
 public:
-    OGLWidget(QWidget *parent = 0);
+    OGLWidget(QWidget *parent = nullptr, AudioInterface* p = nullptr);
     ~OGLWidget();
 protected:
     void initializeGL();
@@ -41,12 +41,11 @@ protected:
     QVector3D determineColor(float bpm);
 
 private:
+    AudioInterface* pInterface;
+
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
-    AudioRecorder* m_Recorder;
 
-    std::thread recording_thread;
-    std::atomic_bool exit_recording_thread_flag = false;
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
 
