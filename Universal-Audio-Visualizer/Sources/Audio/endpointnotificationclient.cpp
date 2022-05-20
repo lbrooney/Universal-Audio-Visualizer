@@ -1,16 +1,14 @@
 #include "Audio/endpointnotificationclient.h"
 #include "Audio/AudioMacros.h"
 
-EndpointNotificationClient::EndpointNotificationClient() :
-    _cRef(1),
-    _pEnumerator(NULL)
+EndpointNotificationClient::EndpointNotificationClient(AudioCommons *p) :
+    _cRef(1), pCommons(p)
 {
 
 }
 
 EndpointNotificationClient::~EndpointNotificationClient()
 {
-    SAFE_RELEASE(_pEnumerator)
 }
 
 // IUnknown methods -- AddRef, Release, and QueryInterface

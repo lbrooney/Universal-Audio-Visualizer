@@ -5,17 +5,19 @@ AudioInterface::AudioInterface()
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
     pCommon = new AudioCommons();
     pRecorder = new AudioRecorder(pCommon);
-    pNotifier = new EndpointNotificationClient();
+    pNotifier = new EndpointNotificationClient(pCommon);
     return;
 }
 
 AudioInterface::~AudioInterface()
 {
-
-    delete pCommon;
-    delete pRecorder;
+    std::cout << "audio interface delete start";
     delete pNotifier;
+    std::cout << "| notifier deleted";
+    delete pRecorder;
+    delete pCommon;
     CoUninitialize();
+    std::cout << " | audio interface delete end" << std::endl;
     return;
 }
 

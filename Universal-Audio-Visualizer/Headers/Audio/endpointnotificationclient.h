@@ -1,16 +1,17 @@
 #ifndef ENDPOINTNOTIFICATIONCLIENT_H
 #define ENDPOINTNOTIFICATIONCLIENT_H
 
+#include "Audio/audiocommons.h"
 #include <mmdeviceapi.h>
 
 class EndpointNotificationClient : public IMMNotificationClient
 {
 private:
     LONG _cRef;
-    IMMDeviceEnumerator *_pEnumerator;
+    AudioCommons *pCommons = nullptr;
 
 public:
-    EndpointNotificationClient();
+    EndpointNotificationClient(AudioCommons* p);
     ~EndpointNotificationClient();
     ULONG STDMETHODCALLTYPE AddRef();
     ULONG STDMETHODCALLTYPE Release();

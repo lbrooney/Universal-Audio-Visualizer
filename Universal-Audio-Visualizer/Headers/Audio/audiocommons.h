@@ -15,7 +15,7 @@ public:
     AudioCommons();
     ~AudioCommons();
     IMMDeviceEnumerator* getEnumerator(void) const;
-    const LPWSTR getSelectedDeviceID(void) const;
+    LPWSTR getSelectedDeviceID(void) const;
     void refreshEndpoints(void);
     const std::vector<LPWSTR>& getEndpoints(void) const;
 };

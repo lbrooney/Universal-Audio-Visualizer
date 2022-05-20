@@ -1,5 +1,7 @@
 #include "Audio/audiocommons.h"
 #include "Audio/AudioMacros.h"
+#include <iostream>
+#include <wchar.h>
 
 AudioCommons::AudioCommons()
 {
@@ -17,9 +19,11 @@ AudioCommons::AudioCommons()
 
 AudioCommons::~AudioCommons()
 {
+    std::cout << " | audio common delete start";
     SAFE_RELEASE(pEnumerator);
     CoTaskMemFree(pSelectedDeviceID);
     clearEndpointVector();
+    std::cout << " | audio common delete end" << std::endl;
 }
 
 void AudioCommons::clearEndpointVector()
@@ -28,11 +32,11 @@ void AudioCommons::clearEndpointVector()
     {
         return;
     }
-    for(auto it = activeEndpoints.begin(); it != activeEndpoints.end();)
+    for(int i = 0; i < activeEndpoints.size(); i += 1)
     {
-        CoTaskMemFree(&it);
-        it = activeEndpoints.erase(it);
+        CoTaskMemFree(activeEndpoints.at(i));
     }
+    activeEndpoints.clear();
 }
 
 void AudioCommons::refreshEndpoints(void)
@@ -62,11 +66,17 @@ const std::vector<LPWSTR>& AudioCommons::getEndpoints(void) const
     return activeEndpoints;
 }
 
-const LPWSTR AudioCommons::getSelectedDeviceID(void) const
+
+// REQUESTED PROGRAM MUST CALL CoTaskMemFree on string
+LPWSTR AudioCommons::getSelectedDeviceID(void) const
 {
-    return pSelectedDeviceID;
+    SIZE_T strSize = sizeof(LPWSTR) * (wcslen(pSelectedDeviceID) + 1);
+    LPWSTR copy = (LPWSTR)CoTaskMemAlloc(strSize);
+    memcpy(copy, pSelectedDeviceID, strSize);
+    return copy;
 }
 
+// OTHER CLASSES SHOULD NOT RELEASE THIS, AUDIO INTERFACE DOES IT
 IMMDeviceEnumerator* AudioCommons::getEnumerator(void) const
 {
     return pEnumerator;

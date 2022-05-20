@@ -1,5 +1,6 @@
 #include "Audio/audiorecorder.h"
 #include "Audio/AudioMacros.h"
+#include <iostream>
 using namespace std;
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
@@ -56,9 +57,10 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 
 AudioRecorder::~AudioRecorder()
 {
+    std::cout << "audio record delete start";
     stopRecording();
     pAudioClient->Stop();  // Stop recording.
-    CoTaskMemFree(p);
+    CoTaskMemFree(pDeviceID);
     CoTaskMemFree(pwfx);
     SAFE_RELEASE(pAudioClient)
     SAFE_RELEASE(pEndpointVolume);
@@ -71,6 +73,7 @@ AudioRecorder::~AudioRecorder()
     del_aubio_tempo(aubioTempo);
     del_fvec(aubioIn);
     del_fvec(aubioOut);
+    std::cout << " | audio record delete end" << std::endl;
 }
 
 void AudioRecorder::stopRecording(void)

@@ -16,8 +16,16 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    delete pInterface;
+    std::cout << "main window delete start" << std::endl;;
+    delete openGLWidget;
+    std::cout << "ogl deleted" << std::endl;;
+    delete pEndpointMenu;
+    std::cout << "endpoint menu deleted" << std::endl;;
     delete ui;
+    std::cout << "ui deleted" << std::endl;
+    std::cout << "shit you crashing dawg" << std::endl;
+    delete pInterface;
+    std::cout << "audio interface deleted" << std::endl << " | main window delete end" << std::endl;
 }
 
 
