@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QBuffer>
 #include <fftw3.h>
+#include <QKeyEvent>
+#include <QtWidgets>
 #include "oglwidget.h"
 #include "endpointmenu.h"
 #include "Audio/audiointerface.h"
@@ -28,6 +30,9 @@ private:
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+protected:
+    void keyPressEvent(QKeyEvent *);
 
 private slots:
     void on_actionFull_Screen_triggered();
