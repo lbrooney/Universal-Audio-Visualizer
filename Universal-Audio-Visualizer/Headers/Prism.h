@@ -12,6 +12,12 @@ public:
         Prism::InitGeometry();
     }
 
+    Prism(float r, float g, float b) : Shape(r, g, b)
+    {
+        m_SideCount = 3;
+        Prism::InitGeometry();
+    }
+
     Prism(float r, float g, float b, int sideCount) : Shape(r, g, b)
     {
         m_SideCount = sideCount;

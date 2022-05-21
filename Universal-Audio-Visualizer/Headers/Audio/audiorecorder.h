@@ -26,7 +26,7 @@
 const REFERENCE_TIME REFTIMES_PER_SEC = 1000000;
 const REFERENCE_TIME REFTIMES_PER_MILLISEC =  10000;
 
-const int frameCount = 1024;
+const int FRAMECOUNT = 1024;
 
 class AudioRecorder
 {
@@ -38,7 +38,7 @@ public:
     float GetVolume();
 
     BOOL bDone = FALSE;
-    double mag[frameCount/2];
+    double mag[FRAMECOUNT/2];
     DWORD sampleRate;
     smpl_t bpm = 0;
     std::queue<double*> dataQueue;

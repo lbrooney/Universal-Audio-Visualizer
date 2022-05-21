@@ -27,6 +27,8 @@
 #include "Circle.h"
 #include "Audio/audiointerface.h"
 
+const float DEFAULTINTENSITY = 0.5f;
+
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
 public:
@@ -52,6 +54,9 @@ private:
 
     glm::mat4 m_PerspectiveMatrix;
     glm::mat4 m_ViewMatrix;
+    void createSphere(float r, float g, float b);
+    void createCube(float r, float g, float b);
+    void createPrism(float r, float g, float b);
 };
 
 #endif // OGLWIDGET_H

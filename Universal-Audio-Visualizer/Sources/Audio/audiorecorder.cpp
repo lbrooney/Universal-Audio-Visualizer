@@ -49,9 +49,9 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
     aubioOut = new_fvec(1);
     aubioTempo = new_aubio_tempo("default", 1024, hop_size, sampleRate);
 
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * frameCount);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * frameCount);
-    p = fftw_plan_dft_1d(frameCount, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
+    p = fftw_plan_dft_1d(FRAMECOUNT, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
     recordingThread = std::thread(&AudioRecorder::Record, this);
 }
 
@@ -92,7 +92,7 @@ void AudioRecorder::Record(void)
     DWORD flags;
 
     int frameCounter = 0;
-    double* byteArray = new double[frameCount];
+    double* byteArray = new double[FRAMECOUNT];
 
     while(!stopRecordingFlag)
     {
@@ -121,12 +121,12 @@ void AudioRecorder::Record(void)
                         byteArray[frameCounter] = 0;
                     }
 
-                    if(frameCounter == frameCount - 1)
+                    if(frameCounter == FRAMECOUNT - 1)
                     {
                         frameCounter = 0;
                         dataQueue.push(byteArray);
                         dataSemaphore.release();
-                        byteArray = new double[frameCount];
+                        byteArray = new double[FRAMECOUNT];
                     }
                 }
 
@@ -153,7 +153,7 @@ void AudioRecorder::Record(void)
         //if no audio is playing, fill data buffers with 0
         if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
         {
-            while(frameCounter < frameCount )
+            while(frameCounter < FRAMECOUNT )
             {
                 byteArray[frameCounter] = 0;
                 tempoQueue.push(0.0f);
@@ -162,7 +162,7 @@ void AudioRecorder::Record(void)
             frameCounter = 0;
             dataQueue.push(byteArray);
             dataSemaphore.release();
-            byteArray = new double[frameCount];
+            byteArray = new double[FRAMECOUNT];
             Sleep(25);
         }
     }
@@ -172,15 +172,15 @@ void AudioRecorder::ProcessData()
 {
     double* data = dataQueue.front();
     int aubioIndex = 0;
-    for(int dataIndex = 0; dataIndex < frameCount; dataIndex++)
+    for(int dataIndex = 0; dataIndex < FRAMECOUNT; dataIndex++)
     {
         //apply Hann window function to captured data
-        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (frameCount - 1));
+        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (FRAMECOUNT - 1));
         in[dataIndex][0] =  data[dataIndex] * multiplier;
         in[dataIndex][1] = 0;
     }
 
-    for(int i = 0; i < frameCount && !tempoQueue.empty(); i++, aubioIndex++)
+    for(int i = 0; i < FRAMECOUNT && !tempoQueue.empty(); i++, aubioIndex++)
     {
         fvec_set_sample(aubioIn, tempoQueue.front(), aubioIndex);
         tempoQueue.pop();
@@ -202,10 +202,10 @@ void AudioRecorder::ProcessData()
     fftw_execute(p);
 
     //calculate log magnitude on transformed data
-    for(int j = 0; j < frameCount / 2; j++)
+    for(int j = 0; j < FRAMECOUNT / 2; j++)
     {
-        float r = out[j][0] / frameCount;
-        float i = out[j][1] / frameCount;
+        float r = out[j][0] / FRAMECOUNT;
+        float i = out[j][1] / FRAMECOUNT;
         mag[j] = log(sqrt((r * r) + (i * i))) * 20;
     }
 }

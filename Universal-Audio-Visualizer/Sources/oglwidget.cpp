@@ -153,37 +153,25 @@ QVector3D OGLWidget::determineColor(float bpm)
 void OGLWidget::loadPreset(int preset)
 {
     objList.clear();
-    float defaultIntensity = 0.5f;
-    int count = static_cast<int>(maxMagnitude * defaultIntensity);
+
+    int count = static_cast<int>(maxMagnitude * DEFAULTINTENSITY);
     switch(preset)
     {
     case 1:
     {
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Prism(1.0f, 0.0f, 0.0f, 3));
-            objList[i]->SetScale(0.2f);
-            objList[i]->intensityScale = defaultIntensity;
-            objList[i]->AssignFrequencyBin(150, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createPrism(1.0f, 0.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Cube(0.0f, 1.0f, 0.0f));
-            objList[i]->SetScale(0.2f);
-            objList[i]->intensityScale = defaultIntensity;
-            objList[i]->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createCube(0.0f, 1.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Sphere(0.0f, 0.0f, 1.0f));
-            objList[i]->SetScale(0.2f);
-            objList[i]->intensityScale = defaultIntensity;
-            objList[i]->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createSphere(0.0f, 0.0f, 1.0f);
         }
 
 
@@ -194,29 +182,17 @@ void OGLWidget::loadPreset(int preset)
         //Bass with triangle prism
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Prism(1.0f, 0.0f, 0.0f, 3));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(50, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createPrism(1.0f, 0.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Prism(0.0f, 1.0f, 0.0f, 3));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(100, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createPrism(0.0f, 1.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Prism(0.0f, 0.0f, 1.0f, 3));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(250, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createPrism(0.0f, 0.0f, 1.0f);
         }
 
         showSpectrum = false;
@@ -226,29 +202,17 @@ void OGLWidget::loadPreset(int preset)
         //Mids with cube
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Cube(1.0f, 0.0f, 0.0f));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(500, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createCube(1.0f, 0.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Cube(0.0f, 1.0f, 0.0f));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createCube(0.0f, 1.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Cube(0.0f, 0.0f, 1.0f));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(3000, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createCube(0.0f, 0.0f, 1.0f);
         }
 
         showSpectrum = false;
@@ -258,29 +222,17 @@ void OGLWidget::loadPreset(int preset)
         //Highs with sphere
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Sphere(1.0f, 0.0f, 0.0f));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createSphere(1.0f, 0.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Sphere(0.0f, 1.0f, 0.0f));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(7500, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createSphere(0.0f, 1.0f, 0.0f);
         }
 
         for(int i = 0; i < count; i++)
         {
-            objList.push_back(new Sphere(0.0f, 0.0f, 1.0f));
-            objList[i]->intensityScale = 0.5f;
-            objList[i]->SetScale(0.2f);
-            objList[i]->AssignFrequencyBin(10000, pInterface->getRecorder()->sampleRate,
-                                           frameCount);
+            createSphere(0.0f, 0.0f, 1.0f);
         }
 
         showSpectrum = false;
@@ -306,3 +258,33 @@ void OGLWidget::loadPreset(int preset)
     }
 }
 
+void OGLWidget::createSphere(float r, float g, float b)
+{
+    Sphere* temp = new Sphere(r, g, b);
+    temp->SetScale(0.2f);
+    temp->intensityScale = DEFAULTINTENSITY;
+    temp->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
+                                   FRAMECOUNT);
+    objList.push_back(temp);
+
+}
+
+void OGLWidget::createCube(float r, float g, float b)
+{
+    Cube *temp = new Cube(r, g, b);
+    temp->SetScale(0.2f);
+    temp->intensityScale = DEFAULTINTENSITY;
+    temp->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
+                                   FRAMECOUNT);
+    objList.push_back(temp);
+}
+
+void OGLWidget::createPrism(float r, float g, float b)
+{
+    Prism* temp = new Prism(r, g, b);
+    temp->SetScale(0.2f);
+    temp->intensityScale = DEFAULTINTENSITY;
+    temp->AssignFrequencyBin(50, pInterface->getRecorder()->sampleRate,
+                                   FRAMECOUNT);
+    objList.push_back(temp);
+}
