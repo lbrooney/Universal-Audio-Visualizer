@@ -22,6 +22,7 @@ Slider::Slider(QWidget *parent) :
         std::cout << "ERROR" << std::endl;
     }
     volumeSetup();
+    scaleSetup();
 }
 
 void Slider::scaleSetup()
