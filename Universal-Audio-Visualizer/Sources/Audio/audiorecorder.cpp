@@ -216,3 +216,12 @@ float AudioRecorder::GetVolume()
     pEndpointVolume->GetMasterVolumeLevelScalar(&vol);
     return vol;
 }
+
+float AudioRecorder::SetVolume(float vol)
+{
+    if(pEndpointVolume->SetMasterVolumeLevelScalar(vol, NULL))
+    {
+        return vol;
+    }
+    return -1;
+}

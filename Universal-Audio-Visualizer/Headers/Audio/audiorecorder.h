@@ -36,6 +36,7 @@ public:
     void Record(void);
     void ProcessData();
     float GetVolume();
+    float SetVolume(float);
 
     BOOL bDone = FALSE;
     double mag[FRAMECOUNT/2];
