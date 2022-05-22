@@ -4,7 +4,7 @@
 #include <QGridLayout>
 #include "Audio/audiorecorder.h"
 
-#define DEFAULT 0.3;
+#define DEFAULT 30
 
 Slider::Slider(QWidget *parent) :
     QDialog(parent),
@@ -27,9 +27,8 @@ Slider::Slider(QWidget *parent) :
 void Slider::scaleSetup()
 {
     auto* ptr = ui->scaleSlider;
-    float base = DEFAULT;
     ptr->setRange(0, 100);
-    ptr->setValue(base * 100);
+    ptr->setValue(DEFAULT);
     ptr->setTracking(true);
 }
 
@@ -37,7 +36,6 @@ void Slider::volumeSetup()
 {
     auto *ptr = ui->volumeSlider;
     float volume = pRecorder->GetVolume() * 100;
-    //std::cout << "line 28 " << volume << std::endl;
     ptr->setRange(0, 100);
     ptr->setValue(volume);
     ptr->setTracking(true);
@@ -58,7 +56,6 @@ void Slider::on_volumeSlider_sliderMoved(int position)
         //std::cout << "error with set volume" << std::endl;
     }
 }
-
 
 void Slider::on_scaleSlider_sliderMoved(int position)
 {

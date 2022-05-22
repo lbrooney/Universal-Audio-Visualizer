@@ -48,12 +48,10 @@ void OGLWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     pInterface->getRecorder()->dataSemaphore.acquire();
-    //if(!m_Recorder->dataQueue.empty())
     pInterface->getRecorder()->ProcessData();
 
     if(!showSpectrum)
     {
-        //float volume = pInterface->getRecorder()->GetVolume();
         int objCount = 0;
         int updateCycle = 5;
         for(int i = 0; i < objList.size(); i++)
