@@ -25,9 +25,8 @@ void Slider::volumeSetup()
 {
     auto *ptr = ui->volumeSlider;
     float volume = pRecorder->GetVolume() * 100;
-    std::cout << "line 28 " << volume << std::endl;
-    ptr->setMinimum(0);
-    ptr->setMaximum(100);
+    //std::cout << "line 28 " << volume << std::endl;
+    ptr->setRange(0, 100);
     ptr->setValue(volume);
     ptr->setTracking(true);
 }
@@ -36,3 +35,15 @@ Slider::~Slider()
 {
     delete ui;
 }
+
+void Slider::on_volumeSlider_sliderMoved(int position)
+{
+    float vol = float(position)/100;
+    //std::cout << "pos" << position << std::endl;
+    float result = pRecorder->SetVolume(vol);
+    if(result == -1)
+    {
+        //std::cout << "error with set volume" << std::endl;
+    }
+}
+

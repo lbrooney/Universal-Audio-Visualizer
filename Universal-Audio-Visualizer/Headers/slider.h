@@ -16,6 +16,9 @@ public:
     explicit Slider(QWidget *parent = nullptr);
     ~Slider();
 
+private slots:
+    void on_volumeSlider_sliderMoved(int position);
+
 private:
     AudioInterface* pInterface = nullptr;
     AudioRecorder* pRecorder = nullptr;
