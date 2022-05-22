@@ -24,13 +24,13 @@ public:
         Prism::InitGeometry();
     }
 
-    /*Prism(const Prism &p) : Shape(p)
+    Prism(const Prism &p) : Shape(p)
     {
         m_SideCount = p.m_SideCount;
         Prism::InitGeometry();
     }
 
-    virtual Prism& operator=(const Prism& source) override
+    /*virtual Prism& operator=(const Prism& source) override
     {
         if(this == &source)
            return *this;
@@ -56,24 +56,24 @@ public:
         //get vertex coords for the sides
         for (int i = 0; i < m_SideCount * 4; i += 4) {
             //vertex 1
-            vertices[i * 3] = float(cos(angle * j));
-            vertices[i * 3 + 1] = float(sin(angle * j));
+            vertices[i * 3] = float(cos(angle * j)) / 2.0f;
+            vertices[i * 3 + 1] = float(sin(angle * j)) / 2.0f;
             vertices[i * 3 + 2] = 0.0f;
 
             //vertex 2
-            vertices[(i + 1) * 3] = float(cos(angle * (j + 1)));
-            vertices[(i + 1) * 3 + 1] = float(sin(angle * (j + 1)));
+            vertices[(i + 1) * 3] = float(cos(angle * (j + 1))) / 2.0f;
+            vertices[(i + 1) * 3 + 1] = float(sin(angle * (j + 1))) / 2.0f;
             vertices[(i + 1) * 3 + 2] = 0.0f;
 
             //vertex 3
-            vertices[(i + 2) * 3] = float(cos(angle * (j + 1)));
-            vertices[(i + 2) * 3 + 1] = float(sin(angle * (j + 1)));
-            vertices[(i + 2) * 3 + 2] = 1.0f;
+            vertices[(i + 2) * 3] = float(cos(angle * (j + 1))) / 2.0f;
+            vertices[(i + 2) * 3 + 1] = float(sin(angle * (j + 1))) / 2.0f;
+            vertices[(i + 2) * 3 + 2] = 1.0f / 2.0f;
 
             //vertex 4
-            vertices[(i + 3) * 3] = float(cos(angle * j));
-            vertices[(i + 3) * 3 + 1] = float(sin(angle * j));
-            vertices[(i + 3) * 3 + 2] = 1.0f;
+            vertices[(i + 3) * 3] = float(cos(angle * j)) / 2.0f;
+            vertices[(i + 3) * 3 + 1] = float(sin(angle * j)) / 2.0f;
+            vertices[(i + 3) * 3 + 2] = 1.0f / 2.0f;
 
             j++;
         }
@@ -84,14 +84,14 @@ public:
         for (int i = 4 * m_SideCount; i < vertexCount / 3 - 2; i++) {
             if (j >= m_SideCount)
                 zVal = 1.0f;
-            vertices[i * 3] = float(cos(angle * j));
-            vertices[i * 3 + 1] = float(sin(angle * j));
-            vertices[i * 3 + 2] = zVal;
+            vertices[i * 3] = float(cos(angle * j)) / 2.0f;
+            vertices[i * 3 + 1] = float(sin(angle * j)) / 2.0f;
+            vertices[i * 3 + 2] = zVal / 2.0f;
 
             j++;
         }
         //second to last coord will be center for bottom cap, last coord center for top cap
-        vertices[vertexCount - 1] = 1.0f;
+        vertices[vertexCount - 1] = 1.0f / 2.0f;
 
         indexCount = m_SideCount * 12;
         GLushort* indices = new GLushort[indexCount];

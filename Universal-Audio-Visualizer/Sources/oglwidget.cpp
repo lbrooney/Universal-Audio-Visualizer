@@ -5,6 +5,9 @@ OGLWidget::OGLWidget(QWidget *parent, AudioInterface* p)
     : QOpenGLWidget{parent}
 {
     pInterface = p;
+
+    timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(playBeat()));
 }
 
 OGLWidget::~OGLWidget()
@@ -35,7 +38,7 @@ void OGLWidget::initializeGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
-    loadPreset(0);
+    loadPreset(1);
 }
 
 void OGLWidget::paintGL()
@@ -43,14 +46,32 @@ void OGLWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     pInterface->getRecorder()->dataSemaphore.acquire();
-    //if(!m_Recorder->dataQueue.empty())
     pInterface->getRecorder()->ProcessData();
 
+    smpl_t bpm = pInterface->getRecorder()->bpm;
+    if(bpm != 0)
+    {
+        smpl_t beatPeriod = 1 / (bpm / 60);
+
+        if(!timerRunning && !playBeatAnim)
+        {
+            cout << beatPeriod * 1000 << endl;
+            timerRunning = true;
+            timer->start(beatPeriod * 1000);
+        }
+    }
     if(!showSpectrum)
     {
         float volume = pInterface->getRecorder()->GetVolume();
         int objCount = 0;
         int updateCycle = 5;
+        float scale  = volume;
+        if(playBeatAnim)
+        {
+            scale += 0.5;
+            playBeatAnim = false;
+        }
+
         for(int i = 0; i < objList.size(); i++)
         {
             double magnitude = objList[i]->m_Magnitude * objList[i]->intensityScale;
@@ -61,31 +82,38 @@ void OGLWidget::paintGL()
                 objList[i]->m_Magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
-                float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
-                float yRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
-                float zRot = static_cast <float> (rand()) / static_cast <float> (RAND_MAX/360.0f);
-                objList[i]->SetRotation(xRot, yRot, zRot);
+                //float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
+                //float yRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
+                //float zRot = static_cast <float> (rand()) / static_cast <float> (RAND_MAX/360.0f);
+                //objList[i]->SetRotation(xRot, yRot, zRot);
 
                 //update position
-                float xPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
-                float yPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
-                float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                zPos *= -2;
-                objList[i]->SetTranslation(xPos, yPos, zPos);
+                //float xPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
+                //float yPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
+                //float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                //zPos *= -2;
+                //objList[i]->SetTranslation(xPos, yPos, zPos);
+
             }
-            if(objCount >= magnitude)
-            {
-                int maxObjects = maxMagnitude * objList[i]->intensityScale;
-                i += maxObjects - objCount;
-                objCount = 0;
-            }
-            else
-            {
-                objList[i]->SetScale(volume);
-                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
-                objList[i]->DrawShape(&m_program);
-                objCount++;
-            }
+            //if object count exceeds current max, skip to next object type
+//            if(objCount >= magnitude)
+//            {
+//                int maxObjects = maxMagnitude * objList[i]->intensityScale;
+//                i += maxObjects - objCount;
+//                objCount = 0;
+//            }
+//            //otherwise update color and draw
+//            else
+//            {
+
+//                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+//                objList[i]->DrawShape(&m_program);
+//                objCount++;
+//            }
+            objList[i]->SetScale(scale);
+            objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+            objList[i]->DrawShape(&m_program);
+            objCount++;
         }
         if(drawCycleCount == updateCycle)
             drawCycleCount = 0;
@@ -132,6 +160,14 @@ void OGLWidget::initShaders()
     m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
     m_program.link();
     m_program.bind();
+}
+
+void OGLWidget::playBeat()
+{
+    cout << "beat\n";
+    timer->stop();
+    playBeatAnim = true;
+    timerRunning = false;
 }
 
 QVector3D OGLWidget::determineColor(float bpm)
@@ -265,6 +301,7 @@ void OGLWidget::createSphere(float r, float g, float b)
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
                                    FRAMECOUNT);
+    temp->SetTranslation(-0.5f, 0.0f, 0.0f);
     objList.push_back(temp);
 
 }
@@ -276,6 +313,7 @@ void OGLWidget::createCube(float r, float g, float b)
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
                                    FRAMECOUNT);
+    temp->SetTranslation(0.0f, 0.0f, 0.0f);
     objList.push_back(temp);
 }
 
@@ -286,5 +324,6 @@ void OGLWidget::createPrism(float r, float g, float b)
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(50, pInterface->getRecorder()->sampleRate,
                                    FRAMECOUNT);
+    temp->SetTranslation(0.5f, 0.0f, 0.0f);
     objList.push_back(temp);
 }

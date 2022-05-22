@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include <QGraphicsView>
 #include <iostream>
+#include <QObject>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

@@ -16,10 +16,10 @@ public:
         Sphere::InitGeometry();
     }
 
-    /*Sphere(const Sphere &s) : Shape(s)
+    Sphere(const Sphere &s) : Shape(s)
     {
         Sphere::InitGeometry();
-    }*/
+    }
 
     void InitGeometry()
     {

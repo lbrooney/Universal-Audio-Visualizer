@@ -14,6 +14,7 @@
 #include <QVector3D>
 #include <vector>
 #include <QTimer>
+#include <QObject>
 
 #include <thread>
 #include <atomic>
@@ -31,10 +32,14 @@ const float DEFAULTINTENSITY = 0.5f;
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
+    Q_OBJECT
 public:
     OGLWidget(QWidget *parent = nullptr, AudioInterface* p = nullptr);
     void loadPreset(int preset);
     ~OGLWidget();
+public slots:
+    void playBeat();
+
 protected:
     void initializeGL();
     void resizeGL(int w, int h);
@@ -47,6 +52,9 @@ private:
 
     QOpenGLShaderProgram m_program;
     std::vector<Shape*> objList;
+    QTimer* timer;
+    bool timerRunning = false;
+    bool playBeatAnim = false;
 
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;

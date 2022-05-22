@@ -189,7 +189,7 @@ void AudioRecorder::ProcessData()
             aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
             if (aubioOut->data[0] != 0) {
                 bpm = aubio_tempo_get_bpm(aubioTempo);
-                std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+                //std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
             }
             aubioIndex = -1;
         }
@@ -208,6 +208,11 @@ void AudioRecorder::ProcessData()
         float i = out[j][1] / FRAMECOUNT;
         mag[j] = log(sqrt((r * r) + (i * i))) * 20;
     }
+}
+
+smpl_t AudioRecorder::GetBeatPeriod()
+{
+    return aubio_tempo_get_period_s(aubioTempo);
 }
 
 float AudioRecorder::GetVolume()

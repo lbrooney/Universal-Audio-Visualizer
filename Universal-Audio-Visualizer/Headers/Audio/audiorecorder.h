@@ -36,6 +36,7 @@ public:
     void Record(void);
     void ProcessData();
     float GetVolume();
+    smpl_t GetBeatPeriod();
 
     BOOL bDone = FALSE;
     double mag[FRAMECOUNT/2];

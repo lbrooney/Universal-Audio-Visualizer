@@ -53,7 +53,7 @@ public:
         intensityScale = 1.0f;
     }
 
-    /*Shape(const Shape &source)
+    Shape(const Shape &source)
     {
         initializeOpenGLFunctions();
         m_Color = source.m_Color;
@@ -68,7 +68,7 @@ public:
         freqBin = source.freqBin;
         intensityScale = source.intensityScale;
         m_Magnitude = source.m_Magnitude;
-    }*/
+    }
 
     virtual ~Shape()
     {
