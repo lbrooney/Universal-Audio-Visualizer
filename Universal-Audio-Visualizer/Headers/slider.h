@@ -19,11 +19,15 @@ public:
 private slots:
     void on_volumeSlider_sliderMoved(int position);
 
+    void on_scaleSlider_sliderMoved(int position);
+
 private:
+    OGLWidget* openGLWidget = nullptr;
     AudioInterface* pInterface = nullptr;
     AudioRecorder* pRecorder = nullptr;
     Ui::Slider *ui;
     void volumeSetup();
+    void scaleSetup();
 };
 
 #endif // SLIDER_H

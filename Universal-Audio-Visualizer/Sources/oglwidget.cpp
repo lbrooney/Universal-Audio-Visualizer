@@ -38,6 +38,11 @@ void OGLWidget::initializeGL()
     loadPreset(0);
 }
 
+void OGLWidget::oglsetScale(float scale)
+{
+    this->scale = scale;
+}
+
 void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -48,7 +53,7 @@ void OGLWidget::paintGL()
 
     if(!showSpectrum)
     {
-        float volume = pInterface->getRecorder()->GetVolume();
+        //float volume = pInterface->getRecorder()->GetVolume();
         int objCount = 0;
         int updateCycle = 5;
         for(int i = 0; i < objList.size(); i++)
@@ -81,7 +86,7 @@ void OGLWidget::paintGL()
             }
             else
             {
-                objList[i]->SetScale(volume);
+                objList[i]->SetScale(scale);
                 objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
                 objList[i]->DrawShape(&m_program);
                 objCount++;

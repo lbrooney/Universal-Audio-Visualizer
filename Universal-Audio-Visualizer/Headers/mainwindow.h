@@ -30,6 +30,7 @@ private:
 public:
     MainWindow(QWidget *parent = nullptr);
     AudioInterface* getAudioInterface();
+    OGLWidget* getOGLWidget();
     ~MainWindow();
 
 protected:

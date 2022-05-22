@@ -33,6 +33,10 @@ AudioInterface* MainWindow::getAudioInterface()
     return pInterface;
 }
 
+OGLWidget* MainWindow::getOGLWidget()
+{
+    return openGLWidget;
+}
 
 
 void MainWindow::on_actionFull_Screen_triggered()

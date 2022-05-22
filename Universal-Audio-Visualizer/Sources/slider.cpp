@@ -4,6 +4,8 @@
 #include <QGridLayout>
 #include "Audio/audiorecorder.h"
 
+#define DEFAULT 0.3;
+
 Slider::Slider(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Slider)
@@ -11,6 +13,7 @@ Slider::Slider(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle("Sliders");
     pInterface = ((MainWindow*)parent)->getAudioInterface();
+    openGLWidget = ((MainWindow*)parent)->getOGLWidget();
     if(pInterface != nullptr) {
         pRecorder = pInterface->getRecorder();
     }
@@ -19,6 +22,15 @@ Slider::Slider(QWidget *parent) :
         std::cout << "ERROR" << std::endl;
     }
     volumeSetup();
+}
+
+void Slider::scaleSetup()
+{
+    auto* ptr = ui->scaleSlider;
+    float base = DEFAULT;
+    ptr->setRange(0, 100);
+    ptr->setValue(base * 100);
+    ptr->setTracking(true);
 }
 
 void Slider::volumeSetup()
@@ -47,3 +59,9 @@ void Slider::on_volumeSlider_sliderMoved(int position)
     }
 }
 
+
+void Slider::on_scaleSlider_sliderMoved(int position)
+{
+    float scale = float(position)/100;
+    openGLWidget->oglsetScale(scale);
+}
