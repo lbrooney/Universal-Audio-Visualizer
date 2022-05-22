@@ -27,6 +27,10 @@ private:
     EndpointMenu* pEndpointMenu = nullptr;
     OGLWidget* openGLWidget;
 
+#ifdef QT_DEBUG
+    QMenu* debug = nullptr;
+#endif
+
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();

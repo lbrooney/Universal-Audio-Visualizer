@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include <QGraphicsView>
 #include <iostream>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,6 +18,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout->addWidget(openGLWidget);
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pInterface);
     menuBar()->addMenu(pEndpointMenu);
+
+#ifdef QT_DEBUG
+    debug = new QMenu("debug", this);
+    menuBar()->addMenu(debug);
+#endif
+
 }
 
 MainWindow::~MainWindow()
@@ -105,3 +112,4 @@ void MainWindow::on_actionWaveform_triggered()
 {
     openGLWidget->loadPreset(0);
 }
+

@@ -11,15 +11,20 @@ private:
     Q_OBJECT
     QActionGroup* endpointGroup = nullptr;
     AudioInterface* pInterface = nullptr;
+    QList<QAction *> actionList;
+
+    void addEndpointAction(LPWSTR input = nullptr);
 
 protected:
     void showEvent(QShowEvent *event) override;
 public:
-    EndpointMenu(QWidget *parent = nullptr, AudioInterface *p = nullptr);
     EndpointMenu(const QString &title, QWidget *parent = nullptr, AudioInterface *p = nullptr);
     virtual ~EndpointMenu();
 
 signals:
+
+private slots:
+    void setNewAudioEndpoint(QAction* a);
 
 };
 
