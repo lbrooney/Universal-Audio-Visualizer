@@ -29,6 +29,7 @@ private:
 
 public:
     MainWindow(QWidget *parent = nullptr);
+    AudioInterface* getAudioInterface();
     ~MainWindow();
 
 protected:
@@ -51,5 +52,6 @@ private slots:
 
     void on_actionWaveform_triggered();
 
+    void on_actionSliders_triggered();
 };
 #endif // MAINWINDOW_H

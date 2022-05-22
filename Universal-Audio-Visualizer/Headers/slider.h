@@ -1,13 +1,14 @@
 #ifndef SLIDER_H
 #define SLIDER_H
 
-#include <QWidget>
+#include <QDialog>
+#include "mainwindow.h"
 
 namespace Ui {
 class Slider;
 }
 
-class Slider : public QWidget
+class Slider : public QDialog
 {
     Q_OBJECT
 
@@ -16,7 +17,10 @@ public:
     ~Slider();
 
 private:
+    AudioInterface* pInterface = nullptr;
+    AudioRecorder* pRecorder = nullptr;
     Ui::Slider *ui;
+    void volumeSetup();
 };
 
 #endif // SLIDER_H

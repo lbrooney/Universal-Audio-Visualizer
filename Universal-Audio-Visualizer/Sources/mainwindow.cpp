@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include <QGraphicsView>
 #include <iostream>
+#include "slider.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -26,6 +27,13 @@ MainWindow::~MainWindow()
     delete ui;
     delete pInterface;
 }
+
+AudioInterface* MainWindow::getAudioInterface()
+{
+    return pInterface;
+}
+
+
 
 void MainWindow::on_actionFull_Screen_triggered()
 {
@@ -104,4 +112,10 @@ void MainWindow::on_actionSphere_triggered()
 void MainWindow::on_actionWaveform_triggered()
 {
     openGLWidget->loadPreset(0);
+}
+
+void MainWindow::on_actionSliders_triggered()
+{
+    Slider *window = new Slider(this);
+    window->show();
 }
