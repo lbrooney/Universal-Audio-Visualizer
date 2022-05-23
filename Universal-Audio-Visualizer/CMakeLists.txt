@@ -42,17 +42,11 @@ set(PROJECT_SOURCES
         Headers/Cube.h
         Headers/Sphere.h
         Headers/Prism.h
-        Headers/Audio/audiointerface.h
-        Sources/Audio/audiointerface.cpp
-        Headers/Audio/AudioRecorder.h
-        Sources/Audio/AudioRecorder.cpp
-        Headers/Audio/audiocommons.h
-        Sources/Audio/audiocommons.cpp
         Headers/endpointmenu.h
         Sources/endpointmenu.cpp
-        Headers/Audio/endpointnotificationclient.h
-        Sources/Audio/endpointnotificationclient.cpp
-        Headers/Audio/AudioMacros.h
+        Headers/audiosystem.h
+        Sources/audiosystem.cpp
+        Headers/audiomacros.h
         Shaders.qrc
         Headers/slider.h
         Sources/slider.ui
