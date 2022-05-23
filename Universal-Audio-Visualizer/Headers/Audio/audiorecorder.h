@@ -28,10 +28,14 @@ const REFERENCE_TIME REFTIMES_PER_MILLISEC =  10000;
 
 const int FRAMECOUNT = 1024;
 
+/*
 typedef struct processedData {
-    std::vector<smpl_t> p_bpm;
-    //std::vector<
+    smpl_t p_bpm = 0;
+    std::vector<double> p_mag;
 } processedData;
+*/
+
+typedef std::pair<smpl_t, std::vector<double>> processedData;
 
 class AudioRecorder
 {
@@ -47,6 +51,7 @@ public:
     BOOL bDone = FALSE;
     //double mag[FRAMECOUNT/2];
     std::vector<double> mag = std::vector<double> (FRAMECOUNT/2, 0);
+    std::vector<processedData> p_data;
     DWORD sampleRate;
     smpl_t bpm = 0;
     std::queue<double*> dataQueue;
