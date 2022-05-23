@@ -55,9 +55,8 @@ void OGLWidget::paintGL()
 
     //smpl_t bpm = pInterface->getRecorder()->bpm;
     auto top = pInterface->getRecorder()->p_data.front();
-    pInterface->getRecorder()->p_data.pop();
-    smpl_t bpm = top.first;
-    //smpl_t bpm = pInterface->getRecorder()->
+    smpl_t &bpm = top.first;
+    std::vector<double> &mag = top.second;
     if(bpm != 0)
     {
         smpl_t beatPeriod = 1 / (bpm / 60);
@@ -85,8 +84,10 @@ void OGLWidget::paintGL()
             if(drawCycleCount >= updateCycle)
             {
                 //update max objects on screen
-                magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
-                objList[i]->m_Magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude);
+                //magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
+                magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
+                //objList[i]->m_Magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude);
+                objList[i]->m_Magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
                 float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -113,7 +114,8 @@ void OGLWidget::paintGL()
             else
             {
                 objList[i]->SetScale(newScale);
-                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+                //objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+                objList[i]->SetColor(determineColor(bpm));
                 objList[i]->DrawShape(&m_program);
                 objCount++;
             }
@@ -130,7 +132,8 @@ void OGLWidget::paintGL()
             float magnitude;
             if(drawCycleCount >= updateCycle)
             {
-                magnitude = pInterface->getRecorder()->mag[objList[i]->freqBin] / 20;
+                //magnitude = pInterface->getRecorder()->mag[objList[i]->freqBin] / 20;
+                magnitude = mag[objList[i]->freqBin] / 20;
             }
             else
             {
@@ -139,7 +142,8 @@ void OGLWidget::paintGL()
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
-            objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+            //objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+            objList[i]->SetColor(determineColor(bpm));
 
             objList[i]->DrawShape(&m_program);
         }
@@ -148,6 +152,7 @@ void OGLWidget::paintGL()
     }
 
     drawCycleCount++;
+    pInterface->getRecorder()->p_data.pop();
     update();
 }
 
