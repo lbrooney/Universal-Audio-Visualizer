@@ -1,26 +1,24 @@
 #include "Audio/audiocommons.h"
 #include "Audio/AudioMacros.h"
+#include <initguid.h>  // Put this in to get rid of linker errors.
+#include <devpkey.h>  // Property keys defined here are now defined inline.
+#include <Functiondiscoverykeys_devpkey.h>
 #include <iostream>
 #include <wchar.h>
+#include <QDebug>
 
 AudioCommons::AudioCommons()
 {
-    IMMDevice *pDevice = nullptr;
     CoCreateInstance(
                     CLSID_MMDeviceEnumerator, NULL,
                     CLSCTX_ALL, IID_IMMDeviceEnumerator,
                     (void**)&pEnumerator);
-    pEnumerator->GetDefaultAudioEndpoint(
-                    eRender, eConsole, &pDevice);
-    pDevice->GetId(&pSelectedDeviceID);
-    SAFE_RELEASE(pDevice);
     refreshEndpoints();
 }
 
 AudioCommons::~AudioCommons()
 {
     SAFE_RELEASE(pEnumerator);
-    CoTaskMemFree(pSelectedDeviceID);
     clearEndpointVector();
 }
 
@@ -30,9 +28,9 @@ void AudioCommons::clearEndpointVector()
     {
         return;
     }
-    for(int i = 0; i < activeEndpoints.size(); i += 1)
+    for(auto it : activeEndpoints)
     {
-        CoTaskMemFree(activeEndpoints.at(i));
+        CoTaskMemFree(it);
     }
     activeEndpoints.clear();
 }
@@ -42,11 +40,7 @@ void AudioCommons::refreshEndpoints(void)
     clearEndpointVector();
     IMMDeviceCollection* pCollection = nullptr;
     IMMDevice* pEndpoint = nullptr;
-    pEnumerator->GetDefaultAudioEndpoint(
-                eRender, eConsole, &pEndpoint);
     LPWSTR id = nullptr;
-    pEndpoint->GetId(&id);
-    activeEndpoints.push_back( {id} );
     pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
     UINT count = 0;
     pCollection->GetCount(&count);
@@ -54,8 +48,21 @@ void AudioCommons::refreshEndpoints(void)
         pCollection->Item(i, &pEndpoint);
         pEndpoint->GetId(&id);
         // { } may not work. may need to allocate memory for copy of id
-        activeEndpoints.push_back( {id} );
+        activeEndpoints.push_back( id );
     }
+    pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pEndpoint);
+    pEndpoint->GetId(&id);
+    for(UINT i = 0; i < activeEndpoints.size(); i += 1)
+    {
+        if(wcscmp(id, activeEndpoints.at(i)) == 0)
+        {
+            defaultIDSpot = i;
+            break;
+        }
+    }
+    selectIDSpot = defaultIDSpot;
+    SAFE_RELEASE(pEndpoint)
+    SAFE_RELEASE(pCollection)
     return;
 }
 
@@ -66,12 +73,12 @@ const std::vector<LPWSTR>& AudioCommons::getEndpoints(void) const
 
 
 // REQUESTED PROGRAM MUST CALL CoTaskMemFree on string
-LPWSTR AudioCommons::getSelectedDeviceID(void) const
+void AudioCommons::getSelectedDeviceID(LPWSTR& input)
 {
-    SIZE_T strSize = sizeof(LPWSTR) * (wcslen(pSelectedDeviceID) + 1);
-    LPWSTR copy = (LPWSTR)CoTaskMemAlloc(strSize);
-    memcpy(copy, pSelectedDeviceID, strSize);
-    return copy;
+    SIZE_T strSize = sizeof(LPWSTR) * (wcslen(activeEndpoints.at(selectIDSpot)) + 1) ;
+    input = (LPWSTR)CoTaskMemAlloc(strSize);
+    memcpy(input, activeEndpoints.at(selectIDSpot), strSize);
+    return;
 }
 
 // OTHER CLASSES SHOULD NOT RELEASE THIS, AUDIO INTERFACE DOES IT
@@ -80,3 +87,39 @@ IMMDeviceEnumerator* AudioCommons::getEnumerator(void) const
     return pEnumerator;
 }
 
+void AudioCommons::setAudioEndpoint(const UINT input)
+{
+#ifdef QT_DEBUG
+    qDebug() << "cur: " << input << "input: " << selectIDSpot << Qt::endl;
+    qDebug() << "Current Device Name ";
+    printDeviceName(activeEndpoints.at(selectIDSpot));
+#endif
+    if(input == -1)
+    {
+        selectIDSpot = defaultIDSpot;
+    } else {
+        selectIDSpot = input;
+    }
+#ifdef QT_DEBUG
+    qDebug() << "New Device Name ";
+    printDeviceName(activeEndpoints.at(selectIDSpot));
+    qDebug() << "input :" << input << "new: " << selectIDSpot << Qt::endl;
+#endif
+    return;
+}
+
+void AudioCommons::printDeviceName(const LPWSTR input) const
+{
+    IMMDevice* pEndpoint = nullptr;
+    pEnumerator->GetDevice(input, &pEndpoint);
+    IPropertyStore* pProps = nullptr;
+    PROPVARIANT varName;
+    pEndpoint->OpenPropertyStore(
+                STGM_READ, &pProps);
+    PropVariantInit(&varName);
+    pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+    qDebug() << QString::fromWCharArray(varName.pwszVal, -1);
+    PropVariantClear(&varName);
+    SAFE_RELEASE(pProps);
+    SAFE_RELEASE(pEndpoint)
+}

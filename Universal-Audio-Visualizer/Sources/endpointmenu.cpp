@@ -7,7 +7,7 @@
 #include <mmdeviceapi.h>
 #include "Audio/AudioMacros.h"
 #include <QActionGroup>
-#include<QDebug>
+#include <QDebug>
 
 EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioInterface *p)
     : QMenu{title, parent}
@@ -26,7 +26,7 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioInterface
     endpointGroup->addAction(temp);
     this->addAction(temp);
 
-    for(int i = 1; i < endpoints.size(); i += 1)
+    for(int i = 0; i < endpoints.size(); i += 1)
     {
         addEndpointAction(endpoints.at(i));
     }
@@ -65,10 +65,14 @@ void EndpointMenu::addEndpointAction(LPWSTR input)
     this->addAction(temp);
     PropVariantClear(&varName);
     SAFE_RELEASE(pProps);
+    SAFE_RELEASE(pDevice)
 }
 
 void EndpointMenu::setNewAudioEndpoint(QAction* a)
 {
-    qDebug() << "Not implemented just yet, but new name would be" <<
-             a->objectName() << " " << a->text() << Qt::endl;
+    SIZE_T strSize = sizeof(LPWSTR) * (a->objectName().size() + 1);
+    LPWSTR copy = (LPWSTR)CoTaskMemAlloc(strSize);
+    a->objectName().toWCharArray(copy);
+    pInterface->setAudioEndpoint(copy);
+    CoTaskMemFree(copy);
 }

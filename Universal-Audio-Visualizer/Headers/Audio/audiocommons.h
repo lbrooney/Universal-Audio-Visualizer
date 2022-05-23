@@ -7,17 +7,20 @@ class AudioCommons
 {
 private:
     IMMDeviceEnumerator* pEnumerator = nullptr;
-    LPWSTR pSelectedDeviceID = nullptr;
+    UINT selectIDSpot = 0;
+    UINT defaultIDSpot = -1;
     std::vector<LPWSTR> activeEndpoints;
 
+    void refreshEndpoints(void);
     void clearEndpointVector();
+    void printDeviceName(const LPWSTR input) const;
 public:
     AudioCommons();
     ~AudioCommons();
     IMMDeviceEnumerator* getEnumerator(void) const;
-    LPWSTR getSelectedDeviceID(void) const;
-    void refreshEndpoints(void);
+    void getSelectedDeviceID(LPWSTR& input);
     const std::vector<LPWSTR>& getEndpoints(void) const;
+    void setAudioEndpoint(const UINT);
 };
 
 #endif // AUDIOCOMMONS_H

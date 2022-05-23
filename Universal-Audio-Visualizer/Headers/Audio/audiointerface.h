@@ -22,7 +22,8 @@ public:
     AudioRecorder* getRecorder(void) const;
     const std::vector<LPWSTR> getEndpoints(void) const;
     IMMDeviceEnumerator* getEnumerator(void) const;
-    const LPWSTR getSelectedDeviceID(void) const;
+    void getSelectedDeviceID(LPWSTR& input);
+    bool setAudioEndpoint(const LPWSTR);
 
 };
 
