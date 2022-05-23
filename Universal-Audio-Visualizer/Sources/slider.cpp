@@ -6,6 +6,8 @@
 
 #define DEFAULT 30
 
+extern double myTempo;
+
 Slider::Slider(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Slider)
@@ -21,6 +23,8 @@ Slider::Slider(QWidget *parent) :
     {
         std::cout << "ERROR" << std::endl;
     }
+
+    ui->textBrowser->setText(QString::number(myTempo));
     volumeSetup();
     scaleSetup();
 }
@@ -63,3 +67,9 @@ void Slider::on_scaleSlider_sliderMoved(int position)
     float scale = float(position)/100;
     openGLWidget->oglsetScale(scale);
 }
+
+void Slider::on_pushButton_clicked()
+{
+    ui->textBrowser->setText(QString::number(myTempo));
+}
+

@@ -21,6 +21,8 @@ private slots:
 
     void on_scaleSlider_sliderMoved(int position);
 
+    void on_pushButton_clicked();
+
 private:
     OGLWidget* openGLWidget = nullptr;
     AudioInterface* pInterface = nullptr;

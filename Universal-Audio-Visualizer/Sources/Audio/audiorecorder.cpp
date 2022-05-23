@@ -11,6 +11,8 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
+double myTempo = 0.0;
+
 AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 {
     pCommons = input;
@@ -238,6 +240,7 @@ void AudioRecorder::ProcessData()
             if (aubioOut->data[0] != 0) {
                 bpm = aubio_tempo_get_bpm(aubioTempo);
                 std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+                myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
             }
             aubioIndex = -1;
         }
