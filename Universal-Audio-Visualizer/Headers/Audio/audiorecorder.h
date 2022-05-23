@@ -51,7 +51,7 @@ public:
     BOOL bDone = FALSE;
     //double mag[FRAMECOUNT/2];
     std::vector<double> mag = std::vector<double> (FRAMECOUNT/2, 0);
-    std::vector<processedData> p_data;
+    std::queue<processedData> p_data;
     DWORD sampleRate;
     smpl_t bpm = 0;
     std::queue<double*> dataQueue;

@@ -268,7 +268,7 @@ void AudioRecorder::ProcessData()
             float i = out[j][1] / FRAMECOUNT;
             mag[j] = log(sqrt((r * r) + (i * i))) * 20;
         }
-        p_data.push_back({bpm, mag});
+        p_data.push({bpm, mag});
         temp = false;
     }
 }

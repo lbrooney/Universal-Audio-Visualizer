@@ -53,7 +53,11 @@ void OGLWidget::paintGL()
     pInterface->getRecorder()->dataSemaphore.acquire();
     pInterface->getRecorder()->ProcessData();
 
-    smpl_t bpm = pInterface->getRecorder()->bpm;
+    //smpl_t bpm = pInterface->getRecorder()->bpm;
+    auto top = pInterface->getRecorder()->p_data.front();
+    pInterface->getRecorder()->p_data.pop();
+    smpl_t bpm = top.first;
+    //smpl_t bpm = pInterface->getRecorder()->
     if(bpm != 0)
     {
         smpl_t beatPeriod = 1 / (bpm / 60);
