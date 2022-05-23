@@ -6,6 +6,8 @@
 #include <QGraphicsView>
 #include <iostream>
 #include <QObject>
+#include <QDebug>
+#include "slider.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,6 +20,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout->addWidget(openGLWidget);
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pInterface);
     menuBar()->addMenu(pEndpointMenu);
+
+#ifdef QT_DEBUG
+    debug = new QMenu("debug", this);
+    menuBar()->addMenu(debug);
+#endif
+
 }
 
 MainWindow::~MainWindow()
@@ -27,6 +35,17 @@ MainWindow::~MainWindow()
     delete ui;
     delete pInterface;
 }
+
+AudioInterface* MainWindow::getAudioInterface()
+{
+    return pInterface;
+}
+
+OGLWidget* MainWindow::getOGLWidget()
+{
+    return openGLWidget;
+}
+
 
 void MainWindow::on_actionFull_Screen_triggered()
 {
@@ -105,4 +124,10 @@ void MainWindow::on_actionSphere_triggered()
 void MainWindow::on_actionWaveform_triggered()
 {
     openGLWidget->loadPreset(0);
+}
+
+void MainWindow::on_actionSliders_triggered()
+{
+    Slider *window = new Slider(this);
+    window->show();
 }

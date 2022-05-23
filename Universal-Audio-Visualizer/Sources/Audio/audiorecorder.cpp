@@ -1,6 +1,8 @@
 #include "Audio/audiorecorder.h"
 #include "Audio/AudioMacros.h"
 #include <iostream>
+#include <wchar.h>
+
 using namespace std;
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
@@ -9,20 +11,21 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
+double myTempo = 0.0;
+
 AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 {
     pCommons = input;
-    REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
 
-    pDeviceID = pCommons->getSelectedDeviceID();
+    pCommons->getSelectedDeviceID(pEndpointID);
 
-    pCommons->getEnumerator()->GetDevice(pDeviceID, &pDevice);
+    pCommons->getEnumerator()->GetDevice(pEndpointID, &pEndpoint);
 
-    pDevice->Activate(
+    pEndpoint->Activate(
                 IID_IAudioClient, CLSCTX_ALL,
                 NULL, (void**)&pAudioClient);
 
-    pDevice->Activate(
+    pEndpoint->Activate(
                 IID_IAudioEndpointVolume, CLSCTX_ALL,
                 NULL, (void**)&pEndpointVolume);
 
@@ -33,7 +36,7 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
     pAudioClient->Initialize(
                 AUDCLNT_SHAREMODE_SHARED,
                 AUDCLNT_STREAMFLAGS_LOOPBACK,
-                hnsRequestedDuration,
+                REFTIMES_PER_SEC,
                 0,
                 pwfx,
                 NULL);
@@ -59,10 +62,11 @@ AudioRecorder::~AudioRecorder()
 {
     stopRecording();
     pAudioClient->Stop();  // Stop recording.
-    CoTaskMemFree(pDeviceID);
+    CoTaskMemFree(pEndpointID);
     CoTaskMemFree(pwfx);
     SAFE_RELEASE(pAudioClient)
     SAFE_RELEASE(pEndpointVolume);
+    SAFE_RELEASE(pEndpoint);
 
 
     fftw_destroy_plan(p);
@@ -84,6 +88,44 @@ void AudioRecorder::stopRecording(void)
     return;
 }
 
+void AudioRecorder::changeRecordingDevice(LPWSTR input)
+{
+    pAudioClient->Stop();  // Stop recording.
+    CoTaskMemFree(pEndpointID);
+    CoTaskMemFree(pwfx);
+    SAFE_RELEASE(pAudioClient)
+    SAFE_RELEASE(pEndpointVolume);
+    SAFE_RELEASE(pEndpoint);
+    pEndpointID = input;
+    pCommons->getEnumerator()->GetDevice(pEndpointID, &pEndpoint);
+
+    pEndpoint->Activate(
+                IID_IAudioClient, CLSCTX_ALL,
+                NULL, (void**)&pAudioClient);
+
+    pEndpoint->Activate(
+                IID_IAudioEndpointVolume, CLSCTX_ALL,
+                NULL, (void**)&pEndpointVolume);
+
+    pAudioClient->GetMixFormat(&pwfx);
+
+    sampleRate = pwfx->nSamplesPerSec;
+
+    pAudioClient->Initialize(
+                AUDCLNT_SHAREMODE_SHARED,
+                AUDCLNT_STREAMFLAGS_LOOPBACK,
+                REFTIMES_PER_SEC,
+                0,
+                pwfx,
+                NULL);
+
+    pAudioClient->GetService(
+                IID_IAudioCaptureClient,
+                (void**)&pCaptureClient);
+
+    pAudioClient->Start();
+}
+
 void AudioRecorder::Record(void)
 {
     UINT32 numFramesAvailable;
@@ -96,6 +138,14 @@ void AudioRecorder::Record(void)
 
     while(!stopRecordingFlag)
     {
+        LPWSTR temp = nullptr;
+        pCommons->getSelectedDeviceID(temp);
+        if(wcscmp(temp, pEndpointID))
+        {
+            changeRecordingDevice(temp);
+        } else {
+            CoTaskMemFree(temp);
+        }
         pCaptureClient->GetNextPacketSize(&packetLength);
         while (packetLength != 0 && !stopRecordingFlag)
         {
@@ -189,7 +239,8 @@ void AudioRecorder::ProcessData()
             aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
             if (aubioOut->data[0] != 0) {
                 bpm = aubio_tempo_get_bpm(aubioTempo);
-                //std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+                std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+                myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
             }
             aubioIndex = -1;
         }
@@ -220,4 +271,13 @@ float AudioRecorder::GetVolume()
     float vol = 0.0f;
     pEndpointVolume->GetMasterVolumeLevelScalar(&vol);
     return vol;
+}
+
+float AudioRecorder::SetVolume(float vol)
+{
+    if(pEndpointVolume->SetMasterVolumeLevelScalar(vol, NULL))
+    {
+        return vol;
+    }
+    return -1;
 }

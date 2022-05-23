@@ -37,6 +37,7 @@ public:
     void ProcessData();
     float GetVolume();
     smpl_t GetBeatPeriod();
+    float SetVolume(float);
 
     BOOL bDone = FALSE;
     double mag[FRAMECOUNT/2];
@@ -51,12 +52,14 @@ public:
 
 private:
 
+    void changeRecordingDevice(LPWSTR input = nullptr);
+
     AudioCommons* pCommons = nullptr;
     std::thread recordingThread;
     std::atomic_bool stopRecordingFlag = false;
 
-    LPWSTR pDeviceID = nullptr;
-    IMMDevice* pDevice = nullptr;
+    LPWSTR pEndpointID = nullptr;
+    IMMDevice* pEndpoint = nullptr;
     IAudioClient* pAudioClient = nullptr;
     IAudioCaptureClient* pCaptureClient = nullptr;
     WAVEFORMATEX* pwfx = nullptr;

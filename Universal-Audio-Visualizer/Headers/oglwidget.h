@@ -36,6 +36,7 @@ class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 public:
     OGLWidget(QWidget *parent = nullptr, AudioInterface* p = nullptr);
     void loadPreset(int preset);
+    void oglsetScale(float scale);
     ~OGLWidget();
 public slots:
     void playBeat();
@@ -59,6 +60,7 @@ private:
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
     bool showSpectrum = false;
+    float scale = 0.3;
 
     glm::mat4 m_PerspectiveMatrix;
     glm::mat4 m_ViewMatrix;

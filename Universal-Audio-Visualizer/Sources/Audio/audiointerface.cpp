@@ -1,4 +1,5 @@
 #include "Audio/audiointerface.h"
+#include <QDebug>
 
 AudioInterface::AudioInterface()
 {
@@ -33,7 +34,29 @@ IMMDeviceEnumerator* AudioInterface::getEnumerator(void) const
     return pCommon->getEnumerator();
 }
 
-const LPWSTR AudioInterface::getSelectedDeviceID(void) const
+void AudioInterface::getSelectedDeviceID(LPWSTR& input)
 {
-    return pCommon->getSelectedDeviceID();
+    pCommon->getSelectedDeviceID(input);
+    return;
+}
+
+bool AudioInterface::setAudioEndpoint(const LPWSTR input)
+{
+#ifdef QT_DEBUG
+    qDebug() << "input " << QString::fromWCharArray(input, -1) << Qt::endl;
+#endif
+    if(wcscmp(input, L"Default") == 0)
+    {
+        pCommon->setAudioEndpoint(-1);
+        return true;
+    }
+    for(UINT i = 0; i < pCommon->getEndpoints().size(); i += 1)
+    {
+        if(wcscmp(input, pCommon->getEndpoints().at(i)) == 0)
+        {
+            pCommon->setAudioEndpoint(i);
+            return true;
+        }
+    }
+    return false;
 }

@@ -54,6 +54,9 @@ set(PROJECT_SOURCES
         Sources/Audio/endpointnotificationclient.cpp
         Headers/Audio/AudioMacros.h
         Shaders.qrc
+        Headers/slider.h
+        Sources/slider.ui
+        Sources/slider.cpp
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${RUNTIME_OUTPUT_DIRECTORY})
