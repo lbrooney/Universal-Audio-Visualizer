@@ -38,7 +38,7 @@ void OGLWidget::initializeGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
-    loadPreset(1);
+    loadPreset(0);
 }
 
 void OGLWidget::oglsetScale(float scale)
@@ -60,7 +60,6 @@ void OGLWidget::paintGL()
 
         if(!timerRunning && !playBeatAnim)
         {
-            cout << beatPeriod * 1000 << endl;
             timerRunning = true;
             timer->start(beatPeriod * 1000);
         }
@@ -69,57 +68,53 @@ void OGLWidget::paintGL()
     {
         int objCount = 0;
         int updateCycle = 5;
-        float scale  = volume;
+        float newScale  = this->scale;
         if(playBeatAnim)
         {
-            scale += 0.5;
+            newScale += this->scale * 0.2;
             playBeatAnim = false;
         }
 
         for(int i = 0; i < objList.size(); i++)
         {
             double magnitude = objList[i]->m_Magnitude * objList[i]->intensityScale;
-            if(drawCycleCount == updateCycle)
+            if(drawCycleCount >= updateCycle)
             {
                 //update max objects on screen
                 magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
                 objList[i]->m_Magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
-                //float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
-                //float yRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
-                //float zRot = static_cast <float> (rand()) / static_cast <float> (RAND_MAX/360.0f);
-                //objList[i]->SetRotation(xRot, yRot, zRot);
+                float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
+                float yRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
+                float zRot = static_cast <float> (rand()) / static_cast <float> (RAND_MAX/360.0f);
+                objList[i]->SetRotation(xRot, yRot, zRot);
 
                 //update position
-                //float xPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
-                //float yPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
-                //float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                //zPos *= -2;
-                //objList[i]->SetTranslation(xPos, yPos, zPos);
+                float xPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
+                float yPos = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2)));
+                float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                zPos *= -2;
+                objList[i]->SetTranslation(xPos, yPos, zPos);
 
             }
             //if object count exceeds current max, skip to next object type
-//            if(objCount >= magnitude)
-//            {
-//                int maxObjects = maxMagnitude * objList[i]->intensityScale;
-//                i += maxObjects - objCount;
-//                objCount = 0;
-//            }
-//            //otherwise update color and draw
-//            else
-//            {
-//                objList[i]->SetScale(scale);
-//                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
-//                objList[i]->DrawShape(&m_program);
-//                objCount++;
-//            }
-            objList[i]->SetScale(scale);
-            objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
-            objList[i]->DrawShape(&m_program);
-            objCount++;
+            if(objCount >= magnitude)
+            {
+                int maxObjects = maxMagnitude * objList[i]->intensityScale;
+                i += maxObjects - objCount;
+                objCount = 0;
+            }
+            //otherwise update color and draw
+            else
+            {
+                objList[i]->SetScale(newScale);
+                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+                objList[i]->DrawShape(&m_program);
+                objCount++;
+            }
         }
-        if(drawCycleCount == updateCycle)
+        if(drawCycleCount >= updateCycle)
             drawCycleCount = 0;
 
     }
@@ -129,9 +124,9 @@ void OGLWidget::paintGL()
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
-            if(drawCycleCount == updateCycle)
+            if(drawCycleCount >= updateCycle)
             {
-                magnitude = pInterface->getRecorder()->mag[objList[i]->freqBin] / 30;
+                magnitude = pInterface->getRecorder()->mag[objList[i]->freqBin] / 20;
             }
             else
             {
@@ -144,7 +139,7 @@ void OGLWidget::paintGL()
 
             objList[i]->DrawShape(&m_program);
         }
-        if(drawCycleCount == updateCycle)
+        if(drawCycleCount >= updateCycle)
             drawCycleCount = 0;
     }
 
@@ -168,7 +163,6 @@ void OGLWidget::initShaders()
 
 void OGLWidget::playBeat()
 {
-    cout << "beat\n";
     timer->stop();
     playBeatAnim = true;
     timerRunning = false;
@@ -304,7 +298,7 @@ void OGLWidget::createSphere(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
-                                   FRAMECOUNT);
+                             FRAMECOUNT);
     temp->SetTranslation(-0.5f, 0.0f, 0.0f);
     objList.push_back(temp);
 
@@ -316,7 +310,7 @@ void OGLWidget::createCube(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
-                                   FRAMECOUNT);
+                             FRAMECOUNT);
     temp->SetTranslation(0.0f, 0.0f, 0.0f);
     objList.push_back(temp);
 }
@@ -327,7 +321,7 @@ void OGLWidget::createPrism(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(50, pInterface->getRecorder()->sampleRate,
-                                   FRAMECOUNT);
+                             FRAMECOUNT);
     temp->SetTranslation(0.5f, 0.0f, 0.0f);
     objList.push_back(temp);
 }

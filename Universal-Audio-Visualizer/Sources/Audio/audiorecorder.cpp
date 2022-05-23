@@ -2,6 +2,7 @@
 #include "Audio/AudioMacros.h"
 #include <iostream>
 #include <wchar.h>
+#include <QDebug>
 
 using namespace std;
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
@@ -55,6 +56,7 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
     in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
     out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
     p = fftw_plan_dft_1d(FRAMECOUNT, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+
     recordingThread = std::thread(&AudioRecorder::Record, this);
 }
 
@@ -65,7 +67,7 @@ AudioRecorder::~AudioRecorder()
     CoTaskMemFree(pEndpointID);
     CoTaskMemFree(pwfx);
     SAFE_RELEASE(pAudioClient)
-    SAFE_RELEASE(pEndpointVolume);
+            SAFE_RELEASE(pEndpointVolume);
     SAFE_RELEASE(pEndpoint);
 
 
@@ -131,7 +133,7 @@ void AudioRecorder::Record(void)
     UINT32 numFramesAvailable;
     UINT32 packetLength = 0;
     BYTE* pData;
-    DWORD flags;
+    DWORD flags = AUDCLNT_BUFFERFLAGS_SILENT;
 
     int frameCounter = 0;
     double* byteArray = new double[FRAMECOUNT];
@@ -239,7 +241,9 @@ void AudioRecorder::ProcessData()
             aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
             if (aubioOut->data[0] != 0) {
                 bpm = aubio_tempo_get_bpm(aubioTempo);
-                std::cout << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << std::endl;
+                #ifdef QT_DEBUG
+                    qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
+                #endif
                 myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
             }
             aubioIndex = -1;
