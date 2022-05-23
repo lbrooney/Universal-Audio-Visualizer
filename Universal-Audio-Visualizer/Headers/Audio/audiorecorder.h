@@ -28,6 +28,11 @@ const REFERENCE_TIME REFTIMES_PER_MILLISEC =  10000;
 
 const int FRAMECOUNT = 1024;
 
+typedef struct processedData {
+    std::vector<smpl_t> p_bpm;
+    //std::vector<
+} processedData;
+
 class AudioRecorder
 {
 public:
@@ -40,13 +45,16 @@ public:
     float SetVolume(float);
 
     BOOL bDone = FALSE;
-    double mag[FRAMECOUNT/2];
+    //double mag[FRAMECOUNT/2];
+    std::vector<double> mag = std::vector<double> (FRAMECOUNT/2, 0);
     DWORD sampleRate;
     smpl_t bpm = 0;
     std::queue<double*> dataQueue;
     std::queue<float> tempoQueue;
 
     std::counting_semaphore<100> dataSemaphore;
+    //Randomly put 100
+    std::counting_semaphore<100> processSemaphore;
 
 
 
@@ -56,6 +64,7 @@ private:
 
     AudioCommons* pCommons = nullptr;
     std::thread recordingThread;
+    std::thread processThread;
     std::atomic_bool stopRecordingFlag = false;
 
     LPWSTR pEndpointID = nullptr;

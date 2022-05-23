@@ -14,7 +14,7 @@ const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
 double myTempo = 0.0;
 
-AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
+AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0), processSemaphore(0)
 {
     pCommons = input;
 
@@ -58,6 +58,7 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
     p = fftw_plan_dft_1d(FRAMECOUNT, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
     recordingThread = std::thread(&AudioRecorder::Record, this);
+    //processThread = std::thread(&processThread, this);
 }
 
 AudioRecorder::~AudioRecorder()
@@ -222,46 +223,52 @@ void AudioRecorder::Record(void)
 
 void AudioRecorder::ProcessData()
 {
-    double* data = dataQueue.front();
-    int aubioIndex = 0;
-    for(int dataIndex = 0; dataIndex < FRAMECOUNT; dataIndex++)
+    bool temp = true;
+    //while(!stopRecordingFlag)
+    while(temp)
     {
-        //apply Hann window function to captured data
-        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (FRAMECOUNT - 1));
-        in[dataIndex][0] =  data[dataIndex] * multiplier;
-        in[dataIndex][1] = 0;
-    }
-
-    for(int i = 0; i < FRAMECOUNT && !tempoQueue.empty(); i++, aubioIndex++)
-    {
-        fvec_set_sample(aubioIn, tempoQueue.front(), aubioIndex);
-        tempoQueue.pop();
-        if(aubioIndex == 511)
+        double* data = dataQueue.front();
+        int aubioIndex = 0;
+        for(int dataIndex = 0; dataIndex < FRAMECOUNT; dataIndex++)
         {
-            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
-            if (aubioOut->data[0] != 0) {
-                bpm = aubio_tempo_get_bpm(aubioTempo);
-                #ifdef QT_DEBUG
-                    qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
-                #endif
-                myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
-            }
-            aubioIndex = -1;
+            //apply Hann window function to captured data
+            double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (FRAMECOUNT - 1));
+            in[dataIndex][0] =  data[dataIndex] * multiplier;
+            in[dataIndex][1] = 0;
         }
-    }
 
-    delete[] data;
-    dataQueue.pop();
+        for(int i = 0; i < FRAMECOUNT && !tempoQueue.empty(); i++, aubioIndex++)
+        {
+            fvec_set_sample(aubioIn, tempoQueue.front(), aubioIndex);
+            tempoQueue.pop();
+            if(aubioIndex == 511)
+            {
+                aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
+                if (aubioOut->data[0] != 0) {
+                    bpm = aubio_tempo_get_bpm(aubioTempo);
+                    #ifdef QT_DEBUG
+                        qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
+                    #endif
+                    myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
+                }
+                aubioIndex = -1;
+            }
+        }
 
-    //run FFT on data
-    fftw_execute(p);
+        delete[] data;
+        dataQueue.pop();
 
-    //calculate log magnitude on transformed data
-    for(int j = 0; j < FRAMECOUNT / 2; j++)
-    {
-        float r = out[j][0] / FRAMECOUNT;
-        float i = out[j][1] / FRAMECOUNT;
-        mag[j] = log(sqrt((r * r) + (i * i))) * 20;
+        //run FFT on data
+        fftw_execute(p);
+
+        //calculate log magnitude on transformed data
+        for(int j = 0; j < FRAMECOUNT / 2; j++)
+        {
+            float r = out[j][0] / FRAMECOUNT;
+            float i = out[j][1] / FRAMECOUNT;
+            mag[j] = log(sqrt((r * r) + (i * i))) * 20;
+        }
+        temp = false;
     }
 }
 
