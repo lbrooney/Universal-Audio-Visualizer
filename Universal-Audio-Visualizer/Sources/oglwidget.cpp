@@ -54,7 +54,7 @@ void OGLWidget::paintGL()
     //pInterface->getRecorder()->ProcessData();
 
     //smpl_t bpm = pInterface->getRecorder()->bpm;
-    auto top = pInterface->getRecorder()->p_data.front();
+    auto &top = pInterface->getRecorder()->p_data.front();
     smpl_t &bpm = top.first;
     std::vector<double> &mag = top.second;
     if(bpm != 0)

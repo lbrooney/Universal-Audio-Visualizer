@@ -57,9 +57,9 @@ public:
     std::queue<double*> dataQueue;
     std::queue<float> tempoQueue;
 
-    std::counting_semaphore<100> dataSemaphore;
+    std::counting_semaphore<10000> dataSemaphore;
     //Randomly put 100
-    std::counting_semaphore<100> processSemaphore;
+    std::counting_semaphore<10000> processSemaphore;
 
 
 

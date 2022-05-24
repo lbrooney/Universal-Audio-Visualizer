@@ -225,9 +225,7 @@ void AudioRecorder::Record(void)
 
 void AudioRecorder::ProcessData()
 {
-    //bool temp = true;
     while(!stopRecordingFlag)
-    //while(temp)
     {
         processSemaphore.acquire();
         double* data = dataQueue.front();
@@ -272,7 +270,6 @@ void AudioRecorder::ProcessData()
             mag[j] = log(sqrt((r * r) + (i * i))) * 20;
         }
         p_data.push({bpm, mag});
-        //temp = false;
         dataSemaphore.release();
     }
 }
