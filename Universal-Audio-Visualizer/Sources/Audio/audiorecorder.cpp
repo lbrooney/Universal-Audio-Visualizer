@@ -58,7 +58,7 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0), processSem
     p = fftw_plan_dft_1d(FRAMECOUNT, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
     recordingThread = std::thread(&AudioRecorder::Record, this);
-    //processThread = std::thread(&processThread, this);
+    processThread = std::thread(&AudioRecorder::ProcessData, this);
 }
 
 AudioRecorder::~AudioRecorder()
@@ -178,7 +178,8 @@ void AudioRecorder::Record(void)
                     {
                         frameCounter = 0;
                         dataQueue.push(byteArray);
-                        dataSemaphore.release();
+                        //dataSemaphore.release();
+                        processSemaphore.release();
                         byteArray = new double[FRAMECOUNT];
                     }
                 }
@@ -214,7 +215,8 @@ void AudioRecorder::Record(void)
             }
             frameCounter = 0;
             dataQueue.push(byteArray);
-            dataSemaphore.release();
+            //dataSemaphore.release();
+            processSemaphore.release();
             byteArray = new double[FRAMECOUNT];
             Sleep(25);
         }
@@ -223,10 +225,11 @@ void AudioRecorder::Record(void)
 
 void AudioRecorder::ProcessData()
 {
-    bool temp = true;
-    //while(!stopRecordingFlag)
-    while(temp)
+    //bool temp = true;
+    while(!stopRecordingFlag)
+    //while(temp)
     {
+        processSemaphore.acquire();
         double* data = dataQueue.front();
         int aubioIndex = 0;
         for(int dataIndex = 0; dataIndex < FRAMECOUNT; dataIndex++)
@@ -269,7 +272,8 @@ void AudioRecorder::ProcessData()
             mag[j] = log(sqrt((r * r) + (i * i))) * 20;
         }
         p_data.push({bpm, mag});
-        temp = false;
+        //temp = false;
+        dataSemaphore.release();
     }
 }
 

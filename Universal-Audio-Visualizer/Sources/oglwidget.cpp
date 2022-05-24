@@ -51,7 +51,7 @@ void OGLWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     pInterface->getRecorder()->dataSemaphore.acquire();
-    pInterface->getRecorder()->ProcessData();
+    //pInterface->getRecorder()->ProcessData();
 
     //smpl_t bpm = pInterface->getRecorder()->bpm;
     auto top = pInterface->getRecorder()->p_data.front();
