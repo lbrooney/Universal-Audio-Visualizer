@@ -53,9 +53,9 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
     aubioOut = new_fvec(1);
     aubioTempo = new_aubio_tempo("default", 1024, hop_size, sampleRate);
 
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
-    p = fftw_plan_dft_1d(FRAMECOUNT, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftwIn = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
+    fftwOut = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
+    fftwPlan = fftw_plan_dft_1d(FRAMECOUNT, fftwIn, fftwOut, FFTW_FORWARD, FFTW_ESTIMATE);
 
     recordingThread = std::thread(&AudioRecorder::Record, this);
 }
@@ -71,9 +71,9 @@ AudioRecorder::~AudioRecorder()
     SAFE_RELEASE(pEndpoint);
 
 
-    fftw_destroy_plan(p);
-    fftw_free(in);
-    fftw_free(out);
+    fftw_destroy_plan(fftwPlan);
+    fftw_free(fftwIn);
+    fftw_free(fftwOut);
 
     del_aubio_tempo(aubioTempo);
     del_fvec(aubioIn);
@@ -228,8 +228,8 @@ void AudioRecorder::ProcessData()
     {
         //apply Hann window function to captured data
         double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (FRAMECOUNT - 1));
-        in[dataIndex][0] =  data[dataIndex] * multiplier;
-        in[dataIndex][1] = 0;
+        fftwIn[dataIndex][0] =  data[dataIndex] * multiplier;
+        fftwIn[dataIndex][1] = 0;
     }
 
     for(int i = 0; i < FRAMECOUNT && !tempoQueue.empty(); i++, aubioIndex++)
@@ -254,13 +254,13 @@ void AudioRecorder::ProcessData()
     dataQueue.pop();
 
     //run FFT on data
-    fftw_execute(p);
+    fftw_execute(fftwPlan);
 
     //calculate log magnitude on transformed data
     for(int j = 0; j < FRAMECOUNT / 2; j++)
     {
-        float r = out[j][0] / FRAMECOUNT;
-        float i = out[j][1] / FRAMECOUNT;
+        float r = fftwOut[j][0] / FRAMECOUNT;
+        float i = fftwOut[j][1] / FRAMECOUNT;
         mag[j] = log(sqrt((r * r) + (i * i))) * 20;
     }
 }

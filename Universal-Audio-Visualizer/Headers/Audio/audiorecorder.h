@@ -43,12 +43,10 @@ public:
     double mag[FRAMECOUNT/2];
     DWORD sampleRate;
     smpl_t bpm = 0;
+
     std::queue<double*> dataQueue;
     std::queue<float> tempoQueue;
-
     std::counting_semaphore<100> dataSemaphore;
-
-
 
 private:
 
@@ -69,9 +67,9 @@ private:
     fvec_t* aubioOut;
     aubio_tempo_t* aubioTempo;
 
-    fftw_complex* in;
-    fftw_complex* out;
-    fftw_plan p;
+    fftw_complex* fftwIn;
+    fftw_complex* fftwOut;
+    fftw_plan fftwPlan;
 
     void stopRecording(void);
 };
