@@ -1,6 +1,6 @@
 #ifndef SPHERE_H
 #define SPHERE_H
-#include "Headers/Shape.h"
+#include "Headers/Shapes/Shape.h"
 #include <vector>
 
 class Sphere : public Shape

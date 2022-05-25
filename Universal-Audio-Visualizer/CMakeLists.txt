@@ -30,18 +30,15 @@ set(PROJECT_SOURCES
         Sources/main.cpp
         Sources/mainwindow.cpp
         Headers/mainwindow.h
-        Headers/Shape.h
+        Headers/Shapes/Shape.h
+        Headers/Shapes/Cube.h
+        Headers/Shapes/Sphere.h
+        Headers/Shapes/Prism.h
         Sources/mainwindow.ui
         Headers/oglwidget.h
         Sources/oglwidget.cpp
         Shaders/vertex.glsl
         Shaders/fragment.glsl
-        Headers/Square.h
-        Headers/Triangle.h
-        Headers/Circle.h
-        Headers/Cube.h
-        Headers/Sphere.h
-        Headers/Prism.h
         Headers/Audio/audiointerface.h
         Sources/Audio/audiointerface.cpp
         Headers/Audio/AudioRecorder.h

@@ -1,6 +1,6 @@
 #ifndef PRISM_H
 #define PRISM_H
-#include "Headers/Shape.h"
+#include "Headers/Shapes/Shape.h"
 #include <vector>
 
 class Prism : public Shape

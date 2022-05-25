@@ -15,17 +15,13 @@
 #include <vector>
 #include <QTimer>
 #include <QObject>
-
 #include <thread>
 #include <atomic>
 
-#include "Shape.h"
-#include "Sphere.h"
-#include "Cube.h"
-#include "Prism.h"
-#include "Triangle.h"
-#include "Square.h"
-#include "Circle.h"
+#include "Shapes/Shape.h"
+#include "Shapes/Sphere.h"
+#include "Shapes/Cube.h"
+#include "Shapes/Prism.h"
 #include "Audio/audiointerface.h"
 
 const float DEFAULTINTENSITY = 0.5f;
@@ -38,6 +34,7 @@ public:
     void loadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();
+
 public slots:
     void playBeat();
 
@@ -50,20 +47,20 @@ protected:
 
 private:
     AudioInterface* pInterface;
+    AudioRecorder* pRecorder;
 
-    QOpenGLShaderProgram m_program;
-    std::vector<Shape*> objList;
-    QTimer* timer;
-    bool timerRunning = false;
+    QTimer* beatTimer;
     bool playBeatAnim = false;
-
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
-    bool showSpectrum = false;
-    float scale = 0.3;
+    bool displayWaveform = false;
+    float defaultScale = 0.3;
 
-    glm::mat4 m_PerspectiveMatrix;
-    glm::mat4 m_ViewMatrix;
+    QOpenGLShaderProgram shaderProgram;
+    std::vector<Shape*> objList;
+    glm::mat4 perspectiveMatrix;
+    glm::mat4 viewMatrix;
+
     void createSphere(float r, float g, float b);
     void createCube(float r, float g, float b);
     void createPrism(float r, float g, float b);
