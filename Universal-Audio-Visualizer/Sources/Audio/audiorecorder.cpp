@@ -69,12 +69,16 @@ AudioRecorder::~AudioRecorder()
     CoTaskMemFree(pEndpointID);
     CoTaskMemFree(pwfx);
     SAFE_RELEASE(pAudioClient)
-            SAFE_RELEASE(pEndpointVolume);
+    SAFE_RELEASE(pEndpointVolume);
     SAFE_RELEASE(pEndpoint);
 
     del_aubio_tempo(tempoObject);
-    del_fvec(fftIn);
+    del_fvec(tempoIn);
     del_fvec(tempoOut);
+
+    del_aubio_fft(fftObject);
+    del_fvec(fftIn);
+    del_cvec(fftOut);
 }
 
 void AudioRecorder::stopRecording(void)
@@ -93,7 +97,7 @@ void AudioRecorder::changeRecordingDevice(LPWSTR input)
     CoTaskMemFree(pEndpointID);
     CoTaskMemFree(pwfx);
     SAFE_RELEASE(pAudioClient)
-    SAFE_RELEASE(pEndpointVolume);
+            SAFE_RELEASE(pEndpointVolume);
     SAFE_RELEASE(pEndpoint);
     pEndpointID = input;
     pCommons->getEnumerator()->GetDevice(pEndpointID, &pEndpoint);
@@ -222,9 +226,9 @@ void AudioRecorder::ProcessData()
             aubio_tempo_do(tempoObject, tempoIn, tempoOut);
             if (tempoOut->data[0] != 0) {
                 bpm = aubio_tempo_get_bpm(tempoObject);
-                #ifdef QT_DEBUG
-                    qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(tempoObject) << Qt::endl;
-                #endif
+#ifdef QT_DEBUG
+                qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(tempoObject) << Qt::endl;
+#endif
                 myTempo = (double) aubio_tempo_get_bpm(tempoObject);
             }
         }

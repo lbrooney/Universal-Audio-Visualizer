@@ -116,7 +116,7 @@ void OGLWidget::paintGL()
     }
     else
     {
-        int updateCycle = 1;
+        int updateCycle = 2;
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
