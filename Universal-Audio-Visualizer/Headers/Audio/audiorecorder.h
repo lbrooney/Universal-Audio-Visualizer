@@ -26,7 +26,7 @@
 const REFERENCE_TIME REFTIMES_PER_SEC = 1000000;
 const REFERENCE_TIME REFTIMES_PER_MILLISEC =  10000;
 
-const int FRAMECOUNT = 1024;
+const int FRAMECOUNT = 2048;
 
 class AudioRecorder
 {
@@ -63,16 +63,12 @@ private:
     WAVEFORMATEX* pwfx = nullptr;
     IAudioEndpointVolume* pEndpointVolume = nullptr;
 
-    fvec_t* aubioIn;
-    fvec_t* aubioOut;
-    fvec_t* aubiofftOut;
-    cvec_t* aubiofftGrain;
-    aubio_fft_t* aubioFFT;
-    aubio_tempo_t* aubioTempo;
-
-    fftw_complex* fftwIn;
-    fftw_complex* fftwOut;
-    fftw_plan fftwPlan;
+    fvec_t* fftIn;
+    fvec_t* tempoIn;
+    fvec_t* tempoOut;
+    cvec_t* fftOut;
+    aubio_fft_t* fftObject;
+    aubio_tempo_t* tempoObject;
 
     void stopRecording(void);
 };

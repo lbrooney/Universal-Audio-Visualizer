@@ -116,7 +116,7 @@ void OGLWidget::paintGL()
     }
     else
     {
-        int updateCycle = 2;
+        int updateCycle = 1;
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
@@ -265,17 +265,17 @@ void OGLWidget::loadPreset(int preset)
     }
     default:
         int binCounter = 0;
-        float xPos = -1.25f;
-        for(int i = 0; i < 128; i++)
+        float xPos = -1.75f;
+        for(int i = 0; i < 400; i++)
         {
-            Cube* c = new Cube(1.0f, 0.0f, 0.0f);
+            Cube* c = new Cube(1.0f, 0.0f, -3.0f);
 
             c->SetTranslation(xPos, 0.0f, 0.0f);
             c->SetScale(0.01f, 0.01f, 0.01f);
             objList.push_back(c);
             c->freqBin = binCounter;
             binCounter += 1;
-            xPos += 0.02f;
+            xPos += 0.022f;
 
         }
 

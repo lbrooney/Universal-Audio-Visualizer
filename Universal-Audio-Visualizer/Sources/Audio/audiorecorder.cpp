@@ -49,17 +49,15 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
     pAudioClient->Start();
 
     //was 512
-    uint_t hop_size = FRAMECOUNT;
-    aubioIn = new_fvec(hop_size);
-    aubioOut = new_fvec(1);
-    aubioTempo = new_aubio_tempo("default", hop_size * 2, hop_size, sampleRate);
-    aubioFFT = new_aubio_fft(hop_size);
-    aubiofftOut = new_fvec(hop_size);
-    aubiofftGrain = new_cvec(hop_size);
+    uint_t tempoHopSize = 512;
+    tempoIn = new_fvec(tempoHopSize);
+    tempoOut = new_fvec(1);
+    tempoObject = new_aubio_tempo("default", tempoHopSize * 2, tempoHopSize, sampleRate);
 
-    fftwIn = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
-    fftwOut = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
-    fftwPlan = fftw_plan_dft_1d(FRAMECOUNT, fftwIn, fftwOut, FFTW_FORWARD, FFTW_ESTIMATE);
+    uint_t fftHopSize = FRAMECOUNT;
+    fftObject = new_aubio_fft(fftHopSize);
+    fftIn = new_fvec(fftHopSize);
+    fftOut = new_cvec(fftHopSize);
 
     recordingThread = std::thread(&AudioRecorder::Record, this);
 }
@@ -74,14 +72,9 @@ AudioRecorder::~AudioRecorder()
             SAFE_RELEASE(pEndpointVolume);
     SAFE_RELEASE(pEndpoint);
 
-
-    fftw_destroy_plan(fftwPlan);
-    fftw_free(fftwIn);
-    fftw_free(fftwOut);
-
-    del_aubio_tempo(aubioTempo);
-    del_fvec(aubioIn);
-    del_fvec(aubioOut);
+    del_aubio_tempo(tempoObject);
+    del_fvec(fftIn);
+    del_fvec(tempoOut);
 }
 
 void AudioRecorder::stopRecording(void)
@@ -215,26 +208,32 @@ void AudioRecorder::ProcessData()
 {
     float* data = dataQueue.front();
 
-    for(int i = 0; i < FRAMECOUNT; i++)
+    for(int fftIndex = 0, tempoIndex = 0; fftIndex < FRAMECOUNT; fftIndex++, tempoIndex++)
     {
-        fvec_set_sample(aubioIn, data[i], i);
+        fvec_set_sample(fftIn, data[fftIndex], fftIndex);
+        fvec_set_sample(tempoIn, data[fftIndex], tempoIndex);
+        if(tempoIndex == 511)
+        {
+            tempoIndex = -1;
+            aubio_tempo_do(tempoObject, tempoIn, tempoOut);
+            if (tempoOut->data[0] != 0) {
+                bpm = aubio_tempo_get_bpm(tempoObject);
+                #ifdef QT_DEBUG
+                    qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(tempoObject) << Qt::endl;
+                #endif
+                myTempo = (double) aubio_tempo_get_bpm(tempoObject);
+            }
+        }
     }
 
-    aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
-    if (aubioOut->data[0] != 0) {
-        bpm = aubio_tempo_get_bpm(aubioTempo);
-        #ifdef QT_DEBUG
-            qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
-        #endif
-        myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
-    }
 
-    aubio_fft_do(aubioFFT, aubioIn, aubiofftGrain);
+
+    aubio_fft_do(fftObject, fftIn, fftOut);
     //calculate log magnitude on transformed data
     for(int j = 0; j < FRAMECOUNT / 4; j+=1)
     {
-        float r = aubiofftGrain->norm[j] * cos(aubiofftGrain->phas[j]);
-        float i = aubiofftGrain->norm[j] * sin(aubiofftGrain->phas[j]);;
+        float r = fftOut->norm[j] * cos(fftOut->phas[j]);
+        float i = fftOut->norm[j] * sin(fftOut->phas[j]);;
         mag[j] = log(sqrt((r * r) + (i * i))) * 10;
     }
 
@@ -244,7 +243,7 @@ void AudioRecorder::ProcessData()
 
 smpl_t AudioRecorder::GetBeatPeriod()
 {
-    return aubio_tempo_get_period_s(aubioTempo);
+    return aubio_tempo_get_period_s(tempoObject);
 }
 
 float AudioRecorder::GetVolume()
