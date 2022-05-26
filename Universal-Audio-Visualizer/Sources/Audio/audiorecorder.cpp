@@ -210,7 +210,11 @@ void AudioRecorder::ProcessData()
 
     for(int fftIndex = 0, tempoIndex = 0; fftIndex < FRAMECOUNT; fftIndex++, tempoIndex++)
     {
-        fvec_set_sample(fftIn, data[fftIndex], fftIndex);
+        //apply Hann window function to fft data
+        float multiplier = 0.5 * (1 - cos(2 * 3.1416 * fftIndex) / (FRAMECOUNT - 1));
+        fvec_set_sample(fftIn, data[fftIndex] * multiplier, fftIndex);
+
+        //copy tempo data as is
         fvec_set_sample(tempoIn, data[fftIndex], tempoIndex);
         if(tempoIndex == 511)
         {
@@ -225,8 +229,6 @@ void AudioRecorder::ProcessData()
             }
         }
     }
-
-
 
     aubio_fft_do(fftObject, fftIn, fftOut);
     //calculate log magnitude on transformed data
