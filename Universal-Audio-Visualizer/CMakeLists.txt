@@ -21,7 +21,8 @@ include_directories(Headers/
                     Sources/
                     lib/
                     lib/fftw/include
-                    lib/aubio/include)
+                    lib/aubio/include
+                    lib/boost)
 
 link_directories(lib/fftw/lib
                  lib/aubio/lib)
@@ -44,13 +45,15 @@ set(PROJECT_SOURCES
         Headers/Prism.h
         Headers/endpointmenu.h
         Sources/endpointmenu.cpp
-        Headers/audiosystem.h
         Sources/audiosystem.cpp
-        Headers/audiomacros.h
+        Headers/audiosystem.h
+        Sources/stdafx.cpp
+        Headers/stdafx.h
         Shaders.qrc
         Headers/slider.h
         Sources/slider.ui
         Sources/slider.cpp
+
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${RUNTIME_OUTPUT_DIRECTORY})

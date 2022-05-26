@@ -25,7 +25,7 @@
 #include "Triangle.h"
 #include "Square.h"
 #include "Circle.h"
-#include "Audio/audiointerface.h"
+#include "audiosystem.h"
 
 const float DEFAULTINTENSITY = 0.5f;
 
@@ -44,9 +44,9 @@ protected:
     QVector3D determineColor(float bpm);
 
 private:
-    AudioInterface* pInterface;
+    AudioSystem* pSystem;
 
-    QOpenGLShaderProgram m_program;
+    QOpenGLShaderProgram mProgram;
     std::vector<Shape*> objList;
 
     int drawCycleCount = 0;

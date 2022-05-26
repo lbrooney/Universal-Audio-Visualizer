@@ -1,16 +1,16 @@
 #ifndef ENDPOINTMENU_H
 #define ENDPOINTMENU_H
 
-#include "Audio/audiointerface.h"
+#include "audiosystem.h"
 #include <QMenu>
 #include <QActionGroup>
 
-class EndpointMenu : public QMenu
+class EndpointMenu : public QMenu, IAudioSessionEvents, IMMNotificationClient
 {
 private:
     Q_OBJECT
     QActionGroup* endpointGroup = nullptr;
-    AudioInterface* pInterface = nullptr;
+    AudioSystem* pSystem = nullptr;
     QList<QAction *> actionList;
 
     void addEndpointAction(LPWSTR input = nullptr);
@@ -18,7 +18,7 @@ private:
 protected:
     void showEvent(QShowEvent *event) override;
 public:
-    EndpointMenu(const QString &title, QWidget *parent = nullptr, AudioInterface *p = nullptr);
+    EndpointMenu(const QString &title, QWidget *parent = nullptr, AudioSystem *p = nullptr);
     virtual ~EndpointMenu();
 
 signals:

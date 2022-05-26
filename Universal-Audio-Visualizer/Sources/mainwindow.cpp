@@ -12,12 +12,12 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    pInterface = new AudioInterface();
+    pSystem = new AudioSystem();
     ui->setupUi(this);
-    openGLWidget = new OGLWidget(ui->centralwidget, pInterface);
+    openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
-    pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pInterface);
+    pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
 
 #ifdef QT_DEBUG

@@ -5,15 +5,14 @@
 #include <Functiondiscoverykeys_devpkey.h>
 #include <vector>
 #include <mmdeviceapi.h>
-#include "Audio/AudioMacros.h"
+#include "stdafx.h"
 #include <QActionGroup>
 #include <QDebug>
 
-EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioInterface *p)
+EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *p)
     : QMenu{title, parent}
 {
-    pInterface = p;
-    const std::vector<LPWSTR> endpoints = pInterface->getEndpoints();
+    pSystem = p;
 
     endpointGroup = new QActionGroup(this);
     endpointGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
@@ -25,11 +24,39 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioInterface
     actionList.push_back(temp);
     endpointGroup->addAction(temp);
     this->addAction(temp);
+    IMMDeviceEnumerator* pEnumerator = nullptr;
+    IMMDeviceCollection* pCollection = nullptr;
+    IMMDevice* pEndpoint = nullptr;
 
-    for(int i = 0; i < endpoints.size(); i += 1)
-    {
-        addEndpointAction(endpoints.at(i));
+    pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
+    UINT count = 0;
+    pCollection->GetCount(&count);
+    for (UINT i = 0; i < count; i+=1) {
+        IMMDevice* pEndpoint = nullptr;
+        pCollection->Item(i, &pEndpoint);
+        LPWSTR id = nullptr;
+        pEndpoint->GetId(&id);
+        IPropertyStore* pProps = nullptr;
+        PROPVARIANT varName;
+        pEndpoint->OpenPropertyStore(
+                    STGM_READ, &pProps);
+        PropVariantInit(&varName);
+        pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+        QAction *temp = new QAction(
+                    QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
+        temp->setCheckable(true);
+        temp->setObjectName(QString::fromWCharArray(id, -1));
+        actionList.push_back(temp);
+        endpointGroup->addAction(temp);
+        this->addAction(temp);
+        CoTaskMemFree(id);
+        PropVariantClear(&varName);
+        SafeRelease(&pProps);
+        SafeRelease(&pEndpoint);
     }
+    SafeRelease(&pCollection);
+    SafeRelease(&pEnumerator);
+
     connect(endpointGroup, SIGNAL(triggered(QAction*)), this, SLOT(setNewAudioEndpoint(QAction*)));
     return;
 }
@@ -46,33 +73,18 @@ void EndpointMenu::showEvent(QShowEvent *event)
     return;
 }
 
-void EndpointMenu::addEndpointAction(LPWSTR input)
-{
-    IMMDevice* pDevice = nullptr;
-    pInterface->getEnumerator()->GetDevice(input, &pDevice);
-    IPropertyStore* pProps = nullptr;
-    PROPVARIANT varName;
-    pDevice->OpenPropertyStore(
-                STGM_READ, &pProps);
-    PropVariantInit(&varName);
-    pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-    QAction *temp = new QAction(
-                QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
-    temp->setCheckable(true);
-    temp->setObjectName(QString::fromWCharArray(input, -1));
-    actionList.push_back(temp);
-    endpointGroup->addAction(temp);
-    this->addAction(temp);
-    PropVariantClear(&varName);
-    SAFE_RELEASE(pProps);
-    SAFE_RELEASE(pDevice)
-}
-
 void EndpointMenu::setNewAudioEndpoint(QAction* a)
 {
-    SIZE_T strSize = sizeof(LPWSTR) * (a->objectName().size() + 1);
-    LPWSTR copy = (LPWSTR)CoTaskMemAlloc(strSize);
-    a->objectName().toWCharArray(copy);
-    pInterface->setAudioEndpoint(copy);
-    CoTaskMemFree(copy);
+    if(a->objectName().compare("Default"))
+    {
+        pSystem->selectedDefault();
+    }
+    else
+    {
+        LPWSTR id = (LPWSTR) malloc((a->objectName().size() + 1) * sizeof(WCHAR));
+        a->objectName().toWCharArray(id);
+        pSystem->selectedEndpoint(id);
+        free(id);
+    }
 }
+
