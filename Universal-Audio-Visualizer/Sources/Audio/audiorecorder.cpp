@@ -48,10 +48,14 @@ AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 
     pAudioClient->Start();
 
-    uint_t hop_size = 512;
+    //was 512
+    uint_t hop_size = FRAMECOUNT;
     aubioIn = new_fvec(hop_size);
     aubioOut = new_fvec(1);
-    aubioTempo = new_aubio_tempo("default", 1024, hop_size, sampleRate);
+    aubioTempo = new_aubio_tempo("default", hop_size * 2, hop_size, sampleRate);
+    aubioFFT = new_aubio_fft(hop_size);
+    aubiofftOut = new_fvec(hop_size);
+    aubiofftGrain = new_cvec(hop_size);
 
     fftwIn = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
     fftwOut = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * FRAMECOUNT);
@@ -136,7 +140,7 @@ void AudioRecorder::Record(void)
     DWORD flags = AUDCLNT_BUFFERFLAGS_SILENT;
 
     int frameCounter = 0;
-    double* byteArray = new double[FRAMECOUNT];
+    float* byteArray = new float[FRAMECOUNT];
 
     while(!stopRecordingFlag)
     {
@@ -162,37 +166,24 @@ void AudioRecorder::Record(void)
             else
             {
                 //copy data the in buffer
+                const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
                 for(int i = 0; i < numFramesAvailable; i++, frameCounter++)
                 {
                     if(pData)
                     {
-                        byteArray[frameCounter] = static_cast<double>(pData[i]);
+                        float sample = *reinterpret_cast<const float*>(ptr);
+                        byteArray[frameCounter] = sample;
                     }
                     else
                     {
-                        byteArray[frameCounter] = 0;
+                        byteArray[frameCounter] = 0.0f;
                     }
-
                     if(frameCounter == FRAMECOUNT - 1)
                     {
-                        frameCounter = 0;
+                        frameCounter = -1;
                         dataQueue.push(byteArray);
                         dataSemaphore.release();
-                        byteArray = new double[FRAMECOUNT];
-                    }
-                }
-
-                const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
-                for(int i = 0; i < numFramesAvailable; i++)
-                {
-                    if(pData)
-                    {
-                        float sample = *reinterpret_cast<const float*>(ptr);
-                        tempoQueue.push(sample);
-                    }
-                    else
-                    {
-                        tempoQueue.push(0.0f);
+                        byteArray = new float[FRAMECOUNT];
                     }
 
                     ptr += sizeof(float);
@@ -214,7 +205,7 @@ void AudioRecorder::Record(void)
             frameCounter = 0;
             dataQueue.push(byteArray);
             dataSemaphore.release();
-            byteArray = new double[FRAMECOUNT];
+            byteArray = new float[FRAMECOUNT];
             Sleep(25);
         }
     }
@@ -222,47 +213,33 @@ void AudioRecorder::Record(void)
 
 void AudioRecorder::ProcessData()
 {
-    double* data = dataQueue.front();
-    int aubioIndex = 0;
-    for(int dataIndex = 0; dataIndex < FRAMECOUNT; dataIndex++)
+    float* data = dataQueue.front();
+
+    for(int i = 0; i < FRAMECOUNT; i++)
     {
-        //apply Hann window function to captured data
-        double multiplier = 0.5 * (1 - cos(2 * 3.1416 * dataIndex) / (FRAMECOUNT - 1));
-        fftwIn[dataIndex][0] =  data[dataIndex] * multiplier;
-        fftwIn[dataIndex][1] = 0;
+        fvec_set_sample(aubioIn, data[i], i);
     }
 
-    for(int i = 0; i < FRAMECOUNT && !tempoQueue.empty(); i++, aubioIndex++)
+    aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
+    if (aubioOut->data[0] != 0) {
+        bpm = aubio_tempo_get_bpm(aubioTempo);
+        #ifdef QT_DEBUG
+            qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
+        #endif
+        myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
+    }
+
+    aubio_fft_do(aubioFFT, aubioIn, aubiofftGrain);
+    //calculate log magnitude on transformed data
+    for(int j = 0; j < FRAMECOUNT / 4; j+=1)
     {
-        fvec_set_sample(aubioIn, tempoQueue.front(), aubioIndex);
-        tempoQueue.pop();
-        if(aubioIndex == 511)
-        {
-            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
-            if (aubioOut->data[0] != 0) {
-                bpm = aubio_tempo_get_bpm(aubioTempo);
-                #ifdef QT_DEBUG
-                    qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
-                #endif
-                myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
-            }
-            aubioIndex = -1;
-        }
+        float r = aubiofftGrain->norm[j] * cos(aubiofftGrain->phas[j]);
+        float i = aubiofftGrain->norm[j] * sin(aubiofftGrain->phas[j]);;
+        mag[j] = log(sqrt((r * r) + (i * i))) * 10;
     }
 
     delete[] data;
     dataQueue.pop();
-
-    //run FFT on data
-    fftw_execute(fftwPlan);
-
-    //calculate log magnitude on transformed data
-    for(int j = 0; j < FRAMECOUNT / 2; j++)
-    {
-        float r = fftwOut[j][0] / FRAMECOUNT;
-        float i = fftwOut[j][1] / FRAMECOUNT;
-        mag[j] = log(sqrt((r * r) + (i * i))) * 20;
-    }
 }
 
 smpl_t AudioRecorder::GetBeatPeriod()

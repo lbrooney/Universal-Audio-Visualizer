@@ -77,8 +77,8 @@ void OGLWidget::paintGL()
             if(drawCycleCount >= updateCycle)
             {
                 //update max objects on screen
-                magnitude = clamp(pRecorder->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
-                objList[i]->magnitude = clamp(pRecorder->mag[objList[i]->freqBin], 0.0, maxMagnitude);
+                magnitude = clamp(pRecorder->mag[objList[i]->freqBin], 0.0f, maxMagnitude) * objList[i]->intensityScale;
+                objList[i]->magnitude = clamp(pRecorder->mag[objList[i]->freqBin], 0.0f, maxMagnitude);
 
                 //update rotation
                 float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -116,7 +116,7 @@ void OGLWidget::paintGL()
     }
     else
     {
-        int updateCycle = 3;
+        int updateCycle = 2;
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
@@ -265,8 +265,8 @@ void OGLWidget::loadPreset(int preset)
     }
     default:
         int binCounter = 0;
-        float xPos = -1.0f;
-        for(int i = 0; i < 200; i++)
+        float xPos = -1.25f;
+        for(int i = 0; i < 128; i++)
         {
             Cube* c = new Cube(1.0f, 0.0f, 0.0f);
 
@@ -274,8 +274,8 @@ void OGLWidget::loadPreset(int preset)
             c->SetScale(0.01f, 0.01f, 0.01f);
             objList.push_back(c);
             c->freqBin = binCounter;
-            binCounter += 2;
-            xPos += 0.01f;
+            binCounter += 1;
+            xPos += 0.02f;
 
         }
 

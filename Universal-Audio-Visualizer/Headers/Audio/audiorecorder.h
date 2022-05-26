@@ -40,11 +40,11 @@ public:
     float SetVolume(float);
 
     BOOL bDone = FALSE;
-    double mag[FRAMECOUNT/2];
+    float mag[FRAMECOUNT/2];
     DWORD sampleRate;
     smpl_t bpm = 0;
 
-    std::queue<double*> dataQueue;
+    std::queue<float*> dataQueue;
     std::queue<float> tempoQueue;
     std::counting_semaphore<100> dataSemaphore;
 
@@ -65,6 +65,9 @@ private:
 
     fvec_t* aubioIn;
     fvec_t* aubioOut;
+    fvec_t* aubiofftOut;
+    cvec_t* aubiofftGrain;
+    aubio_fft_t* aubioFFT;
     aubio_tempo_t* aubioTempo;
 
     fftw_complex* fftwIn;

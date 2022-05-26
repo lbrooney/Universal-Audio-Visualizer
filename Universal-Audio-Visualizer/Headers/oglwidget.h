@@ -52,7 +52,7 @@ private:
     QTimer* beatTimer;
     bool playBeatAnim = false;
     int drawCycleCount = 0;
-    double maxMagnitude = 10.0;
+    float maxMagnitude = 10.0f;
     bool displayWaveform = false;
     float defaultScale = 0.3;
 
