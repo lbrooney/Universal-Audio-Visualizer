@@ -266,7 +266,7 @@ void OGLWidget::loadPreset(int preset)
     default:
         int binCounter = 0;
         float xPos = -1.75f;
-        for(int i = 0; i < 400; i++)
+        for(int i = 0; i < 200; i++)
         {
             Cube* c = new Cube(1.0f, 0.0f, -3.0f);
 
@@ -275,7 +275,7 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(c);
             c->freqBin = binCounter;
             binCounter += 1;
-            xPos += 0.022f;
+            xPos += 0.05f;
 
         }
 
