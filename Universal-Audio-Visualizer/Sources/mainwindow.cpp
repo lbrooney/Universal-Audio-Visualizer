@@ -7,16 +7,20 @@
 #include <iostream>
 #include <QDebug>
 #include "slider.h"
+#include "stdafx.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    pSystem = new AudioSystem();
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    pSystem = new (std::nothrow) AudioSystem();
+    pSystem->Initialize();
     ui->setupUi(this);
     openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
+    pSystem->Start();
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
 
@@ -29,15 +33,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    pSystem->Stop();
     delete openGLWidget;
+    pEndpointMenu->Shutdown();
+    pEndpointMenu->Release();
     delete pEndpointMenu;
     delete ui;
-    delete pInterface;
-}
-
-AudioInterface* MainWindow::getAudioInterface()
-{
-    return pInterface;
+    pSystem->Shutdown();
+    SafeRelease(&pSystem);
 }
 
 OGLWidget* MainWindow::getOGLWidget()

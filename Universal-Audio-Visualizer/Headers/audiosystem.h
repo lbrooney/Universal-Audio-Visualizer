@@ -13,6 +13,7 @@
 #include <AudioPolicy.h>
 #include "boost/circular_buffer.hpp"
 #include "aubio/aubio.h"
+#include <vector>
 
 const UINT CBBUFFERSIZE = 5;
 
@@ -32,10 +33,15 @@ public:
     UINT32 BytesPerSample() { return _MixFormat->wBitsPerSample / 8; }
     size_t FrameSize() { return _FrameSize; }
     WAVEFORMATEX *MixFormat() { return _MixFormat; }
+    UINT32 BufferSize() { return _BufferSize; }
     STDMETHOD_(ULONG, AddRef)();
     STDMETHOD_(ULONG, Release)();
     bool selectedDefault();
     bool selectedEndpoint(LPWSTR input);
+    smpl_t GetBPM();
+    smpl_t GetBeatPeriod();
+    std::vector<double>& GetMag();
+    void ProcessAudio();
 
 private:
     ~AudioSystem(void);  // Destructor is private to prevent accidental deletion.
@@ -56,29 +62,7 @@ private:
     size_t              _FrameSize;
     UINT32              _BufferSize;
 
-    //
-    //  Capture buffer management.
-    //
-    struct _BufferElem {
-        bool                    _IsSilent;
-        BYTE                    *_CaptureBuffer = nullptr;
-        size_t                  _CaptureBufferSize;
-        _BufferElem& operator=(_BufferElem& in)
-        {
-            this->_CaptureBufferSize = in._CaptureBufferSize;
-            this->_IsSilent = in._IsSilent;
-            if(in._IsSilent)
-            {
-                ZeroMemory(this->_CaptureBuffer, in._CaptureBufferSize);
-            }
-            else
-            {
-                CopyMemory(this->_CaptureBuffer, in._CaptureBuffer, in._CaptureBufferSize);
-            }
-            return *this;
-        }
-    };
-    boost::circular_buffer<_BufferElem> _CircularBuffer;
+    boost::circular_buffer<std::vector<BYTE>> _CircularBuffer;
     static DWORD __stdcall WASAPICaptureThread(LPVOID Context);
     DWORD DoCaptureThread();
     //
@@ -124,63 +108,16 @@ private:
     //
     // Aubio Stuff.
     //
-    aubio_fft_t         *_FFT;
-    aubio_tempo_t       *_Tempo;
-    fvec_t              *_AubioInput;
-    fvec_t              *_TempoOutput;
-    cvec_t              *_FFT_Output;
+    smpl_t              _BPM;
+    fvec_t              *_FFTIn;
+    cvec_t              *_FFTOut;
+    fvec_t              *_TempoIn;
+    fvec_t              *_TempoOut;
+    aubio_fft_t         *_FFTObject;
+    aubio_tempo_t       *_TempoObject;
+    std::vector<double> _Mag;
     bool                InitializeAubio();
 
-
-
-
-public:
-    struct _ProcessedAudio {
-        BYTE                    *_CaptureBuffer = nullptr;
-        size_t                  _CaptureBufferSize;
-        /*
-        _ProcessedAudio& operator=(_BufferElem& in)
-        {
-            this->_CaptureBufferSize = in._CaptureBufferSize;
-            this->_CaptureBuffer = (BYTE *)realloc(this->_CaptureBuffer, in._CaptureBufferSize);
-            if(in._IsSilent)
-            {
-                ZeroMemory(this->_CaptureBuffer, in._CaptureBufferSize);
-            }
-            else
-            {
-                CopyMemory(this->_CaptureBuffer, in._CaptureBuffer, in._CaptureBufferSize);
-            }
-            return *this;
-        }
-        */
-        _ProcessedAudio(_BufferElem& in)
-        {
-            this->_CaptureBufferSize = in._CaptureBufferSize;
-            this->_CaptureBuffer = (BYTE *)realloc(this->_CaptureBuffer, in._CaptureBufferSize);
-            if(in._IsSilent)
-            {
-                ZeroMemory(this->_CaptureBuffer, in._CaptureBufferSize);
-            }
-            else
-            {
-                CopyMemory(this->_CaptureBuffer, in._CaptureBuffer, in._CaptureBufferSize);
-            }
-            return;
-        }
-
-        ~_ProcessedAudio()
-        {
-            if(this->_CaptureBuffer)
-                free(this->_CaptureBuffer);
-            return;
-        }
-    };
-
-    _ProcessedAudio ProcessAudio();
-
-private:
-    void hannWindowFunction(_ProcessedAudio& in);
 };
 
 

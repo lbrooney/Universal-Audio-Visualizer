@@ -2,7 +2,6 @@
 #include "ui_slider.h"
 #include <QLabel>
 #include <QGridLayout>
-#include "Audio/audiorecorder.h"
 
 #define DEFAULT 30
 
@@ -11,6 +10,7 @@ Slider::Slider(QWidget *parent) :
     ui(new Ui::Slider)
 {
     ui->setupUi(this);
+    /*
     setWindowTitle("Sliders");
     pInterface = ((MainWindow*)parent)->getAudioInterface();
     openGLWidget = ((MainWindow*)parent)->getOGLWidget();
@@ -22,6 +22,7 @@ Slider::Slider(QWidget *parent) :
         std::cout << "ERROR" << std::endl;
     }
     volumeSetup();
+    */
     scaleSetup();
 }
 
@@ -33,6 +34,7 @@ void Slider::scaleSetup()
     ptr->setTracking(true);
 }
 
+/*
 void Slider::volumeSetup()
 {
     auto *ptr = ui->volumeSlider;
@@ -41,11 +43,14 @@ void Slider::volumeSetup()
     ptr->setValue(volume);
     ptr->setTracking(true);
 }
+*/
 
 Slider::~Slider()
 {
     delete ui;
 }
+
+/*
 
 void Slider::on_volumeSlider_sliderMoved(int position)
 {
@@ -57,9 +62,11 @@ void Slider::on_volumeSlider_sliderMoved(int position)
         //std::cout << "error with set volume" << std::endl;
     }
 }
+*/
 
 void Slider::on_scaleSlider_sliderMoved(int position)
 {
     float scale = float(position)/100;
     openGLWidget->oglsetScale(scale);
 }
+

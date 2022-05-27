@@ -23,8 +23,10 @@ private slots:
 
 private:
     OGLWidget* openGLWidget = nullptr;
+    /*
     AudioInterface* pInterface = nullptr;
     AudioRecorder* pRecorder = nullptr;
+    */
     Ui::Slider *ui;
     void volumeSetup();
     void scaleSetup();

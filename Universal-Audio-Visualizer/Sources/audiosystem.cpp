@@ -35,7 +35,14 @@ AudioSystem::AudioSystem() :
     _AudioSessionControl(nullptr),
     _DeviceEnumerator(nullptr),
     _InStreamSwitch(false),
-    _CircularBuffer(CBBUFFERSIZE)
+    _CircularBuffer(CBBUFFERSIZE),
+    _BPM(0),
+    _FFTIn(nullptr),
+    _FFTOut(nullptr),
+    _TempoIn(nullptr),
+    _TempoOut(nullptr),
+    _FFTObject(nullptr),
+    _TempoObject(nullptr)
 {
 }
 
@@ -71,19 +78,6 @@ bool AudioSystem::InitializeAudioEngine()
         return false;
     }
 
-    for(int i = 0; i < CBBUFFERSIZE; i +=1)
-    {
-        _CircularBuffer[i]._IsSilent = false;
-        _CircularBuffer[i]._CaptureBufferSize = _BufferSize * _FrameSize;
-        _CircularBuffer[i]._CaptureBuffer = (BYTE *)realloc(_CircularBuffer[i]._CaptureBuffer, _BufferSize * _FrameSize);
-        if(_CircularBuffer[i]._CaptureBuffer == nullptr)
-        {
-            printf("Unable to allocate memory in circular buffer: %x.\n", i);
-            return false;
-        }
-        ZeroMemory(_CircularBuffer[i]._CaptureBuffer, _BufferSize * _FrameSize);
-    }
-
     hr = _AudioClient->SetEventHandle(_AudioSamplesReadyEvent);
     if (FAILED(hr))
     {
@@ -103,7 +97,13 @@ bool AudioSystem::InitializeAudioEngine()
 
 bool AudioSystem::InitializeAubio()
 {
-    _BufferSize * _FrameSize;
+    _Mag.resize(_BufferSize);
+    _FFTIn = new_fvec(_BufferSize);
+    _FFTOut = new_cvec(_BufferSize);
+    _TempoIn = new_fvec(_BufferSize);
+    _TempoOut = new_fvec(2);
+    _FFTObject = new_aubio_fft(_BufferSize);
+    _TempoObject = new_aubio_tempo("default", _BufferSize, _FrameSize, SamplesPerSecond() );
     return true;
 }
 
@@ -168,14 +168,14 @@ bool AudioSystem::Initialize()
 
     HRESULT hr;
 
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_DeviceEnumerator));
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&_DeviceEnumerator);
     if (FAILED(hr))
     {
         printf("Unable to instantiate device enumerator: %x\n", hr);
         return false;
     }
 
-    hr = _deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &_Endpoint);
+    hr = _DeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &_Endpoint);
     if (FAILED(hr))
     {
         printf("Unable to get default audio endpoint: %x\n", hr);
@@ -267,15 +267,36 @@ void AudioSystem::Shutdown()
     SafeRelease(&_AudioClient);
     SafeRelease(&_CaptureClient);
 
-    for(UINT i = 0; i < CBBUFFERSIZE; i += 1)
+    // aubio resources
+    if(_FFTIn)
     {
-        _CircularBuffer[i]._IsSilent = true;
-        _CircularBuffer[i]._CaptureBufferSize = -1;
-        if(_CircularBuffer[i]._CaptureBuffer != nullptr)
-        {
-            free(_CircularBuffer[i]._CaptureBuffer);
-            _CircularBuffer[i]._CaptureBuffer = nullptr;
-        }
+        del_fvec(_FFTIn);
+        _FFTIn = nullptr;
+    }
+    if(_FFTOut)
+    {
+        del_cvec(_FFTOut);
+        _FFTOut = nullptr;
+    }
+    if(_TempoIn)
+    {
+        del_fvec(_TempoIn);
+        _TempoIn = nullptr;
+    }
+    if(_TempoOut)
+    {
+        del_fvec(_TempoOut);
+        _TempoOut = nullptr;
+    }
+    if(_FFTObject)
+    {
+        del_aubio_fft(_FFTObject);
+        _FFTObject = nullptr;
+    }
+    if(_TempoObject)
+    {
+        del_aubio_tempo(_TempoObject);
+        _TempoObject = nullptr;
     }
 
     if (_EndpointID)
@@ -379,14 +400,6 @@ DWORD AudioSystem::DoCaptureThread()
         return hr;
     }
 
-    if (!DisableMMCSS)
-    {
-        mmcssHandle = AvSetMmThreadCharacteristics(L"Audio", &mmcssTaskIndex);
-        if (mmcssHandle == NULL)
-        {
-            printf("Unable to enable MMCSS on capture thread: %d\n", GetLastError());
-        }
-    }
     while (stillPlaying)
     {
         //HRESULT hr;
@@ -439,10 +452,11 @@ DWORD AudioSystem::DoCaptureThread()
                     //  We only really care about the silent flag since we want to put frames of silence into the buffer
                     //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
                     //
-                    _BufferElem temp;
-                    temp._IsSilent = flags & AUDCLNT_BUFFERFLAGS_SILENT;
-                    temp._CaptureBufferSize = framesAvailable * _FrameSize;
-                    temp._CaptureBuffer = pData;
+                    std::vector<BYTE> temp;
+                    if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
+                    {
+                        temp.insert(temp.end(), pData, pData+(_BufferSize * _FrameSize));
+                    }
                     _CircularBuffer.push_back(temp);
 
                 }
@@ -454,10 +468,6 @@ DWORD AudioSystem::DoCaptureThread()
             }
             break;
         }
-    }
-    if (!DisableMMCSS)
-    {
-        AvRevertMmThreadCharacteristics(mmcssHandle);
     }
 
     CoUninitialize();
@@ -527,7 +537,7 @@ void AudioSystem::TerminateStreamSwitch()
         printf("Unable to unregister for session notifications: %x\n", hr);
     }
 
-    _DeviceEnumerator->UnregisterEndpointNotificationCallback(this);
+    hr = _DeviceEnumerator->UnregisterEndpointNotificationCallback(this);
     if (FAILED(hr))
     {
         printf("Unable to unregister for endpoint notifications: %x\n", hr);
@@ -596,6 +606,40 @@ bool AudioSystem::HandleStreamSwitchDefaultEvent()
     SafeRelease(&_AudioClient);
     SafeRelease(&_Endpoint);
 
+    // aubio resources
+    if(_FFTIn)
+    {
+        del_fvec(_FFTIn);
+        _FFTIn = nullptr;
+    }
+    if(_FFTOut)
+    {
+        del_cvec(_FFTOut);
+        _FFTOut = nullptr;
+    }
+    if(_TempoIn)
+    {
+        del_fvec(_TempoIn);
+        _TempoIn = nullptr;
+    }
+    if(_TempoOut)
+    {
+        del_fvec(_TempoOut);
+        _TempoOut = nullptr;
+    }
+    if(_FFTObject)
+    {
+        del_aubio_fft(_FFTObject);
+        _FFTObject = nullptr;
+    }
+    if(_TempoObject)
+    {
+        del_aubio_tempo(_TempoObject);
+        _TempoObject = nullptr;
+    }
+
+
+
     //
     //  Step 3.  Wait for the default device to change.
     //
@@ -656,6 +700,11 @@ bool AudioSystem::HandleStreamSwitchDefaultEvent()
     if (!InitializeAudioEngine())
     {
         goto ErrorExit;
+    }
+
+    if (InitializeAubio())
+    {
+        return false;
     }
 
     //
@@ -745,6 +794,39 @@ bool AudioSystem::HandleStreamSwitchSelectedEvent()
     SafeRelease(&_AudioClient);
     SafeRelease(&_Endpoint);
 
+    // aubio resources
+    if(_FFTIn)
+    {
+        del_fvec(_FFTIn);
+        _FFTIn = nullptr;
+    }
+    if(_FFTOut)
+    {
+        del_cvec(_FFTOut);
+        _FFTOut = nullptr;
+    }
+    if(_TempoIn)
+    {
+        del_fvec(_TempoIn);
+        _TempoIn = nullptr;
+    }
+    if(_TempoOut)
+    {
+        del_fvec(_TempoOut);
+        _TempoOut = nullptr;
+    }
+    if(_FFTObject)
+    {
+        del_aubio_fft(_FFTObject);
+        _FFTObject = nullptr;
+    }
+    if(_TempoObject)
+    {
+        del_aubio_tempo(_TempoObject);
+        _TempoObject = nullptr;
+    }
+
+
     //
     //  Step 3.  Wait for the default device to change.
     //
@@ -787,25 +869,15 @@ bool AudioSystem::HandleStreamSwitchSelectedEvent()
     //
     //  Step 6 - Retrieve the new mix format.
     //
-    WAVEFORMATEX *wfxNew;
-    hr = _AudioClient->GetMixFormat(&wfxNew);
+    CoTaskMemFree(_MixFormat);
+    hr = _AudioClient->GetMixFormat(&_MixFormat);
     if (FAILED(hr))
     {
         printf("Unable to retrieve mix format for new audio client: %x.\n", hr);
         goto ErrorExit;
     }
 
-    //
-    //  Note that this is an intentionally naive comparison.  A more sophisticated comparison would
-    //  compare the sample rate, channel count and format and apply the appropriate conversions into the capture pipeline.
-    //
-    if (memcmp(_MixFormat, wfxNew, sizeof(WAVEFORMATEX) + wfxNew->cbSize) != 0)
-    {
-        printf("New mix format doesn't match old mix format.  Aborting.\n");
-        CoTaskMemFree(wfxNew);
-        goto ErrorExit;
-    }
-    CoTaskMemFree(wfxNew);
+    _FrameSize = (_MixFormat->wBitsPerSample / 8) * _MixFormat->nChannels;
 
     //
     //  Step 7:  Re-initialize the audio client.
@@ -813,6 +885,11 @@ bool AudioSystem::HandleStreamSwitchSelectedEvent()
     if (!InitializeAudioEngine())
     {
         goto ErrorExit;
+    }
+
+    if (InitializeAubio())
+    {
+        return false;
     }
 
     //
@@ -998,10 +1075,12 @@ ErrorExit:
     }
     return S_OK;
 }
+
  __attribute__((nothrow)) ULONG AudioSystem::AddRef()
 {
     return InterlockedIncrement(&_RefCount);
 }
+
  __attribute__((nothrow)) ULONG AudioSystem::Release()
 {
     ULONG returnValue = InterlockedDecrement(&_RefCount);
@@ -1012,100 +1091,82 @@ ErrorExit:
     return returnValue;
 }
 
-AudioSystem::_ProcessedAudio AudioSystem::ProcessAudio()
+void AudioSystem::ProcessAudio()
 {
-    _ProcessedAudio data = _CircularBuffer.front();
-    _CircularBuffer.pop_front();
-
-    hannWindowFunction(data);
-
-    for(int i = 0; i < FRAMECOUNT && !tempoQueue.empty(); i++, aubioIndex++)
+    if(_InStreamSwitch)
     {
-        fvec_set_sample(aubioIn, tempoQueue.front(), aubioIndex);
-        tempoQueue.pop();
-        if(aubioIndex == 511)
+        for(auto it : _Mag)
+            it = 0;
+        _BPM = 0;
+    }
+    // have fvec_t of size buffer
+    // set fft input to 0
+    fvec_zeros(_FFTIn);
+    fvec_zeros(_TempoIn);
+    if(!_CircularBuffer.empty())
+    {
+        std::vector<BYTE> data = std::vector<BYTE>(_CircularBuffer.front());
+        _CircularBuffer.pop_front();
+        uint_t wrapAt = (1 << ( _MixFormat->wBitsPerSample - 1 ) );
+        uint_t wrapWith = (1 << _MixFormat->wBitsPerSample);
+        smpl_t scaler = 1. / wrapAt;
+
+        for (int i, j = 0; i < data.size() && j < _BufferSize; j += 1)
         {
-            aubio_tempo_do(aubioTempo, aubioIn, aubioOut);
-            if (aubioOut->data[0] != 0) {
-                bpm = aubio_tempo_get_bpm(aubioTempo);
-                #ifdef QT_DEBUG
-                    qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(aubioTempo) << " " << aubio_tempo_get_confidence(aubioTempo) << Qt::endl;
-                #endif
-                myTempo = (double) aubio_tempo_get_bpm(aubioTempo);
+
+            for (int k = 0; k < ChannelCount(); k += 1)
+            {
+                uint32_t unsignedVal = 0;
+                for (int b = 0; b < _MixFormat->wBitsPerSample; b+=8 )
+                {
+                    unsignedVal += data.at(i) << b;
+                    i += 1;
+                }
+                int32_t signedVal = unsignedVal;
+                // FIXME why does 8 bit conversion maps [0;255] to [-128;127]
+                // instead of [0;127] to [0;127] and [128;255] to [-128;-1]
+                if (_MixFormat->wBitsPerSample == 8) signedVal -= wrapAt;
+                else if (unsignedVal >= wrapAt) signedVal = unsignedVal - wrapWith;
+                _FFTIn->data[j] += signedVal * scaler; // want to include both signed ints in this
+                _TempoIn->data[j] += signedVal * scaler;
             }
-            aubioIndex = -1;
+            _FFTIn->data[j] /= (smpl_t)ChannelCount();
+            _TempoIn->data[j] /= (smpl_t)ChannelCount();
+            /* HANN WINDOW FUNCTION
+            double multiplier = 0.5 * (1 - cos(2 * M_PI * j) / (_BufferSize - 1));
+            _FFTIn->data[j] *= multiplier;
+            _TempoIn->data[j] *= multiplier;
+            */
         }
     }
-
-    delete[] data;
-    dataQueue.pop();
-
-    //run FFT on data
-    fftw_execute(p);
-
-    //calculate log magnitude on transformed data
-    for(int j = 0; j < FRAMECOUNT / 2; j++)
+    //aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
+    //aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
+    /*
+    _BPM = aubio_tempo_get_bpm(_TempoObject);
+    _Mag.resize(_FFTOut->length, 0);
+    for(int j = 0; j < _FFTOut->length; j+=1)
     {
-        float r = out[j][0] / FRAMECOUNT;
-        float i = out[j][1] / FRAMECOUNT;
-        mag[j] = log(sqrt((r * r) + (i * i))) * 20;
-    }
+        float r = _FFTOut->norm[j] * cos(_FFTOut->phas[j]);
+        float i = _FFTOut->norm[j] * sin(_FFTOut->phas[j]);;
+        _Mag.at(j) = log(sqrt((r * r) + (i * i))) * 10;
+    }*/
+    return;
 }
 
-void AudioSystem::hannWindowFunction(_ProcessedAudio& in)
+
+smpl_t AudioSystem::GetBPM()
 {
-    switch(BytesPerSample())
-    {
-    case 1: // char / BYTES
-    {
-        for(int dataIndex = 0; dataIndex < in._CaptureBufferSize; dataIndex += 1)
-        {
-            //apply Hann window function to captured data
-            double multiplier = 0.5 * (1 - cos(2 * M_PI * dataIndex) / (in._CaptureBufferSize - 1));
-            in._CaptureBuffer[dataIndex] =  in._CaptureBuffer[dataIndex] * multiplier;
-        }
-        break;
-    }
-    case 2: // UINT_16
-    {
-        uint16_t* buffer = reinterpret_cast<uint16_t*>(in._CaptureBuffer);
-        for(int dataIndex = 0; dataIndex < (in._CaptureBufferSize / 2); dataIndex += 1)
-        {
-            //apply Hann window function to captured data
-            double multiplier = 0.5 * (1 - cos(2 * M_PI * dataIndex) / (in._CaptureBufferSize - 1));
-            buffer[dataIndex] *= multiplier;
-        }
-        break;
-    }
-    case 3: // UINT24, pretty rare but common enough
-    {
-        for(int dataIndex = 0; dataIndex < (in._CaptureBufferSize / 3); dataIndex += 1)
-        {
-            //apply Hann window function to captured data
-            int realIndex = dataIndex * 3;
-            uint32_t num = 0;
-            num = (in._CaptureBuffer[realIndex] & 0xFF) << 16;
-            num = num + (in._CaptureBuffer[realIndex + 1] << 8);
-            num = num + in._CaptureBuffer[realIndex + 2];
-            double multiplier = 0.5 * (1 - cos(2 * M_PI * dataIndex) / (in._CaptureBufferSize - 1));
+    if(_InStreamSwitch)
+        return 0;
+    return _BPM;
+}
 
-            in._CaptureBuffer[dataIndex] =  in._CaptureBuffer[dataIndex] * multiplier;
-        }
-        break;
-    }
-    case 4: // UINT_32 OMEGA RARE
-    {
-        uint32_t* buffer = reinterpret_cast<uint32_t*>(in._CaptureBuffer);
-        for(int dataIndex = 0; dataIndex < (in._CaptureBufferSize / 4); dataIndex += 1)
-        {
-            //apply Hann window function to captured data
-            double multiplier = 0.5 * (1 - cos(2 * M_PI * dataIndex) / (in._CaptureBufferSize - 1));
-            buffer[dataIndex] *= multiplier;
-        }
-        break;
-    }
+std::vector<double>& AudioSystem::GetMag()
+{
+    return _Mag;
+}
 
-    default:
-        break;
-    }
+smpl_t AudioSystem::GetBeatPeriod()
+{
+    return aubio_tempo_get_period_s(_TempoObject);
 }

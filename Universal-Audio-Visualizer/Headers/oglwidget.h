@@ -32,7 +32,7 @@ const float DEFAULTINTENSITY = 0.5f;
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
 public:
-    OGLWidget(QWidget *parent = nullptr, AudioInterface* p = nullptr);
+    OGLWidget(QWidget *parent = nullptr, AudioSystem* p = nullptr);
     void loadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();

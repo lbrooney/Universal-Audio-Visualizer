@@ -1,10 +1,10 @@
 #include "oglwidget.h"
 using namespace std;
 
-OGLWidget::OGLWidget(QWidget *parent, AudioInterface* p)
+OGLWidget::OGLWidget(QWidget *parent, AudioSystem *p)
     : QOpenGLWidget{parent}
 {
-    pInterface = p;
+    pSystem = p;
 }
 
 OGLWidget::~OGLWidget()
@@ -24,15 +24,15 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    unsigned int u_lightColor = glGetUniformLocation(m_program.programId(), "u_lightColor");
+    unsigned int u_lightColor = glGetUniformLocation(mProgram.programId(), "u_lightColor");
     glUniform3f(u_lightColor, 1.0f, 1.0f, 1.0f);
-    unsigned int u_lightDirection = glGetUniformLocation(m_program.programId(), "u_lightDirection");
+    unsigned int u_lightDirection = glGetUniformLocation(mProgram.programId(), "u_lightDirection");
     glUniform3f(u_lightDirection, 1.0f, 1.0f, 1.0f);
 
-    unsigned int u_projMatrix = glGetUniformLocation(m_program.programId(), "u_ProjMatrix");
+    unsigned int u_projMatrix = glGetUniformLocation(mProgram.programId(), "u_ProjMatrix");
     glUniformMatrix4fv(u_projMatrix, 1, GL_FALSE, glm::value_ptr(m_PerspectiveMatrix));
 
-    unsigned int u_ViewMatrix = glGetUniformLocation(m_program.programId(), "u_ViewMatrix");
+    unsigned int u_ViewMatrix = glGetUniformLocation(mProgram.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
 
     loadPreset(0);
@@ -47,8 +47,7 @@ void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    pInterface->getRecorder()->dataSemaphore.acquire();
-    pInterface->getRecorder()->ProcessData();
+    pSystem->ProcessAudio();
 
     if(!showSpectrum)
     {
@@ -60,8 +59,9 @@ void OGLWidget::paintGL()
             if(drawCycleCount == updateCycle)
             {
                 //update max objects on screen
-                magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
-                objList[i]->m_Magnitude = clamp(pInterface->getRecorder()->mag[objList[i]->freqBin], 0.0, maxMagnitude);
+                std::vector<double> mag = pSystem->GetMag();
+                magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
+                objList[i]->m_Magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
                 float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -85,8 +85,8 @@ void OGLWidget::paintGL()
             else
             {
                 objList[i]->SetScale(scale);
-                objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
-                objList[i]->DrawShape(&m_program);
+                objList[i]->SetColor(determineColor(pSystem->GetBPM()));
+                objList[i]->DrawShape(&mProgram);
                 objCount++;
             }
         }
@@ -102,7 +102,7 @@ void OGLWidget::paintGL()
             float magnitude;
             if(drawCycleCount == updateCycle)
             {
-                magnitude = pInterface->getRecorder()->mag[objList[i]->freqBin] / 30;
+                magnitude = pSystem->GetMag().at(objList[i]->freqBin) / 30;
             }
             else
             {
@@ -111,9 +111,9 @@ void OGLWidget::paintGL()
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
-            objList[i]->SetColor(determineColor(pInterface->getRecorder()->bpm));
+            objList[i]->SetColor(determineColor(pSystem->GetBPM()));
 
-            objList[i]->DrawShape(&m_program);
+            objList[i]->DrawShape(&mProgram);
         }
         if(drawCycleCount == updateCycle)
             drawCycleCount = 0;
@@ -131,10 +131,10 @@ void OGLWidget::resizeGL(int w, int h)
 
 void OGLWidget::initShaders()
 {
-    m_program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/Shaders/vertex.glsl");
-    m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
-    m_program.link();
-    m_program.bind();
+    mProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/Shaders/vertex.glsl");
+    mProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
+    mProgram.link();
+    mProgram.bind();
 }
 
 QVector3D OGLWidget::determineColor(float bpm)
@@ -266,8 +266,8 @@ void OGLWidget::createSphere(float r, float g, float b)
     Sphere* temp = new Sphere(r, g, b);
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
-    temp->AssignFrequencyBin(5000, pInterface->getRecorder()->sampleRate,
-                                   FRAMECOUNT);
+    temp->AssignFrequencyBin(5000, pSystem->SamplesPerSecond(),
+                                   pSystem->BufferSize());
     objList.push_back(temp);
 
 }
@@ -277,8 +277,8 @@ void OGLWidget::createCube(float r, float g, float b)
     Cube *temp = new Cube(r, g, b);
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
-    temp->AssignFrequencyBin(1000, pInterface->getRecorder()->sampleRate,
-                                   FRAMECOUNT);
+    temp->AssignFrequencyBin(1000, pSystem->SamplesPerSecond(),
+                                   pSystem->BufferSize());
     objList.push_back(temp);
 }
 
@@ -287,7 +287,7 @@ void OGLWidget::createPrism(float r, float g, float b)
     Prism* temp = new Prism(r, g, b);
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
-    temp->AssignFrequencyBin(50, pInterface->getRecorder()->sampleRate,
-                                   FRAMECOUNT);
+    temp->AssignFrequencyBin(50, pSystem->SamplesPerSecond(),
+                                   pSystem->BufferSize());
     objList.push_back(temp);
 }
