@@ -13,7 +13,7 @@
 #include <AudioPolicy.h>
 #include "boost/circular_buffer.hpp"
 #include "aubio/aubio.h"
-#include <vector>
+#include "boost/container/vector.hpp"
 
 const UINT CBBUFFERSIZE = 5;
 CONST int FRAMECOUNT = 1024;
@@ -63,7 +63,7 @@ private:
     size_t              _FrameSize;
     UINT32              _BufferSize;
 
-    boost::circular_buffer<std::vector<BYTE>> _CircularBuffer;
+    boost::circular_buffer<boost::container::vector<BYTE>> _CircularBuffer;
     static DWORD __stdcall WASAPICaptureThread(LPVOID Context);
     DWORD DoCaptureThread();
     //

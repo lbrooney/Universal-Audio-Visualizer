@@ -429,7 +429,7 @@ DWORD AudioSystem::DoCaptureThread()
                     //  We only really care about the silent flag since we want to put frames of silence into the buffer
                     //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
                     //
-                    std::vector<BYTE> temp = std::vector<BYTE>( framesAvailable * _FrameSize );
+                    boost::container::vector<BYTE> temp = boost::container::vector<BYTE>( framesAvailable * _FrameSize );
                     if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
                     {
                         std::memcpy(temp.data(), pData, framesAvailable * _FrameSize);
@@ -864,7 +864,7 @@ void AudioSystem::ProcessAudio()
     fvec_zeros(_TempoIn);
     if(!_CircularBuffer.empty())
     {
-        std::vector<BYTE> data = std::vector<BYTE>(_CircularBuffer.front());
+        boost::container::vector<BYTE> data = boost::container::vector<BYTE>(_CircularBuffer.front());
         _CircularBuffer.pop_front();
         uint_t wrapAt = (1 << ( _MixFormat->wBitsPerSample - 1 ) );
         uint_t wrapWith = (1 << _MixFormat->wBitsPerSample);
