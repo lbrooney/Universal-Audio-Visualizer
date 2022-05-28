@@ -21,7 +21,6 @@ MainWindow::MainWindow(QWidget *parent)
     openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
-    pSystem->Start();
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
 
