@@ -13,6 +13,7 @@
 #include <stdafx.h>
 #include "audiosystem.h"
 #include <math.h>
+#include <QtDebug>
 
 //
 //  A simple WASAPI Capture client.
@@ -97,13 +98,13 @@ bool AudioSystem::InitializeAudioEngine()
 
 bool AudioSystem::InitializeAubio()
 {
-    _Mag.resize(_BufferSize);
-    _FFTIn = new_fvec(_BufferSize);
-    _FFTOut = new_cvec(_BufferSize);
-    _TempoIn = new_fvec(_BufferSize);
+    _Mag.resize(FRAMECOUNT);
+    _FFTIn = new_fvec(FRAMECOUNT);
+    _FFTOut = new_cvec(FRAMECOUNT);
+    _TempoIn = new_fvec(FRAMECOUNT);
     _TempoOut = new_fvec(2);
-    _FFTObject = new_aubio_fft(_BufferSize);
-    _TempoObject = new_aubio_tempo("default", _BufferSize, _FrameSize, SamplesPerSecond() );
+    _FFTObject = new_aubio_fft(FRAMECOUNT);
+    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 4, SamplesPerSecond() );
     return true;
 }
 
@@ -216,7 +217,7 @@ bool AudioSystem::Initialize()
     //
     // setup the aubio functionality
     //
-    if (InitializeAubio())
+    if (!InitializeAubio())
     {
         return false;
     }
@@ -403,7 +404,7 @@ DWORD AudioSystem::DoCaptureThread()
     while (stillPlaying)
     {
         //HRESULT hr;
-        DWORD waitResult = WaitForMultipleObjects(3, waitArray, FALSE, INFINITE);
+        DWORD waitResult = WaitForMultipleObjects(4, waitArray, FALSE, INFINITE);
         switch (waitResult)
         {
         case WAIT_OBJECT_0 + 0:     // _ShutdownEvent
@@ -452,10 +453,10 @@ DWORD AudioSystem::DoCaptureThread()
                     //  We only really care about the silent flag since we want to put frames of silence into the buffer
                     //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
                     //
-                    std::vector<BYTE> temp;
+                    std::vector<BYTE> temp = std::vector<BYTE>( framesAvailable * _FrameSize );
                     if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
                     {
-                        temp.insert(temp.end(), pData, pData+(_BufferSize * _FrameSize));
+                        std::memcpy(temp.data(), pData, framesAvailable * _FrameSize);
                     }
                     _CircularBuffer.push_back(temp);
 
@@ -1093,6 +1094,7 @@ ErrorExit:
 
 void AudioSystem::ProcessAudio()
 {
+    //qDebug() << "PROCESSING DATA" << Qt::endl;
     if(_InStreamSwitch)
     {
         for(auto it : _Mag)
@@ -1110,8 +1112,11 @@ void AudioSystem::ProcessAudio()
         uint_t wrapAt = (1 << ( _MixFormat->wBitsPerSample - 1 ) );
         uint_t wrapWith = (1 << _MixFormat->wBitsPerSample);
         smpl_t scaler = 1. / wrapAt;
+        int i = 0;
+        int j = 0;
+        while(i < data.size() && j < FRAMECOUNT)
 
-        for (int i, j = 0; i < data.size() && j < _BufferSize; j += 1)
+        //for (int i, j = 0; i < data.size() && j < FRAMECOUNT; j += 1)
         {
 
             for (int k = 0; k < ChannelCount(); k += 1)
@@ -1127,21 +1132,31 @@ void AudioSystem::ProcessAudio()
                 // instead of [0;127] to [0;127] and [128;255] to [-128;-1]
                 if (_MixFormat->wBitsPerSample == 8) signedVal -= wrapAt;
                 else if (unsignedVal >= wrapAt) signedVal = unsignedVal - wrapWith;
-                _FFTIn->data[j] += signedVal * scaler; // want to include both signed ints in this
-                _TempoIn->data[j] += signedVal * scaler;
+                _FFTIn->data[j] += (smpl_t)(signedVal * scaler); // want to include both signed ints in this
+                _TempoIn->data[j] += (smpl_t)(signedVal * scaler);
+                /*
+                qDebug() << "i " << i << " j " << j <<" k " << k
+                          <<" signed value "<< signedVal
+                         <<" inputed value " << _FFTIn->data[j]<< Qt::endl;
+                         */
             }
             _FFTIn->data[j] /= (smpl_t)ChannelCount();
             _TempoIn->data[j] /= (smpl_t)ChannelCount();
+            /*
+            qDebug() << "i " << i << " j " << j
+                     <<" inputed value " << _FFTIn->data[j]<< Qt::endl;
+                     */
             /* HANN WINDOW FUNCTION
             double multiplier = 0.5 * (1 - cos(2 * M_PI * j) / (_BufferSize - 1));
             _FFTIn->data[j] *= multiplier;
             _TempoIn->data[j] *= multiplier;
             */
+            j += 1;
         }
     }
-    //aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
-    //aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
-    /*
+    aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
+    aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
+
     _BPM = aubio_tempo_get_bpm(_TempoObject);
     _Mag.resize(_FFTOut->length, 0);
     for(int j = 0; j < _FFTOut->length; j+=1)
@@ -1149,7 +1164,7 @@ void AudioSystem::ProcessAudio()
         float r = _FFTOut->norm[j] * cos(_FFTOut->phas[j]);
         float i = _FFTOut->norm[j] * sin(_FFTOut->phas[j]);;
         _Mag.at(j) = log(sqrt((r * r) + (i * i))) * 10;
-    }*/
+    }
     return;
 }
 

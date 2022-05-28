@@ -17,7 +17,7 @@ public:
     ~Slider();
 
 private slots:
-    void on_volumeSlider_sliderMoved(int position);
+    //void on_volumeSlider_sliderMoved(int position);
 
     void on_scaleSlider_sliderMoved(int position);
 
