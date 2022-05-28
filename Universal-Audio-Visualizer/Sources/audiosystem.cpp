@@ -10,6 +10,7 @@
 #include "string.h"
 #include <assert.h>
 #include <avrt.h>
+#include <iostream>
 #include <stdafx.h>
 #include "audiosystem.h"
 #include <math.h>
@@ -601,15 +602,40 @@ bool AudioSystem::HandleStreamSwitchEvent()
     SafeRelease(&_CaptureClient);
     SafeRelease(&_AudioClient);
     SafeRelease(&_Endpoint);
+
+    // aubio resources
     /*
-    // free our buffers in circular buffer, they are remade in initialize engine
-    for(int i = 0; i < CBBUFFERSIZE; i += 1)
+    if(_FFTIn)
     {
-        if(_CircularBuffer[i]._CaptureBuffer)
-            free(_CircularBuffer[i]._CaptureBuffer);
-        _CircularBuffer[i]._Size = 0;
+        del_fvec(_FFTIn);
+        _FFTIn = nullptr;
+    }
+    if(_FFTOut)
+    {
+        del_cvec(_FFTOut);
+        _FFTOut = nullptr;
+    }
+    if(_TempoIn)
+    {
+        del_fvec(_TempoIn);
+        _TempoIn = nullptr;
+    }
+    if(_TempoOut)
+    {
+        del_fvec(_TempoOut);
+        _TempoOut = nullptr;
+    }
+    if(_FFTObject)
+    {
+        del_aubio_fft(_FFTObject);
+        _FFTObject = nullptr;
     }
     */
+    if(_TempoObject)
+    {
+        del_aubio_tempo(_TempoObject);
+        _TempoObject = nullptr;
+    }
 
     //
     //  Step 3.  Wait for the default device / new device to change.
@@ -685,10 +711,14 @@ bool AudioSystem::HandleStreamSwitchEvent()
         goto ErrorExit;
     }
 
-    if (InitializeAubio())
+    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 4, SamplesPerSecond() );
+
+    /*
+    if (!InitializeAubio())
     {
         return false;
     }
+    */
 
     //
     //  Step 8: Re-register for session disconnect notifications.
@@ -899,7 +929,6 @@ DWORD AudioSystem::DoAnalysisThread()
 
     while (stillPlaying)
     {
-    //HRESULT hr;
     DWORD waitResult = WaitForMultipleObjects(2, waitArray, FALSE, INFINITE);
         switch (waitResult)
         {

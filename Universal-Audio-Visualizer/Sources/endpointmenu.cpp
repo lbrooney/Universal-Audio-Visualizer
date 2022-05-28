@@ -3,6 +3,7 @@
 #include <initguid.h>  // Put this in to get rid of linker errors.
 #include <devpkey.h>  // Property keys defined here are now defined inline.
 #include <Functiondiscoverykeys_devpkey.h>
+#include <iostream>
 #include <vector>
 #include <mmdeviceapi.h>
 #include "stdafx.h"
@@ -101,7 +102,7 @@ void EndpointMenu::setNewAudioEndpoint(QAction* a)
     }
     else
     {
-        LPWSTR id = (LPWSTR) malloc((a->objectName().size() + 1) * sizeof(WCHAR));
+        LPWSTR id = (LPWSTR) calloc((a->objectName().size() + 1), sizeof(WCHAR));
         a->objectName().toWCharArray(id);
         pSystem->selectedEndpoint(id);
         free(id);
