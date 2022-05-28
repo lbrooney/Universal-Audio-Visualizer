@@ -17,10 +17,10 @@ MainWindow::MainWindow(QWidget *parent)
     pSystem = new (std::nothrow) AudioSystem();
     pSystem->Initialize();
     ui->setupUi(this);
+    pSystem->Start();
     openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
-    pSystem->Start();
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
 

@@ -63,16 +63,29 @@ private:
     size_t              _FrameSize;
     UINT32              _BufferSize;
 
-    boost::circular_buffer<std::vector<BYTE>> _CircularBuffer;
+    struct _BufferElem
+    {
+        BYTE *_CaptureBuffer = nullptr;
+        uint16_t _Size = 0;
+        bool _IsSilent = false;;
+        _BufferElem& operator=(const _BufferElem& in)
+        {
+            // causes performance loss
+            //ZeroMemory(this->_CaptureBuffer, this->_Size);
+            if(!_IsSilent)
+                CopyMemory(this->_CaptureBuffer, in._CaptureBuffer, in._Size);
+            return *this;
+        }
+    };
+
+    boost::circular_buffer<_BufferElem> _CircularBuffer;
     static DWORD __stdcall WASAPICaptureThread(LPVOID Context);
     DWORD DoCaptureThread();
     //
     //  Stream switch related members and methods.
     //
-    HANDLE                  _StreamSwitchDefaultEvent;          // Set when the current session is disconnected or the default device changes.
-    HANDLE                  _StreamSwitchCompleteDefaultEvent;  // Set when the default device changed.
-    HANDLE                  _StreamSwitchSelectedEvent;          // Set when the current session is disconnected or the default device changes.
-    HANDLE                  _StreamSwitchCompleteSelectedEvent;  // Set when the default device changed.
+    HANDLE                  _StreamSwitchEvent;          // Set when the current session is disconnected or the default device changes.
+    HANDLE                  _StreamSwitchCompleteEvent;  // Set when the default device changed.
     IAudioSessionControl    *_AudioSessionControl;
     IMMDeviceEnumerator     *_DeviceEnumerator;
     bool                    _InStreamSwitch;
@@ -80,8 +93,7 @@ private:
 
     bool InitializeStreamSwitch();
     void TerminateStreamSwitch();
-    bool HandleStreamSwitchDefaultEvent();
-    bool HandleStreamSwitchSelectedEvent();
+    bool HandleStreamSwitchEvent();
 
     STDMETHOD(OnDisplayNameChanged) (LPCWSTR /*NewDisplayName*/, LPCGUID /*EventContext*/) { return S_OK; };
     STDMETHOD(OnIconPathChanged) (LPCWSTR /*NewIconPath*/, LPCGUID /*EventContext*/) { return S_OK; };
