@@ -34,7 +34,6 @@ AudioSystem::AudioSystem() :
     _AudioSessionControl(nullptr),
     _DeviceEnumerator(nullptr),
     _InStreamSwitch(false),
-    _CircularBuffer(CBBUFFERSIZE),
     _BPM(0),
     _FFTIn(nullptr),
     _FFTOut(nullptr),
@@ -429,12 +428,12 @@ DWORD AudioSystem::DoCaptureThread()
                     //  We only really care about the silent flag since we want to put frames of silence into the buffer
                     //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
                     //
-                    boost::container::vector<BYTE> temp = boost::container::vector<BYTE>( framesAvailable * _FrameSize );
+                    std::vector<BYTE> temp = std::vector<BYTE>( framesAvailable * _FrameSize );
                     if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
                     {
                         std::memcpy(temp.data(), pData, framesAvailable * _FrameSize);
                     }
-                    _CircularBuffer.push_back(temp);
+                    _AudioQueue.push(temp);
 
                 }
                 hr = _CaptureClient->ReleaseBuffer(framesAvailable);
@@ -862,10 +861,10 @@ void AudioSystem::ProcessAudio()
     // set fft input to 0
     fvec_zeros(_FFTIn);
     fvec_zeros(_TempoIn);
-    if(!_CircularBuffer.empty())
+    if(!_AudioQueue.empty())
     {
-        boost::container::vector<BYTE> data = boost::container::vector<BYTE>(_CircularBuffer.front());
-        _CircularBuffer.pop_front();
+        std::vector<BYTE> data = std::vector<BYTE>(_AudioQueue.front());
+        _AudioQueue.pop();
         uint_t wrapAt = (1 << ( _MixFormat->wBitsPerSample - 1 ) );
         uint_t wrapWith = (1 << _MixFormat->wBitsPerSample);
         smpl_t scaler = 1. / wrapAt;

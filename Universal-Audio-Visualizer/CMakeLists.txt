@@ -21,8 +21,7 @@ include_directories(Headers/
                     Sources/
                     lib/
                     lib/fftw/include
-                    lib/aubio/include
-                    lib/boost)
+                    lib/aubio/include)
 
 link_directories(lib/fftw/lib
                  lib/aubio/lib)
