@@ -40,7 +40,8 @@ AudioSystem::AudioSystem() :
     _TempoIn(nullptr),
     _TempoOut(nullptr),
     _FFTObject(nullptr),
-    _TempoObject(nullptr)
+    _TempoObject(nullptr),
+    _AnalysisSamplesReadyEvent(nullptr)
 {
 }
 
@@ -131,7 +132,7 @@ bool AudioSystem::Initialize()
     //
     //  Create our shutdown and samples ready events- we want auto reset events that start in the not-signaled state.
     //
-    _ShutdownEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    _ShutdownEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
     if (_ShutdownEvent == nullptr)
     {
         printf("Unable to create shutdown event: %d.\n", GetLastError());
@@ -142,6 +143,13 @@ bool AudioSystem::Initialize()
     if (_AudioSamplesReadyEvent == nullptr)
     {
         printf("Unable to create samples ready event: %d.\n", GetLastError());
+        return false;
+    }
+
+    _AnalysisSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (_AnalysisSamplesReadyEvent == nullptr)
+    {
+        printf("Unable to analysis ready event event: %d.\n", GetLastError());
         return false;
     }
 
@@ -233,6 +241,14 @@ void AudioSystem::Shutdown()
         _CaptureThread = nullptr;
     }
 
+    if (_AnalysisThread)
+    {
+        SetEvent(_ShutdownEvent);
+        WaitForSingleObject(_AnalysisThread, INFINITE);
+        CloseHandle(_AnalysisThread);
+        _AnalysisThread = nullptr;
+    }
+
     if (_ShutdownEvent)
     {
         CloseHandle(_ShutdownEvent);
@@ -242,6 +258,11 @@ void AudioSystem::Shutdown()
     {
         CloseHandle(_AudioSamplesReadyEvent);
         _AudioSamplesReadyEvent = nullptr;
+    }
+    if (_AnalysisSamplesReadyEvent)
+    {
+        CloseHandle(_AnalysisSamplesReadyEvent);
+        _AnalysisSamplesReadyEvent = nullptr;
     }
     if (_StreamSwitchEvent)
     {
@@ -315,6 +336,13 @@ bool AudioSystem::Start()
     if (_CaptureThread == nullptr)
     {
         printf("Unable to create transport thread: %x.", GetLastError());
+        return false;
+    }
+
+    _AnalysisThread = CreateThread(NULL, 0, AudioAnalysisThread, this, 0, NULL);
+    if (_AnalysisThread == nullptr)
+    {
+        printf("Unable to create analysis thread: %x.", GetLastError());
         return false;
     }
 
@@ -395,7 +423,7 @@ DWORD AudioSystem::DoCaptureThread()
         case WAIT_OBJECT_0 + 0:     // _ShutdownEvent
             stillPlaying = false;       // We're done, exit the loop.
             break;
-        case WAIT_OBJECT_0 + 1:     // _StreamSwitchDefaultEvent
+        case WAIT_OBJECT_0 + 1:     // _StreamSwitchEvent
             //
             //  We need to stop the capturer, tear down the _AudioClient and _CaptureClient objects and re-create them on the new.
             //  endpoint if possible.  If this fails, abort the thread.
@@ -441,6 +469,7 @@ DWORD AudioSystem::DoCaptureThread()
                 {
                     printf("Unable to release capture buffer: %x!\n", hr);
                 }
+                SetEvent(_AnalysisSamplesReadyEvent);
             }
             break;
         }
@@ -469,7 +498,7 @@ bool AudioSystem::InitializeStreamSwitch()
     _StreamSwitchCompleteEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
     if (_StreamSwitchCompleteEvent == nullptr)
     {
-        printf("Unable to create stream switch default complete event: %d.\n", GetLastError());
+        printf("Unable to create stream switch complete event: %d.\n", GetLastError());
         return false;
     }
 
@@ -848,15 +877,40 @@ bool AudioSystem::selectedEndpoint(LPWSTR input)
     return returnValue;
 }
 
-void AudioSystem::ProcessAudio()
+ //
+ //  Capture thread - processes samples from the audio engine
+ //
+DWORD AudioSystem::AudioAnalysisThread(LPVOID Context)
 {
-    //qDebug() << "PROCESSING DATA" << Qt::endl;
-    if(_InStreamSwitch)
+    AudioSystem *analyzer = static_cast<AudioSystem *>(Context);
+    return analyzer->DoAnalysisThread();
+}
+
+DWORD AudioSystem::DoAnalysisThread()
+{
+    bool stillPlaying = true;
+    HANDLE waitArray[2] = {_ShutdownEvent, _AnalysisSamplesReadyEvent };
+
+    while (stillPlaying)
     {
-        for(auto it : _Mag)
-            it = 0;
-        _BPM = 0;
+    //HRESULT hr;
+    DWORD waitResult = WaitForMultipleObjects(2, waitArray, FALSE, INFINITE);
+        switch (waitResult)
+        {
+            case WAIT_OBJECT_0 + 0:     // _ShutdownEvent
+            stillPlaying = false;       // We're done, exit the loop.
+            break;
+            case WAIT_OBJECT_0 + 1:     // if a sample is available then work with it
+                AnalyzeAudio();
+            break;
+        }
     }
+
+    return 0;
+}
+
+void AudioSystem::AnalyzeAudio()
+{
     // have fvec_t of size buffer
     // set fft input to 0
     fvec_zeros(_FFTIn);

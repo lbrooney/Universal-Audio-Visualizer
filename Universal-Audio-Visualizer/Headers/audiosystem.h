@@ -42,7 +42,6 @@ public:
     smpl_t GetBPM();
     smpl_t GetBeatPeriod();
     std::vector<double>& GetMag();
-    void ProcessAudio();
 
 private:
     ~AudioSystem(void);  // Destructor is private to prevent accidental deletion.
@@ -115,6 +114,12 @@ private:
     aubio_tempo_t       *_TempoObject;
     std::vector<double> _Mag;
     bool                InitializeAubio();
+    HANDLE              _AnalysisSamplesReadyEvent;
+    HANDLE              _AnalysisThread;
+
+    DWORD                   DoAnalysisThread();
+    static DWORD __stdcall  AudioAnalysisThread(LPVOID Context);
+    void                    AnalyzeAudio();
 
 };
 
