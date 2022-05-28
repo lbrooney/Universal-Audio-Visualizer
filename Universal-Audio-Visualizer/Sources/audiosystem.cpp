@@ -29,10 +29,8 @@ AudioSystem::AudioSystem() :
     _ShutdownEvent(nullptr),
     _AudioSamplesReadyEvent(nullptr),
     _MixFormat(nullptr),
-    _StreamSwitchDefaultEvent(nullptr),
-    _StreamSwitchCompleteDefaultEvent(nullptr),
-    _StreamSwitchSelectedEvent(nullptr),
-    _StreamSwitchCompleteSelectedEvent(nullptr),
+    _StreamSwitchEvent(nullptr),
+    _StreamSwitchCompleteEvent(nullptr),
     _AudioSessionControl(nullptr),
     _DeviceEnumerator(nullptr),
     _InStreamSwitch(false),
@@ -153,17 +151,10 @@ bool AudioSystem::Initialize()
     //  Note that we create this event even if we're not going to stream switch - that's because the event is used
     //  in the main loop of the capturer and thus it has to be set.
     //
-    _StreamSwitchDefaultEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_StreamSwitchDefaultEvent == nullptr)
+    _StreamSwitchEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (_StreamSwitchEvent == nullptr)
     {
         printf("Unable to create default stream switch event: %d.\n", GetLastError());
-        return false;
-    }
-
-    _StreamSwitchSelectedEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_StreamSwitchDefaultEvent == nullptr)
-    {
-        printf("Unable to create selected stream switch event: %d.\n", GetLastError());
         return false;
     }
 
@@ -253,15 +244,10 @@ void AudioSystem::Shutdown()
         CloseHandle(_AudioSamplesReadyEvent);
         _AudioSamplesReadyEvent = nullptr;
     }
-    if (_StreamSwitchDefaultEvent)
+    if (_StreamSwitchEvent)
     {
-        CloseHandle(_StreamSwitchDefaultEvent);
-        _StreamSwitchDefaultEvent = nullptr;
-    }
-    if (_StreamSwitchSelectedEvent)
-    {
-        CloseHandle(_StreamSwitchSelectedEvent);
-        _StreamSwitchSelectedEvent = nullptr;
+        CloseHandle(_StreamSwitchEvent);
+        _StreamSwitchEvent = nullptr;
     }
 
     SafeRelease(&_Endpoint);
@@ -390,7 +376,7 @@ DWORD AudioSystem::WASAPICaptureThread(LPVOID Context)
 DWORD AudioSystem::DoCaptureThread()
 {
     bool stillPlaying = true;
-    HANDLE waitArray[4] = {_ShutdownEvent, _StreamSwitchDefaultEvent, _StreamSwitchSelectedEvent, _AudioSamplesReadyEvent };
+    HANDLE waitArray[3] = {_ShutdownEvent, _StreamSwitchEvent, _AudioSamplesReadyEvent };
     HANDLE mmcssHandle = NULL;
     DWORD mmcssTaskIndex = 0;
 
@@ -404,7 +390,7 @@ DWORD AudioSystem::DoCaptureThread()
     while (stillPlaying)
     {
         //HRESULT hr;
-        DWORD waitResult = WaitForMultipleObjects(4, waitArray, FALSE, INFINITE);
+        DWORD waitResult = WaitForMultipleObjects(3, waitArray, FALSE, INFINITE);
         switch (waitResult)
         {
         case WAIT_OBJECT_0 + 0:     // _ShutdownEvent
@@ -415,22 +401,12 @@ DWORD AudioSystem::DoCaptureThread()
             //  We need to stop the capturer, tear down the _AudioClient and _CaptureClient objects and re-create them on the new.
             //  endpoint if possible.  If this fails, abort the thread.
             //
-            if (!HandleStreamSwitchDefaultEvent())
+            if (!HandleStreamSwitchEvent())
             {
                 stillPlaying = false;
             }
             break;
-        case WAIT_OBJECT_0 + 2:     // _StreamSwitchSelectedEvent
-            //
-            //  We need to stop the capturer, tear down the _AudioClient and _CaptureClient objects and re-create them on the new.
-            //  endpoint if possible.  If this fails, abort the thread.
-            //
-            if (!HandleStreamSwitchSelectedEvent())
-            {
-                stillPlaying = false;
-            }
-            break;
-        case WAIT_OBJECT_0 + 3:     // _AudioSamplesReadyEvent
+        case WAIT_OBJECT_0 + 2:     // _AudioSamplesReadyEvent
             //
             //  We need to retrieve the next buffer of samples from the audio capturer.
             //
@@ -491,20 +467,10 @@ bool AudioSystem::InitializeStreamSwitch()
     //
     //  Create the stream switch complete event- we want a manual reset event that starts in the not-signaled state.
     //
-    _StreamSwitchCompleteDefaultEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_StreamSwitchCompleteDefaultEvent == nullptr)
+    _StreamSwitchCompleteEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (_StreamSwitchCompleteEvent == nullptr)
     {
         printf("Unable to create stream switch default complete event: %d.\n", GetLastError());
-        return false;
-    }
-
-    //
-    //  Create the stream switch complete event- we want a manual reset event that starts in the not-signaled state.
-    //
-    _StreamSwitchCompleteSelectedEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_StreamSwitchCompleteSelectedEvent == nullptr)
-    {
-        printf("Unable to create stream switch selected complete event: %d.\n", GetLastError());
         return false;
     }
 
@@ -544,15 +510,10 @@ void AudioSystem::TerminateStreamSwitch()
         printf("Unable to unregister for endpoint notifications: %x\n", hr);
     }
 
-    if (_StreamSwitchCompleteDefaultEvent)
+    if (_StreamSwitchCompleteEvent)
     {
-        CloseHandle(_StreamSwitchCompleteDefaultEvent);
-        _StreamSwitchCompleteDefaultEvent = nullptr;
-    }
-    if (_StreamSwitchCompleteSelectedEvent)
-    {
-        CloseHandle(_StreamSwitchCompleteDefaultEvent);
-        _StreamSwitchCompleteDefaultEvent = nullptr;
+        CloseHandle(_StreamSwitchCompleteEvent);
+        _StreamSwitchCompleteEvent = nullptr;
     }
 
     SafeRelease(&_AudioSessionControl);
@@ -575,11 +536,10 @@ void AudioSystem::TerminateStreamSwitch()
 //  7) Re-initialize the _AudioClient.
 //  8) Re-register for session disconnect notifications and reset the stream switch complete event.
 //
-bool AudioSystem::HandleStreamSwitchDefaultEvent()
+bool AudioSystem::HandleStreamSwitchEvent()
 {
     HRESULT hr;
 
-    assert(_DefaultSelected);
     assert(_InStreamSwitch);
     //
     //  Step 1.  Stop capturing.
@@ -606,43 +566,18 @@ bool AudioSystem::HandleStreamSwitchDefaultEvent()
     SafeRelease(&_CaptureClient);
     SafeRelease(&_AudioClient);
     SafeRelease(&_Endpoint);
-
-    // aubio resources
-    if(_FFTIn)
+    /*
+    // free our buffers in circular buffer, they are remade in initialize engine
+    for(int i = 0; i < CBBUFFERSIZE; i += 1)
     {
-        del_fvec(_FFTIn);
-        _FFTIn = nullptr;
+        if(_CircularBuffer[i]._CaptureBuffer)
+            free(_CircularBuffer[i]._CaptureBuffer);
+        _CircularBuffer[i]._Size = 0;
     }
-    if(_FFTOut)
-    {
-        del_cvec(_FFTOut);
-        _FFTOut = nullptr;
-    }
-    if(_TempoIn)
-    {
-        del_fvec(_TempoIn);
-        _TempoIn = nullptr;
-    }
-    if(_TempoOut)
-    {
-        del_fvec(_TempoOut);
-        _TempoOut = nullptr;
-    }
-    if(_FFTObject)
-    {
-        del_aubio_fft(_FFTObject);
-        _FFTObject = nullptr;
-    }
-    if(_TempoObject)
-    {
-        del_aubio_tempo(_TempoObject);
-        _TempoObject = nullptr;
-    }
-
-
+    */
 
     //
-    //  Step 3.  Wait for the default device to change.
+    //  Step 3.  Wait for the default device / new device to change.
     //
     //  There is a race between the session disconnect arriving and the new default device
     //  arriving (if applicable).  Wait the shorter of 500 milliseconds or the arrival of the
@@ -654,7 +589,7 @@ bool AudioSystem::HandleStreamSwitchDefaultEvent()
     //  real audio application implementing stream switching would re-format their
     //  pipeline to deliver the new format).
     //
-    waitResult = WaitForSingleObject(_StreamSwitchCompleteDefaultEvent, 500);
+    waitResult = WaitForSingleObject(_StreamSwitchCompleteEvent, 500);
     if (waitResult == WAIT_TIMEOUT)
     {
         printf("Stream switch timeout - aborting...\n");
@@ -665,11 +600,23 @@ bool AudioSystem::HandleStreamSwitchDefaultEvent()
     //  Step 4.  If we can't get the new endpoint, we need to abort the stream switch.  If there IS a new device,
     //          we should be able to retrieve it.
     //
-    hr = _DeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &_Endpoint);
-    if (FAILED(hr))
+    if(_DefaultSelected)
     {
-        printf("Unable to retrieve new default device during stream switch: %x\n", hr);
-        goto ErrorExit;
+        hr = _DeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &_Endpoint);
+        if (FAILED(hr))
+        {
+            printf("Unable to retrieve new default device during stream switch: %x\n", hr);
+            goto ErrorExit;
+        }
+    }
+    else
+    {
+        hr = _DeviceEnumerator->GetDevice(_EndpointID, &_Endpoint);
+        if (FAILED(hr))
+        {
+            printf("Unable to retrieve new device during stream switch: %x\n", hr);
+            goto ErrorExit;
+        }
     }
     //
     //  Step 5 - Re-instantiate the audio client on the new endpoint.
@@ -727,7 +674,7 @@ bool AudioSystem::HandleStreamSwitchDefaultEvent()
     //
     //  Reset the stream switch complete event because it's a manual reset event.
     //
-    ResetEvent(_StreamSwitchCompleteDefaultEvent);
+    ResetEvent(_StreamSwitchCompleteEvent);
     //
     //  And we're done.  Start capturing again.
     //
@@ -748,301 +695,111 @@ ErrorExit:
 }
 
 //
-//  Handle the selected stream switch.
-//
-//  When a stream switch happens, we want to do several things in turn:
-//
-//  1) Stop the current capturer.
-//  2) Release any resources we have allocated (the _AudioClient, _AudioSessionControl (after unregistering for notifications) and
-//        _CaptureClient).
-//  3) Wait until the default device has changed (or 500ms has elapsed).  If we time out, we need to abort because the stream switch can't happen.
-//  4) Retrieve the new default endpoint for our role.
-//  5) Re-instantiate the audio client on that new endpoint.
-//  6) Retrieve the mix format for the new endpoint.  If the mix format doesn't match the old endpoint's mix format, we need to abort because the stream
-//      switch can't happen.
-//  7) Re-initialize the _AudioClient.
-//  8) Re-register for session disconnect notifications and reset the stream switch complete event.
-//
-bool AudioSystem::HandleStreamSwitchSelectedEvent()
-{
-    HRESULT hr;
-
-    assert(!_DefaultSelected);
-    assert(_InStreamSwitch);
-    //
-    //  Step 1.  Stop capturing.
-    //
-    hr = _AudioClient->Stop();
-    DWORD waitResult;
-    if (FAILED(hr))
-    {
-        printf("Unable to stop audio client during stream switch: %x\n", hr);
-        goto ErrorExit;
-    }
-
-    //
-    //  Step 2.  Release our resources.  Note that we don't release the mix format, we need it for step 6.
-    //
-    hr = _AudioSessionControl->UnregisterAudioSessionNotification(this);
-    if (FAILED(hr))
-    {
-        printf("Unable to stop audio client during stream switch: %x\n", hr);
-        goto ErrorExit;
-    }
-
-    SafeRelease(&_AudioSessionControl);
-    SafeRelease(&_CaptureClient);
-    SafeRelease(&_AudioClient);
-    SafeRelease(&_Endpoint);
-
-    // aubio resources
-    if(_FFTIn)
-    {
-        del_fvec(_FFTIn);
-        _FFTIn = nullptr;
-    }
-    if(_FFTOut)
-    {
-        del_cvec(_FFTOut);
-        _FFTOut = nullptr;
-    }
-    if(_TempoIn)
-    {
-        del_fvec(_TempoIn);
-        _TempoIn = nullptr;
-    }
-    if(_TempoOut)
-    {
-        del_fvec(_TempoOut);
-        _TempoOut = nullptr;
-    }
-    if(_FFTObject)
-    {
-        del_aubio_fft(_FFTObject);
-        _FFTObject = nullptr;
-    }
-    if(_TempoObject)
-    {
-        del_aubio_tempo(_TempoObject);
-        _TempoObject = nullptr;
-    }
-
-
-    //
-    //  Step 3.  Wait for the default device to change.
-    //
-    //  There is a race between the session disconnect arriving and the new default device
-    //  arriving (if applicable).  Wait the shorter of 500 milliseconds or the arrival of the
-    //  new default device, then attempt to switch to the default device.  In the case of a
-    //  format change (i.e. the default device does not change), we artificially generate  a
-    //  new default device notification so the code will not needlessly wait 500ms before
-    //  re-opening on the new format.  (However, note below in step 6 that in this SDK
-    //  sample, we are unlikely to actually successfully absorb a format change, but a
-    //  real audio application implementing stream switching would re-format their
-    //  pipeline to deliver the new format).
-    //
-    waitResult = WaitForSingleObject(_StreamSwitchCompleteSelectedEvent, 500);
-    if (waitResult == WAIT_TIMEOUT)
-    {
-        printf("Stream switch timeout - aborting...\n");
-        goto ErrorExit;
-    }
-
-    //
-    //  Step 4.  If we can't get the new endpoint, we need to abort the stream switch.  If there IS a new device,
-    //          we should be able to retrieve it.
-    //
-    hr = _DeviceEnumerator->GetDevice(_EndpointID, &_Endpoint);
-    if (FAILED(hr))
-    {
-        printf("Unable to retrieve new device during stream switch: %x\n", hr);
-        goto ErrorExit;
-    }
-    //
-    //  Step 5 - Re-instantiate the audio client on the new endpoint.
-    //
-    hr = _Endpoint->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_AudioClient));
-    if (FAILED(hr))
-    {
-        printf("Unable to activate audio client on the new endpoint: %x.\n", hr);
-        goto ErrorExit;
-    }
-    //
-    //  Step 6 - Retrieve the new mix format.
-    //
-    CoTaskMemFree(_MixFormat);
-    hr = _AudioClient->GetMixFormat(&_MixFormat);
-    if (FAILED(hr))
-    {
-        printf("Unable to retrieve mix format for new audio client: %x.\n", hr);
-        goto ErrorExit;
-    }
-
-    _FrameSize = (_MixFormat->wBitsPerSample / 8) * _MixFormat->nChannels;
-
-    //
-    //  Step 7:  Re-initialize the audio client.
-    //
-    if (!InitializeAudioEngine())
-    {
-        goto ErrorExit;
-    }
-
-    if (InitializeAubio())
-    {
-        return false;
-    }
-
-    //
-    //  Step 8: Re-register for session disconnect notifications.
-    //
-    hr = _AudioClient->GetService(IID_PPV_ARGS(&_AudioSessionControl));
-    if (FAILED(hr))
-    {
-        printf("Unable to retrieve session control on new audio client: %x\n", hr);
-        goto ErrorExit;
-    }
-    hr = _AudioSessionControl->RegisterAudioSessionNotification(this);
-    if (FAILED(hr))
-    {
-        printf("Unable to retrieve session control on new audio client: %x\n", hr);
-        goto ErrorExit;
-    }
-
-    //
-    //  Reset the stream switch complete event because it's a manual reset event.
-    //
-    ResetEvent(_StreamSwitchCompleteDefaultEvent);
-    //
-    //  And we're done.  Start capturing again.
-    //
-    hr = _AudioClient->Start();
-    if (FAILED(hr))
-    {
-        printf("Unable to start the new audio client: %x\n", hr);
-        goto ErrorExit;
-    }
-
-    _InStreamSwitch = false;
-    _DefaultSelected = false;
-    return true;
-
-ErrorExit:
-    _InStreamSwitch = false;
-    return false;
-}
-
-//
 //  Called when an audio session is disconnected.
 //
 //  When a session is disconnected because of a device removal or format change event, we just want
 //  to let the capture thread know that the session's gone away
 //
- __attribute__((nothrow)) HRESULT AudioSystem::OnSessionDisconnected(AudioSessionDisconnectReason DisconnectReason)
+__attribute__((nothrow)) HRESULT AudioSystem::OnSessionDisconnected(AudioSessionDisconnectReason DisconnectReason)
 {
-    if (DisconnectReason == DisconnectReasonDeviceRemoval) // if device removed go to default device
-    {
-        //
-        //  The stream was disconnected because the device we're capturing to was removed.
-        //
-        //  We want to reset the stream switch complete event (so we'll block when the HandleStreamSwitchEvent function
-        //  waits until the default device changed event occurs).
-        //
-        //  Note that we don't set the _StreamSwitchCompleteEvent - that will be set when the OnDefaultDeviceChanged event occurs.
-        //
-        _InStreamSwitch = true;
-        SetEvent(_StreamSwitchDefaultEvent);
-    }
-    if (DisconnectReason == DisconnectReasonFormatChanged)
-    {
-        _InStreamSwitch = true;
-        if(_DefaultSelected)
-            {
-            //
-            //  The stream was disconnected because the format changed on our capture device.
-            //
-            //  We want to flag that we're in a stream switch and then set the stream switch event (which breaks out of the capturer).  We also
-            //  want to set the _StreamSwitchCompleteEvent because we're not going to see a default device changed event after this.
-            //
-            SetEvent(_StreamSwitchDefaultEvent);
-            SetEvent(_StreamSwitchCompleteDefaultEvent);
-        }
-        else
-        {
-            SetEvent(_StreamSwitchSelectedEvent);
-            SetEvent(_StreamSwitchCompleteSelectedEvent);
-        }
-    }
-    return S_OK;
+   if (DisconnectReason == DisconnectReasonDeviceRemoval) // if device removed go to default device
+   {
+       //
+       //  The stream was disconnected because the device we're capturing to was removed.
+       //
+       //  We want to reset the stream switch complete event (so we'll block when the HandleStreamSwitchEvent function
+       //  waits until the default device changed event occurs).
+       //
+       //  Note that we don't set the _StreamSwitchCompleteEvent - that will be set when the OnDefaultDeviceChanged event occurs.
+       //
+       _InStreamSwitch = true;
+       SetEvent(_StreamSwitchEvent);
+   }
+   if (DisconnectReason == DisconnectReasonFormatChanged)
+   {
+       _InStreamSwitch = true;
+       //
+       //  The stream was disconnected because the format changed on our capture device.
+       //
+       //  We want to flag that we're in a stream switch and then set the stream switch event (which breaks out of the capturer).  We also
+       //  want to set the _StreamSwitchCompleteEvent because we're not going to see a default device changed event after this.
+       //
+       SetEvent(_StreamSwitchEvent);
+       SetEvent(_StreamSwitchCompleteEvent);
+   }
+   return S_OK;
 }
 //
 //  Called when the default capture device changed.  We just want to set an event which lets the stream switch logic know that it's ok to
 //  continue with the stream switch.
 //
- __attribute__((nothrow)) HRESULT AudioSystem::OnDefaultDeviceChanged(EDataFlow Flow, ERole Role, LPCWSTR /*NewDefaultDeviceId*/)
+__attribute__((nothrow)) HRESULT AudioSystem::OnDefaultDeviceChanged(EDataFlow Flow, ERole Role, LPCWSTR /*NewDefaultDeviceId*/)
 {
-    if (Flow == eRender && Role == eConsole && _DefaultSelected)
-    {
-        //
-        //  The default capture device for our configured role was changed.
-        //
-        //  If we're not in a stream switch already, we want to initiate a stream switch event.
-        //  We also we want to set the stream switch complete event.  That will signal the capture thread that it's ok to re-initialize the
-        //  audio capturer.
-        //
-        if (!_InStreamSwitch)
-        {
-            _InStreamSwitch = true;
-            SetEvent(_StreamSwitchDefaultEvent);
-        }
-        SetEvent(_StreamSwitchCompleteDefaultEvent);
-    }
-    return S_OK;
+   if (Flow == eRender && Role == eConsole && _DefaultSelected)
+   {
+       //
+       //  The default capture device for our configured role was changed.
+       //
+       //  If we're not in a stream switch already, we want to initiate a stream switch event.
+       //  We also we want to set the stream switch complete event.  That will signal the capture thread that it's ok to re-initialize the
+       //  audio capturer.
+       //
+       if (!_InStreamSwitch)
+       {
+           _InStreamSwitch = true;
+           SetEvent(_StreamSwitchEvent);
+       }
+       SetEvent(_StreamSwitchCompleteEvent);
+   }
+   return S_OK;
 }
 
- bool AudioSystem::selectedDefault()
- {
+bool AudioSystem::selectedDefault()
+{
 /*
-     if(_DefaultSelected)
-     {
-         return false;
-     }
-*/
-     if (!_InStreamSwitch)
-     {
-         _InStreamSwitch = true;
-         SetEvent(_StreamSwitchDefaultEvent);
-     }
-     SetEvent(_StreamSwitchCompleteDefaultEvent);
-    return true;
- }
-
-
- bool AudioSystem::selectedEndpoint(LPWSTR input)
- {
-    if (!_InStreamSwitch)
+    if(_DefaultSelected)
     {
-        _InStreamSwitch = true;
-        if(_EndpointID != nullptr)
-        {
-            if(wcscmp(input, _EndpointID) != 0)
-            {
-                if(_EndpointID)
-                {
-                    free(_EndpointID);
-                }
-                _EndpointID = _wcsdup(input);
-            }
-        }
-        SetEvent(_StreamSwitchSelectedEvent);
-        // no need to compare just copy in and call event
-        // copy
-        // call event
-
+        return false;
     }
-    SetEvent(_StreamSwitchCompleteSelectedEvent);
-    return true;
- }
+*/
+   if (!_InStreamSwitch)
+   {
+    _InStreamSwitch = true;
+    _DefaultSelected = true;
+    SetEvent(_StreamSwitchEvent);
+   }
+   SetEvent(_StreamSwitchCompleteEvent);
+   return true;
+}
+
+
+bool AudioSystem::selectedEndpoint(LPWSTR input)
+{
+   if (!_InStreamSwitch)
+   {
+       _InStreamSwitch = true;
+       _DefaultSelected = false;
+       if(_EndpointID)
+       {
+           if(wcscmp(input, _EndpointID)) // if they are different then free and swap!
+           {
+               free(_EndpointID);
+               _EndpointID = _wcsdup(input);
+           }
+       }
+       else
+       {
+           _EndpointID = _wcsdup(input);
+       }
+       SetEvent(_StreamSwitchEvent);
+       // no need to compare just copy in and call event
+       // copy
+       // call event
+
+   }
+   SetEvent(_StreamSwitchCompleteEvent);
+   return true;
+}
 
 //
 //  IUnknown

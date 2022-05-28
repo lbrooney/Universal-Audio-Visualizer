@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
     pSystem = new (std::nothrow) AudioSystem();
     pSystem->Initialize();
+    pSystem->Start();
     ui->setupUi(this);
     openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));

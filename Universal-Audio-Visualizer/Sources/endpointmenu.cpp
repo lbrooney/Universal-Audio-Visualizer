@@ -95,7 +95,7 @@ void EndpointMenu::showEvent(QShowEvent *event)
 
 void EndpointMenu::setNewAudioEndpoint(QAction* a)
 {
-    if(a->objectName().compare("Default"))
+    if(a->objectName().compare("Default") == 0)
     {
         pSystem->selectedDefault();
     }

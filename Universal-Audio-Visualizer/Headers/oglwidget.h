@@ -28,6 +28,8 @@
 #include "audiosystem.h"
 
 const float DEFAULTINTENSITY = 0.5f;
+const uint8_t SHAPEUPDATECYCLE = 5;
+const uint8_t SPECTRUMUPDATECYCLE = 3;
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
