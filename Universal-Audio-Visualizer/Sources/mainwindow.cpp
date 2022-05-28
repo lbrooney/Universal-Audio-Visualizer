@@ -36,8 +36,7 @@ MainWindow::~MainWindow()
     pSystem->Stop();
     delete openGLWidget;
     pEndpointMenu->Shutdown();
-    pEndpointMenu->Release();
-    delete pEndpointMenu;
+    SafeRelease(&pEndpointMenu);
     delete ui;
     pSystem->Shutdown();
     SafeRelease(&pSystem);

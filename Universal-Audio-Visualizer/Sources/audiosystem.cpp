@@ -34,6 +34,7 @@ AudioSystem::AudioSystem() :
     _AudioSessionControl(nullptr),
     _DeviceEnumerator(nullptr),
     _InStreamSwitch(false),
+    _EndpointID(nullptr),
     _BPM(0),
     _FFTIn(nullptr),
     _FFTOut(nullptr),
@@ -388,6 +389,14 @@ void AudioSystem::Stop()
         CloseHandle(_CaptureThread);
         _CaptureThread = nullptr;
     }
+
+    if (_AnalysisThread)
+    {
+        WaitForSingleObject(_AnalysisThread, INFINITE);
+
+        CloseHandle(_AnalysisThread);
+        _AnalysisThread = nullptr;
+    }
 }
 
 
@@ -404,8 +413,6 @@ DWORD AudioSystem::DoCaptureThread()
 {
     bool stillPlaying = true;
     HANDLE waitArray[3] = {_ShutdownEvent, _StreamSwitchEvent, _AudioSamplesReadyEvent };
-    HANDLE mmcssHandle = NULL;
-    DWORD mmcssTaskIndex = 0;
 
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr))
@@ -714,7 +721,6 @@ bool AudioSystem::HandleStreamSwitchEvent()
     }
 
     _InStreamSwitch = false;
-    _DefaultSelected = true;
     return true;
 
 ErrorExit:
@@ -981,8 +987,6 @@ void AudioSystem::AnalyzeAudio()
 
 smpl_t AudioSystem::GetBPM()
 {
-    if(_InStreamSwitch)
-        return 0;
     return _BPM;
 }
 
