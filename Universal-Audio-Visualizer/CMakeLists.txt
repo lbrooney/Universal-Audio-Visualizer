@@ -19,6 +19,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGLWidgets Gui Core)
 include_directories(Headers/
                     Shaders/
                     Sources/
+                    img/
                     lib/
                     lib/fftw/include
                     lib/aubio/include)
@@ -54,6 +55,7 @@ set(PROJECT_SOURCES
         Headers/slider.h
         Sources/slider.ui
         Sources/slider.cpp
+        Images.qrc
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${RUNTIME_OUTPUT_DIRECTORY})

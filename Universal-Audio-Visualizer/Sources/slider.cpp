@@ -23,7 +23,6 @@ Slider::Slider(QWidget *parent) :
     {
         std::cout << "ERROR" << std::endl;
     }
-
     ui->textBrowser->setText(QString::number(myTempo));
     volumeSetup();
     scaleSetup();
