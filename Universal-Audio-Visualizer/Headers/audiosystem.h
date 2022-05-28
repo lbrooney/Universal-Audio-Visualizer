@@ -15,7 +15,7 @@
 #include "aubio/aubio.h"
 #include "boost/container/vector.hpp"
 
-const UINT CBBUFFERSIZE = 5;
+const UINT CBBUFFERSIZE = 50;
 CONST int FRAMECOUNT = 1024;
 
 //
