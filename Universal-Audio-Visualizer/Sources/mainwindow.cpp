@@ -150,8 +150,5 @@ void MainWindow::on_actionBlue_triggered()
 }
 
 
-void MainWindow::on_actionDetect_triggered()
-{
-    openGLWidget->rgb_selector=openGLWidget->determineColor(pInterface->getRecorder()->bpm);
-}
+
 
