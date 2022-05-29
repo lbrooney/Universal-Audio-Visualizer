@@ -80,6 +80,8 @@ bool AudioSystem::InitializeAudioEngine()
         return false;
     }
 
+    //qDebug() << "BUFFER SIZE " << _BufferSize << " FRAMESIZE " << _FrameSize << " CHANNEL COUNT" << ChannelCount() << " BitsPerSample" << _MixFormat->wBitsPerSample << Qt::endl;
+
     hr = _AudioClient->SetEventHandle(_AudioSamplesReadyEvent);
     if (FAILED(hr))
     {
@@ -99,13 +101,15 @@ bool AudioSystem::InitializeAudioEngine()
 
 bool AudioSystem::InitializeAubio()
 {
-    _Mag.resize(FRAMECOUNT * 2);
+    // Potenitally lose a little bit of data if _BufferSize > FRAMECOUNT(1024 ATM)
+    // but if _BufferSize used then the program just crashes
+    _Mag.resize(FRAMECOUNT);
     _FFTIn = new_fvec(FRAMECOUNT);
     _FFTOut = new_cvec(FRAMECOUNT);
     _TempoIn = new_fvec(FRAMECOUNT);
     _TempoOut = new_fvec(2);
     _FFTObject = new_aubio_fft(FRAMECOUNT);
-    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
+    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 4, SamplesPerSecond() );
     return true;
 }
 
@@ -124,6 +128,7 @@ bool AudioSystem::LoadFormat()
     }
 
     _FrameSize = (_MixFormat->wBitsPerSample / 8) * _MixFormat->nChannels;
+
     return true;
 }
 
@@ -465,30 +470,20 @@ DWORD AudioSystem::DoCaptureThread()
                     //  We only really care about the silent flag since we want to put frames of silence into the buffer
                     //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
                     //
-                    std::vector<BYTE> temp = std::vector<BYTE>( FRAMECOUNT * ChannelCount() );
-                    for(int i = 0; i < (framesAvailable * _FrameSize) / (FRAMECOUNT * ChannelCount()); i += 1)
-                    {
-                        if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
-                        {
-                            std::memcpy(temp.data(), pData, FRAMECOUNT * ChannelCount());
-                            _AudioQueue.push(temp);
-                            SetEvent(_AnalysisSamplesReadyEvent);
-                        }
-                    }
+                    std::vector<BYTE> temp = std::vector<BYTE>( _BufferSize * _FrameSize );
                     if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
                     {
-                        std::memset(temp.data(), 0, FRAMECOUNT * ChannelCount());
-                        std::memcpy(temp.data(), pData, (framesAvailable * _FrameSize) % (FRAMECOUNT * ChannelCount()));
-                        _AudioQueue.push(temp);
-                        SetEvent(_AnalysisSamplesReadyEvent);
+                        std::memcpy(temp.data(), pData, FRAMECOUNT * ChannelCount());
                     }
+                    _AudioQueue.push(temp);
+                    SetEvent(_AnalysisSamplesReadyEvent);
+
                 }
                 hr = _CaptureClient->ReleaseBuffer(framesAvailable);
                 if (FAILED(hr))
                 {
                     printf("Unable to release capture buffer: %x!\n", hr);
                 }
-                SetEvent(_AnalysisSamplesReadyEvent);
             }
             break;
         }
@@ -958,7 +953,8 @@ DWORD AudioSystem::DoAnalysisThread()
 void AudioSystem::AnalyzeAudio()
 {
     // have fvec_t of size buffer
-    // set fft input to 0
+    fvec_zeros(_FFTIn);
+    fvec_zeros(_TempoIn);
     if(!_AudioQueue.empty())
     {
         std::vector<BYTE> data = std::vector<BYTE>(_AudioQueue.front());
@@ -978,8 +974,8 @@ void AudioSystem::AnalyzeAudio()
                 uint32_t unsignedVal = 0;
                 for (int b = 0; b < _MixFormat->wBitsPerSample; b+=8 )
                 {
-                    //unsignedVal += data.at(i) << b;
-                    unsignedVal += data[i] << b;
+                    unsignedVal += data.at(i) << b;
+                    //unsignedVal += data[i] << b;
                     i += 1;
                 }
                 int32_t signedVal = unsignedVal;
@@ -989,29 +985,19 @@ void AudioSystem::AnalyzeAudio()
                 else if (unsignedVal >= wrapAt) signedVal = unsignedVal - wrapWith;
                 _FFTIn->data[j] += (smpl_t)(signedVal * scaler); // want to include both signed ints in this
                 _TempoIn->data[j] += (smpl_t)(signedVal * scaler);
-                //_FFTIn->data[j] += (smpl_t)(signedVal); // want to include both signed ints in this
-                //_TempoIn->data[j] += (smpl_t)(signedVal);
-                /*
-                qDebug() << "i " << i << " j " << j <<" k " << k
-                          <<" signed value "<< signedVal
-                         <<" inputed value " << _FFTIn->data[j]<< Qt::endl;
-                         */
             }
             _FFTIn->data[j] /= (smpl_t)ChannelCount();
             _TempoIn->data[j] /= (smpl_t)ChannelCount();
-            /*
-            qDebug() << "i " << i << " j " << j
-                     <<" inputed value " << _FFTIn->data[j]<< Qt::endl;
-                     */
             // HANN WINDOW FUNCTION
             double multiplier = 0.5 * (1.0 - cos(2. * M_PI * (smpl_t)j / (smpl_t)FRAMECOUNT));
             _FFTIn->data[j] *= multiplier;
             //_TempoIn->data[j] *= multiplier;
 
             j += 1;
+            //qDebug() << "i : " << i << " j " << j << Qt::endl;
         }
     }
-    //fvec_shift(_FFTIn);
+    fvec_shift(_FFTIn);
     aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
     aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
 
