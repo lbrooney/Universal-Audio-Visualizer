@@ -12,8 +12,6 @@ const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 
-double myTempo = 0.0;
-
 AudioRecorder::AudioRecorder(AudioCommons* input) : dataSemaphore(0)
 {
     pCommons = input;
@@ -229,7 +227,6 @@ void AudioRecorder::ProcessData()
 #ifdef QT_DEBUG
                 qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(tempoObject) << Qt::endl;
 #endif
-                myTempo = (double) aubio_tempo_get_bpm(tempoObject);
             }
         }
     }
@@ -250,6 +247,11 @@ void AudioRecorder::ProcessData()
 smpl_t AudioRecorder::GetBeatPeriod()
 {
     return aubio_tempo_get_period_s(tempoObject);
+}
+
+smpl_t AudioRecorder::GetBPM()
+{
+    return aubio_tempo_get_bpm(tempoObject);
 }
 
 float AudioRecorder::GetVolume()

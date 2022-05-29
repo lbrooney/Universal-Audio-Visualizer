@@ -37,6 +37,7 @@ public:
     void ProcessData();
     float GetVolume();
     smpl_t GetBeatPeriod();
+    smpl_t GetBPM();
     float SetVolume(float);
 
     BOOL bDone = FALSE;

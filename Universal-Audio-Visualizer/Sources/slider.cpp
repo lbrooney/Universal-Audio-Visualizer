@@ -2,11 +2,10 @@
 #include "ui_slider.h"
 #include <QLabel>
 #include <QGridLayout>
+#include <QTimer>
 #include "Audio/audiorecorder.h"
 
 #define DEFAULT 30
-
-extern double myTempo;
 
 Slider::Slider(QWidget *parent) :
     QDialog(parent),
@@ -23,9 +22,16 @@ Slider::Slider(QWidget *parent) :
     {
         std::cout << "ERROR" << std::endl;
     }
-    ui->textBrowser->setText(QString::number(myTempo));
+    // A clever way to save the state of the toggle button ;)
+    if (openGLWidget->rgb_selector != QVector3D(1, 1, 1))
+    {
+        ui->checkBox->setCheckState(Qt::Checked);
+    }
     volumeSetup();
     scaleSetup();
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &Slider::UpdateText);
+    timer->start();
 }
 
 void Slider::scaleSetup()
@@ -67,8 +73,29 @@ void Slider::on_scaleSlider_sliderMoved(int position)
     openGLWidget->oglsetScale(scale);
 }
 
-void Slider::on_pushButton_clicked()
+void Slider::UpdateText()
 {
-    ui->textBrowser->setText(QString::number(myTempo));
+    ui->textBrowser->setText(QString::number(pRecorder->GetBPM()));
+}
+
+void Slider::UpdateColor()
+{
+    // (Off -> On)
+    if (ui->checkBox->isChecked())
+    {
+        openGLWidget->rgb_selector = openGLWidget->determineColor(pInterface->getRecorder()->bpm);
+    }
+    // (On -> Off)
+    else
+    {
+       openGLWidget->rgb_selector = QVector3D(1, 1, 1); // Default color is white
+    }
+}
+
+void Slider::on_checkBox_toggled(bool checked)
+{
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &Slider::UpdateColor);
+    timer->start();
 }
 
