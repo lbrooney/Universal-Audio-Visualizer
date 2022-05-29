@@ -36,12 +36,14 @@ public:
     STDMETHOD_(ULONG, Release)();
     void Shutdown();
 
-signals:
-    //void DeviceStateChanged(LPCWSTR DeviceId, DWORD NewState);
-
 private slots:
     void setNewAudioEndpoint(QAction* a);
-    //void RecieveDeviceStateChanged(LPCWSTR DeviceId, DWORD NewState);
+    void AddDevice(QString DeviceId);
+    void RemoveDevice(QString DeviceId);
+
+signals:
+    void DeviceAdded(QString DeviceId);
+    void DeviceRemoved(QString DeviceId);
 
 };
 

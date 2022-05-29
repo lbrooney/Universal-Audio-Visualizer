@@ -69,6 +69,8 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *p
     }
 
     connect(endpointGroup, SIGNAL(triggered(QAction*)), this, SLOT(setNewAudioEndpoint(QAction*)));
+    connect(this, SIGNAL(DeviceAdded(QString)), this, SLOT(AddDevice(QString)));
+    connect(this, SIGNAL(DeviceRemoved(QString)), this, SLOT(RemoveDevice(QString)));
     return;
 }
 
@@ -109,43 +111,59 @@ void EndpointMenu::setNewAudioEndpoint(QAction* a)
     }
 }
 
+void EndpointMenu::AddDevice(QString DeviceId)
+{
+    IMMDevice* pEndpoint = nullptr;
+    LPWSTR id = (LPWSTR) calloc(DeviceId.size() + 1, sizeof(WCHAR));
+    DeviceId.toWCharArray(id);
+    pSystem->selectedEndpoint(id);
+    pEnumerator->GetDevice(id, &pEndpoint);
+    free(id);
+    IPropertyStore* pProps = nullptr;
+    PROPVARIANT varName;
+    pEndpoint->OpenPropertyStore(
+                STGM_READ, &pProps);
+    PropVariantInit(&varName);
+    pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+    QAction *temp = new QAction(
+                QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
+    temp->setCheckable(true);
+    temp->setObjectName(DeviceId);
+    actionList.push_back(temp);
+    endpointGroup->addAction(temp);
+    this->addAction(temp);
+    PropVariantClear(&varName);
+    SafeRelease(&pProps);
+    SafeRelease(&pEndpoint);
+}
+
+void EndpointMenu::RemoveDevice(QString DeviceId)
+{
+    QAction *temp = nullptr;
+    for (int i = 0; i < actionList.size(); i += 1)
+    {
+        if(actionList.at(i)->objectName().compare(DeviceId) == 0)
+        {
+            temp = actionList.at(i);
+            actionList.removeAt(i);
+            break;
+        }
+    }
+    if(temp)
+        delete temp;
+    return;
+}
+
  __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR DeviceId, DWORD NewState)
 {
+    QString ID = QString::fromWCharArray(DeviceId, -1);
     switch(NewState)
     {
     case DEVICE_STATE_ACTIVE:
-    {
-        IMMDevice* pEndpoint = nullptr;
-        pEnumerator->GetDevice(DeviceId, &pEndpoint);
-        IPropertyStore* pProps = nullptr;
-        PROPVARIANT varName;
-        pEndpoint->OpenPropertyStore(
-                    STGM_READ, &pProps);
-        PropVariantInit(&varName);
-        pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-        QAction *temp = new QAction(
-                    QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
-        temp->setCheckable(true);
-        temp->setObjectName(QString::fromWCharArray(DeviceId, -1));
-        actionList.push_back(temp);
-        endpointGroup->addAction(temp);
-        this->addAction(temp);
-        PropVariantClear(&varName);
-        SafeRelease(&pProps);
-        SafeRelease(&pEndpoint);
+        emit DeviceAdded(ID);
         break;
-    }
     default:
-        QString ID = QString::fromWCharArray(DeviceId, -1);
-        for(auto it : actionList)
-        {
-            if(it->objectName().compare(ID) == 0)
-            {
-                delete it;
-                break;
-            }
-        }
-        actionList.front()->setChecked(true);
+        emit DeviceRemoved(ID);
         break;
     }
     return S_OK;
