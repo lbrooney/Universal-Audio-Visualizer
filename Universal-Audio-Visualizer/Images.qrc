@@ -2,5 +2,7 @@
     <qresource prefix="/Icons">
         <file>img/off-button.png</file>
         <file>img/on-button.png</file>
+        <file>img/icon.ico</file>
+        <file>img/icon.png</file>
     </qresource>
 </RCC>

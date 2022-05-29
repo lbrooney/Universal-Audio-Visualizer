@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
     pSystem->Initialize();
     pSystem->Start();
     ui->setupUi(this);
+    setWindowIcon(QIcon(":/Icons/img/icon.png"));
+    setWindowTitle("Universal Audio Visualizer");
     openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
