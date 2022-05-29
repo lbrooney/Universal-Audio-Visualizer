@@ -55,7 +55,7 @@ void OGLWidget::paintGL()
         for(int i = 0; i < objList.size(); i++)
         {
             double magnitude = objList[i]->m_Magnitude * objList[i]->intensityScale;
-            if(drawCycleCount == SHAPEUPDATECYCLE)
+            if(drawCycleCount >= SHAPEUPDATECYCLE)
             {
                 //update max objects on screen
                 std::vector<double> mag = pSystem->GetMag();
@@ -89,7 +89,7 @@ void OGLWidget::paintGL()
                 objCount++;
             }
         }
-        if(drawCycleCount == SHAPEUPDATECYCLE)
+        if(drawCycleCount >= SHAPEUPDATECYCLE)
             drawCycleCount = 0;
 
     }
@@ -98,7 +98,7 @@ void OGLWidget::paintGL()
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
-            if(drawCycleCount == SPECTRUMUPDATECYCLE)
+            if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             {
                 magnitude = pSystem->GetMag().at(objList[i]->freqBin) / 30;
             }
@@ -113,7 +113,7 @@ void OGLWidget::paintGL()
 
             objList[i]->DrawShape(&mProgram);
         }
-        if(drawCycleCount == SPECTRUMUPDATECYCLE)
+        if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             drawCycleCount = 0;
     }
 

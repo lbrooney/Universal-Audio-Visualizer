@@ -37,9 +37,11 @@ public:
     void Shutdown();
 
 signals:
+    //void DeviceStateChanged(LPCWSTR DeviceId, DWORD NewState);
 
 private slots:
     void setNewAudioEndpoint(QAction* a);
+    //void RecieveDeviceStateChanged(LPCWSTR DeviceId, DWORD NewState);
 
 };
 
