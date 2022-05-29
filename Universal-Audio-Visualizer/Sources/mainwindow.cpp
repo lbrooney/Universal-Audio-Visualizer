@@ -131,3 +131,27 @@ void MainWindow::on_actionSliders_triggered()
     Slider *window = new Slider(this);
     window->show();
 }
+
+void MainWindow::on_actionRed_triggered()
+{
+    openGLWidget->rgb_selector=QVector3D(1,0,0);
+}
+
+
+void MainWindow::on_actionGreen_triggered()
+{
+    openGLWidget->rgb_selector=QVector3D(0,1,0);
+}
+
+
+void MainWindow::on_actionBlue_triggered()
+{
+    openGLWidget->rgb_selector=QVector3D(0,0,1);
+}
+
+
+void MainWindow::on_actionDetect_triggered()
+{
+    openGLWidget->rgb_selector=openGLWidget->determineColor(pInterface->getRecorder()->bpm);
+}
+

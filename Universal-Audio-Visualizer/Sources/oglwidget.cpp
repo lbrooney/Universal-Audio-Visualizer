@@ -9,6 +9,7 @@ OGLWidget::OGLWidget(QWidget *parent, AudioInterface* p)
 
     beatTimer = new QTimer(this);
     connect(beatTimer, SIGNAL(timeout()), this, SLOT(playBeat()));
+    rgb_selector=QVector3D(1,1,1);
 }
 
 OGLWidget::~OGLWidget()
@@ -105,7 +106,8 @@ void OGLWidget::paintGL()
             else
             {
                 objList[i]->SetScale(newScale);
-                objList[i]->SetColor(determineColor(pRecorder->bpm));
+//                objList[i]->SetColor(determineColor(pRecorder->bpm));
+                objList[i]->SetColor(rgb_selector);
                 objList[i]->DrawShape(&shaderProgram);
                 objCount++;
             }
@@ -131,8 +133,8 @@ void OGLWidget::paintGL()
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->scale.x, magnitude, objList[i]->scale.z);
-            objList[i]->SetColor(determineColor(pRecorder->bpm));
-
+//            objList[i]->SetColor(determineColor(pRecorder->bpm));
+            objList[i]->SetColor(rgb_selector);
             objList[i]->DrawShape(&shaderProgram);
         }
         if(drawCycleCount >= updateCycle)
