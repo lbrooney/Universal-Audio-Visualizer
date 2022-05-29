@@ -25,7 +25,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -52,9 +52,18 @@
     <addaction name="actionCube"/>
     <addaction name="actionSphere"/>
    </widget>
+   <widget class="QMenu" name="menuColors">
+    <property name="title">
+     <string>Colors</string>
+    </property>
+    <addaction name="actionRed"/>
+    <addaction name="actionGreen"/>
+    <addaction name="actionBlue"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuFullScreen"/>
    <addaction name="menuShapes"/>
+   <addaction name="menuColors"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionEdit">
@@ -111,6 +120,21 @@
   <action name="actionSliders">
    <property name="text">
     <string>Sliders</string>
+   </property>
+  </action>
+  <action name="actionRed">
+   <property name="text">
+    <string>Red</string>
+   </property>
+  </action>
+  <action name="actionGreen">
+   <property name="text">
+    <string>Green</string>
+   </property>
+  </action>
+  <action name="actionBlue">
+   <property name="text">
+    <string>Blue</string>
    </property>
   </action>
  </widget>

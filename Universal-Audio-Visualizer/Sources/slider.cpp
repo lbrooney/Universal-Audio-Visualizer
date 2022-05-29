@@ -2,6 +2,7 @@
 #include "ui_slider.h"
 #include <QLabel>
 #include <QGridLayout>
+#include <QTimer>
 
 const int DEFAULTSIZE = 30;
 
@@ -14,8 +15,16 @@ Slider::Slider(QWidget *parent, AudioSystem *p) :
     setWindowTitle("Sliders");
     openGLWidget = ((MainWindow*)parent)->getOGLWidget();
     ui->textBrowser->setText(QString::number(pSystem->GetBPM()));
+    // A clever way to save the state of the toggle button ;)
+    if (openGLWidget->rgbSelector != QVector3D(1, 1, 1))
+    {
+        ui->checkBox->setCheckState(Qt::Checked);
+    }
     volumeSetup();
     scaleSetup();
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &Slider::UpdateText);
+    timer->start();
 }
 
 void Slider::scaleSetup()
@@ -57,8 +66,29 @@ void Slider::on_scaleSlider_sliderMoved(int position)
     openGLWidget->oglsetScale(scale);
 }
 
-void Slider::on_pushButton_clicked()
+void Slider::UpdateText()
 {
     ui->textBrowser->setText(QString::number(pSystem->GetBPM()));
+}
+
+void Slider::UpdateColor()
+{
+    // (Off -> On)
+    if (ui->checkBox->isChecked())
+    {
+        openGLWidget->rgbSelector = openGLWidget->determineColor(pSystem->GetBPM());
+    }
+    // (On -> Off)
+    else
+    {
+       openGLWidget->rgbSelector = QVector3D(1, 1, 1); // Default color is white
+    }
+}
+
+void Slider::on_checkBox_toggled(bool checked)
+{
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &Slider::UpdateColor);
+    timer->start();
 }
 

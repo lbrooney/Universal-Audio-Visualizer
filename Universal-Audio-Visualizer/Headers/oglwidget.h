@@ -33,7 +33,8 @@ public:
     void loadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();
-
+    QVector3D rgbSelector;
+    QVector3D determineColor(float bpm);
 public slots:
     void playBeat();
 
@@ -42,7 +43,7 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void initShaders();
-    QVector3D determineColor(float bpm);
+
 
 private:
 

@@ -22,7 +22,7 @@ private slots:
 
     void on_scaleSlider_sliderMoved(int position);
 
-    void on_pushButton_clicked();
+    void on_checkBox_toggled(bool checked);
 
 private:
     OGLWidget* openGLWidget = nullptr;
@@ -30,6 +30,8 @@ private:
     Ui::Slider *ui;
     void volumeSetup();
     void scaleSetup();
+    void UpdateText();
+    void UpdateColor();
 };
 
 #endif // SLIDER_H

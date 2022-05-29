@@ -57,5 +57,12 @@ private slots:
     void on_actionWaveform_triggered();
 
     void on_actionSliders_triggered();
+
+    void on_actionRed_triggered();
+
+    void on_actionGreen_triggered();
+
+    void on_actionBlue_triggered();
+
 };
 #endif // MAINWINDOW_H

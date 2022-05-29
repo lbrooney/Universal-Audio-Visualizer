@@ -127,3 +127,24 @@ void MainWindow::on_actionSliders_triggered()
     Slider *window = new Slider(this, pSystem);
     window->show();
 }
+
+void MainWindow::on_actionRed_triggered()
+{
+    openGLWidget->rgbSelector=QVector3D(1,0,0);
+}
+
+
+void MainWindow::on_actionGreen_triggered()
+{
+    openGLWidget->rgbSelector=QVector3D(0,1,0);
+}
+
+
+void MainWindow::on_actionBlue_triggered()
+{
+    openGLWidget->rgbSelector=QVector3D(0,0,1);
+}
+
+
+
+
