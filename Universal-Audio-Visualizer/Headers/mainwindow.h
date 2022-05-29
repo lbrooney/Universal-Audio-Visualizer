@@ -8,7 +8,7 @@
 #include <QtWidgets>
 #include "oglwidget.h"
 #include "endpointmenu.h"
-#include "Audio/audiointerface.h"
+#include "audiosystem.h"
 
 extern int choose_shape;
 
@@ -23,7 +23,7 @@ private:
     Ui::MainWindow *ui;
     void fullscreen();
     bool isFullscreen = false;
-    AudioInterface* pInterface = nullptr;
+    AudioSystem* pSystem = nullptr;
     EndpointMenu* pEndpointMenu = nullptr;
     OGLWidget* openGLWidget;
 
@@ -33,7 +33,6 @@ private:
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    AudioInterface* getAudioInterface();
     OGLWidget* getOGLWidget();
     ~MainWindow();
 

@@ -19,18 +19,17 @@
 #include <atomic>
 
 #include "Shapes/Shape.h"
-#include "Shapes/Sphere.h"
-#include "Shapes/Cube.h"
-#include "Shapes/Prism.h"
-#include "Audio/audiointerface.h"
+#include "audiosystem.h"
 
 const float DEFAULTINTENSITY = 0.5f;
+const uint8_t SHAPEUPDATECYCLE = 5;
+const uint8_t SPECTRUMUPDATECYCLE = 3;
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
     Q_OBJECT
 public:
-    OGLWidget(QWidget *parent = nullptr, AudioInterface* p = nullptr);
+    OGLWidget(QWidget *parent = nullptr, AudioSystem* p = nullptr);
     void loadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();
@@ -46,13 +45,14 @@ protected:
     QVector3D determineColor(float bpm);
 
 private:
-    AudioInterface* pInterface;
-    AudioRecorder* pRecorder;
 
     QTimer* beatTimer;
     bool playBeatAnim = false;
+    AudioSystem* pSystem;
+
+    QOpenGLShaderProgram mProgram;
     int drawCycleCount = 0;
-    float maxMagnitude = 10.0f;
+    double maxMagnitude = 10.0;
     bool displayWaveform = false;
     float defaultScale = 0.3;
 

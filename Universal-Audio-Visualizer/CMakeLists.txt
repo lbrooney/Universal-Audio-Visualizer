@@ -40,17 +40,12 @@ set(PROJECT_SOURCES
         Sources/oglwidget.cpp
         Shaders/vertex.glsl
         Shaders/fragment.glsl
-        Headers/Audio/audiointerface.h
-        Sources/Audio/audiointerface.cpp
-        Headers/Audio/AudioRecorder.h
-        Sources/Audio/AudioRecorder.cpp
-        Headers/Audio/audiocommons.h
-        Sources/Audio/audiocommons.cpp
         Headers/endpointmenu.h
         Sources/endpointmenu.cpp
-        Headers/Audio/endpointnotificationclient.h
-        Sources/Audio/endpointnotificationclient.cpp
-        Headers/Audio/AudioMacros.h
+        Sources/audiosystem.cpp
+        Headers/audiosystem.h
+        Sources/stdafx.cpp
+        Headers/stdafx.h
         Shaders.qrc
         Headers/slider.h
         Sources/slider.ui

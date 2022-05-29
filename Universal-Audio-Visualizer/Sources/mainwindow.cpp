@@ -8,37 +8,33 @@
 #include <QObject>
 #include <QDebug>
 #include "slider.h"
+#include "stdafx.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    pInterface = new AudioInterface();
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    pSystem = new (std::nothrow) AudioSystem();
+    pSystem->Initialize();
+    pSystem->Start();
     ui->setupUi(this);
-    openGLWidget = new OGLWidget(ui->centralwidget, pInterface);
+    openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
-    pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pInterface);
+    pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
-
-#ifdef QT_DEBUG
-    debug = new QMenu("debug", this);
-    menuBar()->addMenu(debug);
-#endif
-
 }
 
 MainWindow::~MainWindow()
 {
+    pSystem->Stop();
     delete openGLWidget;
-    delete pEndpointMenu;
+    pEndpointMenu->Shutdown();
+    SafeRelease(&pEndpointMenu);
     delete ui;
-    delete pInterface;
-}
-
-AudioInterface* MainWindow::getAudioInterface()
-{
-    return pInterface;
+    pSystem->Shutdown();
+    SafeRelease(&pSystem);
 }
 
 OGLWidget* MainWindow::getOGLWidget()
@@ -128,6 +124,6 @@ void MainWindow::on_actionWaveform_triggered()
 
 void MainWindow::on_actionSliders_triggered()
 {
-    Slider *window = new Slider(this);
+    Slider *window = new Slider(this, pSystem);
     window->show();
 }

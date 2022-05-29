@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "mainwindow.h"
+#include "audiosystem.h"
 
 namespace Ui {
 class Slider;
@@ -13,7 +14,7 @@ class Slider : public QDialog
     Q_OBJECT
 
 public:
-    explicit Slider(QWidget *parent = nullptr);
+    explicit Slider(QWidget *parent = nullptr, AudioSystem *p = nullptr);
     ~Slider();
 
 private slots:
@@ -25,8 +26,7 @@ private slots:
 
 private:
     OGLWidget* openGLWidget = nullptr;
-    AudioInterface* pInterface = nullptr;
-    AudioRecorder* pRecorder = nullptr;
+    AudioSystem *pSystem = nullptr;
     Ui::Slider *ui;
     void volumeSetup();
     void scaleSetup();

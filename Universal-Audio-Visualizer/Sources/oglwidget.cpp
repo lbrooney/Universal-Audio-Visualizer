@@ -1,12 +1,12 @@
 #include "oglwidget.h"
+#include "Shapes/Sphere.h"
+#include "Shapes/Cube.h"
+#include "Shapes/Prism.h"
 using namespace std;
 
-OGLWidget::OGLWidget(QWidget *parent, AudioInterface* p)
-    : QOpenGLWidget{parent}
+OGLWidget::OGLWidget(QWidget *parent, AudioSystem *p)
+    : QOpenGLWidget{parent}, pSystem(p)
 {
-    pInterface = p;
-    pRecorder = pInterface->getRecorder();
-
     beatTimer = new QTimer(this);
     connect(beatTimer, SIGNAL(timeout()), this, SLOT(playBeat()));
 }
@@ -50,14 +50,12 @@ void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    pRecorder->dataSemaphore.acquire();
-    pRecorder->ProcessData();
-
-    if(pRecorder->bpm != 0 && !beatTimer->isActive() && !playBeatAnim)
+    if(pSystem->GetBPM() != 0 && !beatTimer->isActive() && !playBeatAnim)
     {
-        smpl_t beatPeriod = 1 / (pRecorder->bpm / 60);
+        smpl_t beatPeriod = 1 / (pSystem->GetBPM() / 60);
         beatTimer->start(beatPeriod * 1000);
     }
+
 
     if(!displayWaveform)
     {
@@ -67,18 +65,18 @@ void OGLWidget::paintGL()
 
         if(playBeatAnim)
         {
-            newScale += this->defaultScale * pRecorder->GetVolume();
+            newScale += this->defaultScale * pSystem->GetVolume();
             playBeatAnim = false;
         }
-
+        std::vector<double> mag = pSystem->GetMag();
         for(int i = 0; i < objList.size(); i++)
         {
             double magnitude = objList[i]->magnitude * objList[i]->intensityScale;
-            if(drawCycleCount >= updateCycle)
+            if(drawCycleCount >= SHAPEUPDATECYCLE)
             {
                 //update max objects on screen
-                magnitude = clamp(pRecorder->mag[objList[i]->freqBin], 0.0f, maxMagnitude) * objList[i]->intensityScale;
-                objList[i]->magnitude = clamp(pRecorder->mag[objList[i]->freqBin], 0.0f, maxMagnitude);
+                magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
+                objList[i]->magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
                 float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -105,24 +103,23 @@ void OGLWidget::paintGL()
             else
             {
                 objList[i]->SetScale(newScale);
-                objList[i]->SetColor(determineColor(pRecorder->bpm));
+                objList[i]->SetColor(determineColor(pSystem->GetBPM()));
                 objList[i]->DrawShape(&shaderProgram);
                 objCount++;
             }
         }
-        if(drawCycleCount >= updateCycle)
+        if(drawCycleCount >= SHAPEUPDATECYCLE)
             drawCycleCount = 0;
-
     }
     else
     {
-        int updateCycle = 2;
+        std::vector<double> mag = pSystem->GetMag();
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
-            if(drawCycleCount >= updateCycle)
+            if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             {
-                magnitude = pRecorder->mag[objList[i]->freqBin] / 20;
+                magnitude = mag.at(objList[i]->freqBin) / 20;
             }
             else
             {
@@ -131,11 +128,11 @@ void OGLWidget::paintGL()
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
             objList[i]->SetScale(objList[i]->scale.x, magnitude, objList[i]->scale.z);
-            objList[i]->SetColor(determineColor(pRecorder->bpm));
+            objList[i]->SetColor(determineColor(pSystem->GetBPM()));
 
             objList[i]->DrawShape(&shaderProgram);
         }
-        if(drawCycleCount >= updateCycle)
+        if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             drawCycleCount = 0;
     }
 
@@ -286,34 +283,30 @@ void OGLWidget::loadPreset(int preset)
 
 void OGLWidget::createSphere(float r, float g, float b)
 {
-    Sphere* s = new Sphere(r, g, b);
-    s->SetScale(0.2f);
-    s->intensityScale = DEFAULTINTENSITY;
-    s->AssignFrequencyBin(5000, pRecorder->sampleRate,
-                             FRAMECOUNT);
-    s->SetTranslation(-0.5f, 0.0f, 0.0f);
-    objList.push_back(s);
-
+    Sphere* temp = new Sphere(r, g, b);
+    temp->SetScale(0.2f);
+    temp->intensityScale = DEFAULTINTENSITY;
+    temp->AssignFrequencyBin(5000, pSystem->SamplesPerSecond(),
+                                   FRAMECOUNT);
+    objList.push_back(temp);
 }
 
 void OGLWidget::createCube(float r, float g, float b)
 {
-    Cube *c = new Cube(r, g, b);
-    c->SetScale(0.2f);
-    c->intensityScale = DEFAULTINTENSITY;
-    c->AssignFrequencyBin(1000, pRecorder->sampleRate,
-                             FRAMECOUNT);
-    c->SetTranslation(0.0f, 0.0f, 0.0f);
-    objList.push_back(c);
+    Cube *temp = new Cube(r, g, b);
+    temp->SetScale(0.2f);
+    temp->intensityScale = DEFAULTINTENSITY;
+    temp->AssignFrequencyBin(1000, pSystem->SamplesPerSecond(),
+                                   FRAMECOUNT);
+    objList.push_back(temp);
 }
 
 void OGLWidget::createPrism(float r, float g, float b)
 {
-    Prism* p = new Prism(r, g, b);
-    p->SetScale(0.2f);
-    p->intensityScale = DEFAULTINTENSITY;
-    p->AssignFrequencyBin(50, pRecorder->sampleRate,
-                             FRAMECOUNT);
-    p->SetTranslation(0.5f, 0.0f, 0.0f);
-    objList.push_back(p);
+    Prism* temp = new Prism(r, g, b);
+    temp->SetScale(0.2f);
+    temp->intensityScale = DEFAULTINTENSITY;
+    temp->AssignFrequencyBin(50, pSystem->SamplesPerSecond(),
+                                   FRAMECOUNT);
+    objList.push_back(temp);
 }
