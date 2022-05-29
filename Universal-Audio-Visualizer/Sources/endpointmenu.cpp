@@ -153,6 +153,8 @@ void EndpointMenu::RemoveDevice(QString DeviceId)
         {
             temp = actionList.at(i);
             actionList.removeAt(i);
+            if(temp->isChecked())
+                actionList.front()->setChecked(true);
             break;
         }
     }

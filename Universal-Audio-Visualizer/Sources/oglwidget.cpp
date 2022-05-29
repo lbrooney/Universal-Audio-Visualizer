@@ -48,7 +48,7 @@ void OGLWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //pSystem->ProcessAudio();
-
+    //qDebug() << "BPM " << pSystem->GetBPM() << Qt::endl;
     if(!showSpectrum)
     {
         int objCount = 0;

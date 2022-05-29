@@ -109,7 +109,7 @@ bool AudioSystem::InitializeAubio()
     _TempoIn = new_fvec(FRAMECOUNT);
     _TempoOut = new_fvec(2);
     _FFTObject = new_aubio_fft(FRAMECOUNT);
-    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 4, SamplesPerSecond() );
+    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
     return true;
 }
 
@@ -470,11 +470,20 @@ DWORD AudioSystem::DoCaptureThread()
                     //  We only really care about the silent flag since we want to put frames of silence into the buffer
                     //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
                     //
-                    std::vector<BYTE> temp = std::vector<BYTE>( _BufferSize * _FrameSize );
-                    if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
+                    std::vector<BYTE> temp = std::vector<BYTE>( FRAMECOUNT * _FrameSize  );
+
+                    for(int i = 0; i < framesAvailable / FRAMECOUNT; i += 1)
                     {
-                        std::memcpy(temp.data(), pData, FRAMECOUNT * ChannelCount());
+                        ZeroMemory(temp.data(), FRAMECOUNT * _FrameSize);
+                        if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
+                        {
+                            std::memcpy(temp.data(), pData, FRAMECOUNT * _FrameSize);
+                        }
+                        _AudioQueue.push(temp);
+                        SetEvent(_AnalysisSamplesReadyEvent);
                     }
+                    ZeroMemory(temp.data(), FRAMECOUNT * _FrameSize);
+                    std::memcpy(temp.data(), pData, (framesAvailable % FRAMECOUNT) * _FrameSize);
                     _AudioQueue.push(temp);
                     SetEvent(_AnalysisSamplesReadyEvent);
 
@@ -717,6 +726,12 @@ bool AudioSystem::HandleStreamSwitchEvent()
         goto ErrorExit;
     }
 
+    qDebug() << "BUFFER SIZE " << _BufferSize << " FRAMESIZE "
+             << _FrameSize << " CHANNEL COUNT"
+             << ChannelCount() << " BitsPerSample"
+             << _MixFormat->wBitsPerSample
+             << " SAMPS PER SEC " << SamplesPerSecond() << Qt::endl;
+
     _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
 
     /*
@@ -953,8 +968,8 @@ DWORD AudioSystem::DoAnalysisThread()
 void AudioSystem::AnalyzeAudio()
 {
     // have fvec_t of size buffer
-    fvec_zeros(_FFTIn);
-    fvec_zeros(_TempoIn);
+    //fvec_zeros(_FFTIn);
+    //fvec_zeros(_TempoIn);
     if(!_AudioQueue.empty())
     {
         std::vector<BYTE> data = std::vector<BYTE>(_AudioQueue.front());
@@ -1002,7 +1017,7 @@ void AudioSystem::AnalyzeAudio()
     aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
 
     _BPM = aubio_tempo_get_bpm(_TempoObject);
-    for(int j = 0; j < _FFTOut->length; j+=1)
+    for(int j = 0; j < FRAMECOUNT; j+=1)
     {
         float r = _FFTOut->norm[j] * cos(_FFTOut->phas[j]);
         float i = _FFTOut->norm[j] * sin(_FFTOut->phas[j]);;

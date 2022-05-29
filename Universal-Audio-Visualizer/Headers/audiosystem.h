@@ -16,7 +16,7 @@
 #include <vector>
 
 const UINT CBBUFFERSIZE = 5;
-CONST int FRAMECOUNT = 1024;
+CONST int FRAMECOUNT = 512;
 
 //
 //  WASAPI Capture class.

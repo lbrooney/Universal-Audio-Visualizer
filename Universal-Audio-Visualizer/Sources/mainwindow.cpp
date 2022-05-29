@@ -23,12 +23,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout->addWidget(openGLWidget);
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
-
-#ifdef QT_DEBUG
-    debug = new QMenu("debug", this);
-    menuBar()->addMenu(debug);
-#endif
-
 }
 
 MainWindow::~MainWindow()
