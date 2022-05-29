@@ -11,6 +11,13 @@
 #include <QDebug>
 #include <wchar.h>
 
+static const IID IID__IMMEndpoint = {
+    //MIDL_INTERFACE("1BE09788-6894-4089-8586-9A2A6C265AC5")
+    0x1be09788, 0x6894, 0x4089, {0x85, 0x86, 0x9a, 0x2a, 0x6c, 0x26, 0x5a, 0xc5}
+};
+
+#define IID__IMMENDPOINT                       (IID__IMMEndpoint)
+
 EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *p)
     : QMenu{title, parent}
 {
@@ -157,15 +164,26 @@ void EndpointMenu::RemoveDevice(QString DeviceId)
  __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR DeviceId, DWORD NewState)
 {
     QString ID = QString::fromWCharArray(DeviceId, -1);
-    switch(NewState)
+    IMMDevice* pDevice = nullptr;
+    pEnumerator->GetDevice(DeviceId, &pDevice);
+    IMMEndpoint* pEndpoint = nullptr;
+    pDevice->QueryInterface(IID__IMMENDPOINT, (void**)&pEndpoint);
+    EDataFlow pDataFlow;
+    pEndpoint->GetDataFlow(&pDataFlow);
+    if(pDataFlow == eRender)
     {
-    case DEVICE_STATE_ACTIVE:
-        emit DeviceAdded(ID);
-        break;
-    default:
-        emit DeviceRemoved(ID);
-        break;
+        switch(NewState)
+        {
+        case DEVICE_STATE_ACTIVE:
+            emit DeviceAdded(ID);
+            break;
+        default:
+            emit DeviceRemoved(ID);
+            break;
+        }
     }
+    SafeRelease(&pEndpoint);
+    SafeRelease(&pDevice);
     return S_OK;
 }
 
