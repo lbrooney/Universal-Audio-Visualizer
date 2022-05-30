@@ -19,6 +19,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS OpenGLWidgets Gui Core)
 include_directories(Headers/
                     Shaders/
                     Sources/
+                    img/
                     lib/
                     lib/fftw/include
                     lib/aubio/include)
@@ -49,6 +50,7 @@ set(PROJECT_SOURCES
         Shaders.qrc
         Shaders/vertex.glsl
         Shaders/fragment.glsl
+        Images.qrc
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${RUNTIME_OUTPUT_DIRECTORY})

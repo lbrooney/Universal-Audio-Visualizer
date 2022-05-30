@@ -19,56 +19,56 @@ class Shape : public QOpenGLFunctions
 public:
     Shape()
     {
-        m_ModelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::mat4(1.0f);
         indexBuf = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
-        m_Color = QVector3D(1.0f, 1.0f, 1.0f);
+        color = QVector3D(1.0f, 1.0f, 1.0f);
         initializeOpenGLFunctions();
 
         arrayBuf.create();
         indexBuf.create();
         normalBuf.create();
 
-        m_Scale = glm::vec3(1.0f, 1.0f, 1.0f);
-        m_Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
+        scale = glm::vec3(1.0f, 1.0f, 1.0f);
+        rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        position = glm::vec3(0.0f, 0.0f, 0.0f);
 
         intensityScale = 1.0f;
     }
 
     Shape(float r, float g, float b)
     {
-        m_ModelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::mat4(1.0f);
         indexBuf = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
-        m_Color = QVector3D(r, g, b);
+        color = QVector3D(r, g, b);
         initializeOpenGLFunctions();
 
         arrayBuf.create();
         indexBuf.create();
         normalBuf.create();
 
-        m_Scale = glm::vec3(1.0f, 1.0f, 1.0f);
-        m_Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
+        scale = glm::vec3(1.0f, 1.0f, 1.0f);
+        rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        position = glm::vec3(0.0f, 0.0f, 0.0f);
 
         intensityScale = 1.0f;
     }
 
-    /*Shape(const Shape &source)
+    Shape(const Shape &source)
     {
         initializeOpenGLFunctions();
-        m_Color = source.m_Color;
-        m_ModelMatrix = source.m_ModelMatrix;
+        color = source.color;
+        modelMatrix = source.modelMatrix;
         arrayBuf = source.arrayBuf;
         indexBuf = source.indexBuf;
         normalBuf = source.normalBuf;
         indexCount = source.indexCount;
-        m_Scale = source.m_Scale;
-        m_Rotation = source.m_Rotation;
-        m_Position = source.m_Position;
+        scale = source.scale;
+        rotation = source.rotation;
+        position = source.position;
         freqBin = source.freqBin;
         intensityScale = source.intensityScale;
-        m_Magnitude = source.m_Magnitude;
-    }*/
+        magnitude = source.magnitude;
+    }
 
     virtual ~Shape()
     {
@@ -83,18 +83,18 @@ public:
            return *this;
 
         initializeOpenGLFunctions();
-        m_Color = source.m_Color;
-        m_ModelMatrix = source.m_ModelMatrix;
+        color = source.color;
+        modelMatrix = source.modelMatrix;
         arrayBuf = source.arrayBuf;
         indexBuf = source.indexBuf;
         normalBuf = source.normalBuf;
         indexCount = source.indexCount;
-        m_Scale = source.m_Scale;
-        m_Rotation = source.m_Rotation;
-        m_Position = source.m_Position;
+        scale = source.scale;
+        rotation = source.rotation;
+        position = source.position;
         freqBin = source.freqBin;
         intensityScale = source.intensityScale;
-        m_Magnitude = source.m_Magnitude;
+        magnitude = source.magnitude;
 
         return *this;
     }
@@ -111,23 +111,23 @@ public:
 
         indexBuf.bind();
 
-        m_ModelMatrix = glm::mat4(1.0f);
-        m_ModelMatrix = glm::translate(m_ModelMatrix, m_Position);
-        m_ModelMatrix = glm::rotate(m_ModelMatrix, glm::radians(m_Rotation.x), glm::vec3(1, 0, 0));
-        m_ModelMatrix = glm::rotate(m_ModelMatrix, glm::radians(m_Rotation.y), glm::vec3(0, 1, 0));
-        m_ModelMatrix = glm::rotate(m_ModelMatrix, glm::radians(m_Rotation.z), glm::vec3(0, 0, 1));
-        m_ModelMatrix = glm::scale(m_ModelMatrix, m_Scale);
+        modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, position);
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), glm::vec3(1, 0, 0));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.y), glm::vec3(0, 1, 0));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.z), glm::vec3(0, 0, 1));
+        modelMatrix = glm::scale(modelMatrix, scale);
 
         unsigned int u_ModelMatrix = glGetUniformLocation(program->programId(), "u_ModelMatrix");
-        glUniformMatrix4fv(u_ModelMatrix, 1, GL_FALSE, glm::value_ptr(m_ModelMatrix));
+        glUniformMatrix4fv(u_ModelMatrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        m_NormalMatrix = glm::transpose(glm::inverse(m_ModelMatrix));
+        normalMatrix = glm::transpose(glm::inverse(modelMatrix));
 
         unsigned int u_NormalMatrix = glGetUniformLocation(program->programId(), "u_NormalMatrix");
-        glUniformMatrix4fv(u_NormalMatrix, 1, GL_FALSE, glm::value_ptr(m_NormalMatrix));
+        glUniformMatrix4fv(u_NormalMatrix, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
         unsigned int u_Color = glGetUniformLocation(program->programId(), "u_Color");
-        glUniform3f(u_Color, m_Color.x(), m_Color.y(), m_Color.z());
+        glUniform3f(u_Color, color.x(), color.y(), color.z());
 
         arrayBuf.bind();
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -142,43 +142,43 @@ public:
 
     void SetTranslation(float x, float y, float z)
     {
-        m_Position = glm::vec3(x, y, z);
+        this->position = glm::vec3(x, y, z);
     }
     void SetRotation(float x, float y, float z)
     {
-        m_Rotation = glm::vec3(x, y, z);
+        this->rotation = glm::vec3(x, y, z);
     }
-    void SetScale(float scale)
+    void SetScale(float s)
     {
-        m_Scale = glm::vec3(scale, scale, scale);
+        this->scale = glm::vec3(s, s, s);
     }
     void SetScale(float x, float y, float z)
     {
-        m_Scale = glm::vec3(x, y, z);
+        this->scale = glm::vec3(x, y, z);
     }
     void SetColor(float r, float g, float b)
     {
-        m_Color = QVector3D(r, g, b);
+        this->color = QVector3D(r, g, b);
     }
     void SetColor(QVector3D color)
     {
-        m_Color = color;
+        this->color = color;
     }
     void AssignFrequencyBin(int freq, DWORD sampleRate, int blockSize)
     {
         float freqStep = sampleRate / (float)blockSize;
-        freqBin = round(freq / freqStep);
+        this->freqBin = round(freq / freqStep);
     }
 
-    glm::mat4 m_ModelMatrix;
-    glm::mat4 m_NormalMatrix;
-    QVector3D m_Color;
-    glm::vec3 m_Rotation;
-    glm::vec3 m_Scale;
-    glm::vec3 m_Position;
+    glm::mat4 modelMatrix;
+    glm::mat4 normalMatrix;
+    QVector3D color;
+    glm::vec3 rotation;
+    glm::vec3 scale;
+    glm::vec3 position;
     int freqBin = 0;
     float intensityScale;
-    float m_Magnitude = 0.0f;
+    float magnitude = 0.0f;
 
 protected:
     QOpenGLBuffer arrayBuf;

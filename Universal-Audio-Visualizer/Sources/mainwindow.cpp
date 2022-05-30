@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include <QGraphicsView>
 #include <iostream>
+#include <QObject>
 #include <QDebug>
 #include "slider.h"
 #include "stdafx.h"
@@ -18,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
     pSystem->Initialize();
     pSystem->Start();
     ui->setupUi(this);
+    setWindowIcon(QIcon(":/Icons/img/icon.png"));
+    setWindowTitle("Universal Audio Visualizer");
     openGLWidget = new OGLWidget(ui->centralwidget, pSystem);
     openGLWidget->setObjectName(QString::fromUtf8("openGLWidget"));
     ui->verticalLayout->addWidget(openGLWidget);
@@ -123,6 +126,27 @@ void MainWindow::on_actionWaveform_triggered()
 
 void MainWindow::on_actionSliders_triggered()
 {
-    Slider *window = new Slider(this);
+    Slider *window = new Slider(this, pSystem);
     window->show();
 }
+
+void MainWindow::on_actionRed_triggered()
+{
+    openGLWidget->rgbSelector=QVector3D(1,0,0);
+}
+
+
+void MainWindow::on_actionGreen_triggered()
+{
+    openGLWidget->rgbSelector=QVector3D(0,1,0);
+}
+
+
+void MainWindow::on_actionBlue_triggered()
+{
+    openGLWidget->rgbSelector=QVector3D(0,0,1);
+}
+
+
+
+

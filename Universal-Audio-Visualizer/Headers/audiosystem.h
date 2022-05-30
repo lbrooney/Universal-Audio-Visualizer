@@ -11,6 +11,7 @@
 #include <MMDeviceAPI.h>
 #include <AudioClient.h>
 #include <AudioPolicy.h>
+#include <endpointvolume.h>
 #include "aubio/aubio.h"
 #include <queue>
 #include <vector>
@@ -42,6 +43,9 @@ public:
     smpl_t GetBPM();
     smpl_t GetBeatPeriod();
     std::vector<double>& GetMag();
+    float GetVolume();
+    float SetVolume(float vol);
+
 
 private:
     ~AudioSystem(void);  // Destructor is private to prevent accidental deletion.
@@ -49,18 +53,19 @@ private:
     //
     //  Core Audio Capture member variables.
     //
-    IMMDeviceEnumerator *_deviceEnumerator;
-    IMMDevice           *_Endpoint;
-    LPWSTR              _EndpointID;
-    IAudioClient        *_AudioClient;
-    IAudioCaptureClient *_CaptureClient;
+    IMMDeviceEnumerator  *_DeviceEnumerator;
+    IMMDevice            *_Endpoint;
+    LPWSTR               _EndpointID;
+    IAudioClient         *_AudioClient;
+    IAudioCaptureClient  *_CaptureClient;
+    IAudioEndpointVolume *_EndpointVolume;
 
-    HANDLE              _CaptureThread;
-    HANDLE              _ShutdownEvent;
-    HANDLE              _AudioSamplesReadyEvent;
-    WAVEFORMATEX        *_MixFormat;
-    size_t              _FrameSize;
-    UINT32              _BufferSize;
+    HANDLE               _CaptureThread;
+    HANDLE               _ShutdownEvent;
+    HANDLE               _AudioSamplesReadyEvent;
+    WAVEFORMATEX         *_MixFormat;
+    size_t               _FrameSize;
+    UINT32               _BufferSize;
 
     std::queue<std::vector<BYTE>> _AudioQueue;
     static DWORD __stdcall WASAPICaptureThread(LPVOID Context);
@@ -71,7 +76,6 @@ private:
     HANDLE                  _StreamSwitchEvent;          // Set when the current session is disconnected or the default device changes.
     HANDLE                  _StreamSwitchCompleteEvent;  // Set when the default device changed.
     IAudioSessionControl    *_AudioSessionControl;
-    IMMDeviceEnumerator     *_DeviceEnumerator;
     bool                    _InStreamSwitch;
     bool                    _DefaultSelected;
 

@@ -1,13 +1,17 @@
 #include "oglwidget.h"
+#include "Shapes/Sphere.h"
+#include "Shapes/Cube.h"
+#include "Shapes/Prism.h"
 using namespace std;
 
 OGLWidget::OGLWidget(QWidget *parent, AudioSystem *p)
-    : QOpenGLWidget{parent}
+    : QOpenGLWidget{parent}, pSystem(p)
 {
     pSystem = p;
 
     beatTimer = new QTimer(this);
     connect(beatTimer, SIGNAL(timeout()), this, SLOT(playBeat()));
+    rgbSelector = QVector3D(1,1,1);
 }
 
 OGLWidget::~OGLWidget()
@@ -18,8 +22,8 @@ OGLWidget::~OGLWidget()
 void OGLWidget::initializeGL()
 {
     float apsectRatio = (float)width() / (float)height();
-    m_PerspectiveMatrix = glm::perspective(glm::radians(60.0f), apsectRatio, 0.1f, 1000.0f);
-    m_ViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    perspectiveMatrix = glm::perspective(glm::radians(60.0f), apsectRatio, 0.1f, 1000.0f);
+    viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     initializeOpenGLFunctions();
     glEnable(GL_DEPTH_TEST);
@@ -27,23 +31,22 @@ void OGLWidget::initializeGL()
 
     initShaders();
 
-    unsigned int u_lightColor = glGetUniformLocation(mProgram.programId(), "u_lightColor");
+    unsigned int u_lightColor = glGetUniformLocation(shaderProgram.programId(), "u_lightColor");
     glUniform3f(u_lightColor, 1.0f, 1.0f, 1.0f);
-    unsigned int u_lightDirection = glGetUniformLocation(mProgram.programId(), "u_lightDirection");
+    unsigned int u_lightDirection = glGetUniformLocation(shaderProgram.programId(), "u_lightDirection");
     glUniform3f(u_lightDirection, 1.0f, 1.0f, 1.0f);
 
-    unsigned int u_projMatrix = glGetUniformLocation(mProgram.programId(), "u_ProjMatrix");
-    glUniformMatrix4fv(u_projMatrix, 1, GL_FALSE, glm::value_ptr(m_PerspectiveMatrix));
-
-    unsigned int u_ViewMatrix = glGetUniformLocation(mProgram.programId(), "u_ViewMatrix");
-    glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(m_ViewMatrix));
+    unsigned int u_projMatrix = glGetUniformLocation(shaderProgram.programId(), "u_ProjMatrix");
+    glUniformMatrix4fv(u_projMatrix, 1, GL_FALSE, glm::value_ptr(perspectiveMatrix));
+    unsigned int u_ViewMatrix = glGetUniformLocation(shaderProgram.programId(), "u_ViewMatrix");
+    glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
     loadPreset(0);
 }
 
 void OGLWidget::oglsetScale(float scale)
 {
-    this->scale = scale;
+    this->defaultScale = scale;
 }
 
 void OGLWidget::paintGL()
@@ -56,28 +59,27 @@ void OGLWidget::paintGL()
         beatTimer->start(beatPeriod * 1000);
     }
 
+
     if(!showSpectrum)
     {
         int objCount = 0;
-        float newScale  = this->scale;
+        int updateCycle = 5;
+        float newScale  = this->defaultScale;
 
         if(playBeatAnim)
         {
-            //newScale += this->scale * pRecorder->GetVolume();
-            newScale += this->scale * 0.3;
+            newScale += this->defaultScale * pSystem->GetVolume();
             playBeatAnim = false;
         }
-
-
+        std::vector<double> mag = pSystem->GetMag();
         for(int i = 0; i < objList.size(); i++)
         {
-            double magnitude = objList[i]->m_Magnitude * objList[i]->intensityScale;
+            double magnitude = objList[i]->magnitude * objList[i]->intensityScale;
             if(drawCycleCount >= SHAPEUPDATECYCLE)
             {
                 //update max objects on screen
-                std::vector<double> mag = pSystem->GetMag();
                 magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude) * objList[i]->intensityScale;
-                objList[i]->m_Magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude);
+                objList[i]->magnitude = clamp(mag[objList[i]->freqBin], 0.0, maxMagnitude);
 
                 //update rotation
                 float xRot = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/360.0f));
@@ -91,17 +93,21 @@ void OGLWidget::paintGL()
                 float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
                 zPos *= -2;
                 objList[i]->SetTranslation(xPos, yPos, zPos);
+
             }
+            //if object count exceeds current max, skip to next object type
             if(objCount >= magnitude)
             {
                 int maxObjects = maxMagnitude * objList[i]->intensityScale;
                 i += maxObjects - objCount;
                 objCount = 0;
             }
+            //otherwise update color and draw
             else
             {
-                objList[i]->SetScale(newScale);
-                objList[i]->SetColor(determineColor(pSystem->GetBPM()));
+                objList[i]->SetScale(newScale);;
+                //objList[i]->SetColor(determineColor(pSystem->GetBPM()));
+                objList[i]->SetColor(rgbSelector);
                 objList[i]->DrawShape(&mProgram);
                 objCount++;
             }
@@ -111,6 +117,7 @@ void OGLWidget::paintGL()
     }
     else
     {
+        std::vector<double> mag = pSystem->GetMag();
         for(int i = 0; i < objList.size(); i++)
         {
             float magnitude;
@@ -120,14 +127,14 @@ void OGLWidget::paintGL()
             }
             else
             {
-                magnitude = objList[i]->m_Scale.y;
+                magnitude = objList[i]->scale.y;
             }
 
             magnitude = clamp(magnitude, 0.01f, 10.0f);
-            objList[i]->SetScale(objList[i]->m_Scale.x, magnitude, objList[i]->m_Scale.z);
-            objList[i]->SetColor(determineColor(pSystem->GetBPM()));
-
-            objList[i]->DrawShape(&mProgram);
+            objList[i]->SetScale(objList[i]->scale.x, magnitude, objList[i]->scale.z);
+            //objList[i]->SetColor(determineColor(pSystem->GetBPM()));
+            objList[i]->SetColor(rgbSelector);
+            objList[i]->DrawShape(&shaderProgram);
         }
         if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             drawCycleCount = 0;
@@ -144,10 +151,16 @@ void OGLWidget::resizeGL(int w, int h)
 
 void OGLWidget::initShaders()
 {
-    mProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/Shaders/vertex.glsl");
-    mProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
-    mProgram.link();
-    mProgram.bind();
+    shaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/Shaders/vertex.glsl");
+    shaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
+    shaderProgram.link();
+    shaderProgram.bind();
+}
+
+void OGLWidget::playBeat()
+{
+    beatTimer->stop();
+    playBeatAnim = true;
 }
 
 void OGLWidget::playBeat()
@@ -177,6 +190,7 @@ void OGLWidget::loadPreset(int preset)
     objList.clear();
 
     int count = static_cast<int>(maxMagnitude * DEFAULTINTENSITY);
+    displayWaveform = false;
     switch(preset)
     {
     case 1:
@@ -196,7 +210,6 @@ void OGLWidget::loadPreset(int preset)
             createSphere(0.0f, 0.0f, 1.0f);
         }
 
-        showSpectrum = false;
         break;
     }
     case 2:{
@@ -216,7 +229,6 @@ void OGLWidget::loadPreset(int preset)
             createPrism(0.0f, 0.0f, 1.0f);
         }
 
-        showSpectrum = false;
         break;
     }
     case 3:{
@@ -236,7 +248,6 @@ void OGLWidget::loadPreset(int preset)
             createCube(0.0f, 0.0f, 1.0f);
         }
 
-        showSpectrum = false;
         break;
     }
     case 4:{
@@ -256,7 +267,6 @@ void OGLWidget::loadPreset(int preset)
             createSphere(0.0f, 0.0f, 1.0f);
         }
 
-        showSpectrum = false;
         break;
     }
     default:
@@ -264,18 +274,19 @@ void OGLWidget::loadPreset(int preset)
         float xPos = -1.75f;
         for(int i = 0; i < 200; i++)
         {
-            Cube* s = new Cube(1.0f, 0.0f, 0.0f);
+            Cube* c = new Cube(1.0f, 0.0f, -3.0f);
 
-            s->SetTranslation(xPos, 0.0f, 0.0f);
-            s->SetScale(0.01f, 0.01f, 0.01f);
-            objList.push_back(s);
-            s->freqBin = binCounter;
+            c->SetTranslation(xPos, 0.0f, 0.0f);
+            c->SetScale(0.01f, 0.01f, 0.01f);
+            objList.push_back(c);
+            c->freqBin = binCounter;
             binCounter += 2;
             xPos += 0.05f;
 
         }
+
         objList[0]->freqBin = 1;
-        showSpectrum = true;
+        displayWaveform = true;
     }
 }
 
@@ -285,9 +296,8 @@ void OGLWidget::createSphere(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(5000, pSystem->SamplesPerSecond(),
-                             pSystem->BufferSize());
+                                   FRAMECOUNT);
     objList.push_back(temp);
-
 }
 
 void OGLWidget::createCube(float r, float g, float b)
@@ -296,7 +306,7 @@ void OGLWidget::createCube(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(1000, pSystem->SamplesPerSecond(),
-                             pSystem->BufferSize());
+                                   FRAMECOUNT);
     objList.push_back(temp);
 }
 
@@ -306,6 +316,6 @@ void OGLWidget::createPrism(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(50, pSystem->SamplesPerSecond(),
-                             pSystem->BufferSize());
+                                   FRAMECOUNT);
     objList.push_back(temp);
 }

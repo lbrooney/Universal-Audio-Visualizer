@@ -14,7 +14,7 @@
 #include <QVector3D>
 #include <vector>
 #include <QTimer>
-
+#include <QObject>
 #include <thread>
 #include <atomic>
 
@@ -36,7 +36,8 @@ public:
     void loadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();
-
+    QVector3D rgbSelector;
+    QVector3D determineColor(float bpm);
 public slots:
     void playBeat();
 
@@ -45,14 +46,15 @@ protected:
     void resizeGL(int w, int h);
     void paintGL();
     void initShaders();
-    QVector3D determineColor(float bpm);
+
 
 private:
+
+    QTimer* beatTimer;
+    bool playBeatAnim = false;
     AudioSystem* pSystem;
 
     QOpenGLShaderProgram mProgram;
-    std::vector<Shape*> objList;
-
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
     bool showSpectrum = false;
@@ -61,8 +63,11 @@ private:
     QTimer* beatTimer;
     bool playBeatAnim = false;
 
-    glm::mat4 m_PerspectiveMatrix;
-    glm::mat4 m_ViewMatrix;
+    QOpenGLShaderProgram shaderProgram;
+    std::vector<Shape*> objList;
+    glm::mat4 perspectiveMatrix;
+    glm::mat4 viewMatrix;
+
     void createSphere(float r, float g, float b);
     void createCube(float r, float g, float b);
     void createPrism(float r, float g, float b);

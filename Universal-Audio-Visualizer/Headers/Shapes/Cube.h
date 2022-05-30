@@ -17,11 +17,11 @@ public:
         indexCount = 36;
     }
 
-    /*Cube(const Cube &c) : Shape(c)
+    Cube(const Cube &c) : Shape(c)
     {
         indexCount = 36;
         Cube::InitGeometry();
-    }*/
+    }
 
     void InitGeometry()
     {

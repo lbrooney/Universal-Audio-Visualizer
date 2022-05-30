@@ -17,16 +17,19 @@
 #include <math.h>
 #include <QtDebug>
 
+const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
+
 //
 //  A simple WASAPI Capture client.
 //
 
 AudioSystem::AudioSystem() :
     _RefCount(1),
-    _deviceEnumerator(nullptr),
+    _DeviceEnumerator(nullptr),
     _Endpoint(nullptr),
     _AudioClient(nullptr),
     _CaptureClient(nullptr),
+    _EndpointVolume(nullptr),
     _CaptureThread(nullptr),
     _ShutdownEvent(nullptr),
     _AudioSamplesReadyEvent(nullptr),
@@ -34,7 +37,6 @@ AudioSystem::AudioSystem() :
     _StreamSwitchEvent(nullptr),
     _StreamSwitchCompleteEvent(nullptr),
     _AudioSessionControl(nullptr),
-    _DeviceEnumerator(nullptr),
     _InStreamSwitch(false),
     _EndpointID(nullptr),
     _BPM(0),
@@ -202,6 +204,16 @@ bool AudioSystem::Initialize()
     }
 
     //
+    //  Activate the endpoint volume on the new endpoint.
+    //
+    hr = _Endpoint->Activate(IID_IAudioEndpointVolume, CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_EndpointVolume));
+    if (FAILED(hr))
+    {
+        printf("Unable to activate endpoint volume: %x.\n", hr);
+        return false;
+    }
+
+    //
     // Load the MixFormat.  This may differ depending on the shared mode used
     //
     if (!LoadFormat())
@@ -279,6 +291,7 @@ void AudioSystem::Shutdown()
     }
 
     SafeRelease(&_Endpoint);
+    SafeRelease(&_EndpointVolume);
     SafeRelease(&_AudioClient);
     SafeRelease(&_CaptureClient);
 
@@ -678,6 +691,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
     SafeRelease(&_AudioSessionControl);
     SafeRelease(&_CaptureClient);
     SafeRelease(&_AudioClient);
+    SafeRelease(&_EndpointVolume);
     SafeRelease(&_Endpoint);
 
     // aubio resources
@@ -766,6 +780,15 @@ bool AudioSystem::HandleStreamSwitchEvent()
         goto ErrorExit;
     }
     //
+    //  Re-instantiate the endpoint volume on the new endpoint.
+    //
+    hr = _Endpoint->Activate(IID_IAudioEndpointVolume, CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_EndpointVolume));
+    if (FAILED(hr))
+    {
+        printf("Unable to activate endpoint volume on the new endpoint: %x.\n", hr);
+        goto ErrorExit;
+    }
+    //
     //  Step 6 - Retrieve the new mix format.
     //
     CoTaskMemFree(_MixFormat);
@@ -788,11 +811,11 @@ bool AudioSystem::HandleStreamSwitchEvent()
         goto ErrorExit;
     }
 
-    qDebug() << "BUFFER SIZE " << _BufferSize << " FRAMESIZE "
+    /*qDebug() << "BUFFER SIZE " << _BufferSize << " FRAMESIZE "
              << _FrameSize << " CHANNEL COUNT"
              << ChannelCount() << " BitsPerSample"
              << _MixFormat->wBitsPerSample
-             << " SAMPS PER SEC " << SamplesPerSecond() << Qt::endl;
+             << " SAMPS PER SEC " << SamplesPerSecond() << Qt::endl;*/
 
     _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
 
@@ -1080,4 +1103,24 @@ std::vector<double>& AudioSystem::GetMag()
 smpl_t AudioSystem::GetBeatPeriod()
 {
     return aubio_tempo_get_period_s(_TempoObject);
+}
+
+float AudioSystem::GetVolume()
+{
+    if(_InStreamSwitch)
+        return 0;
+    float vol;
+    _EndpointVolume->GetMasterVolumeLevelScalar(&vol);
+    return vol;
+}
+
+float AudioSystem::SetVolume(float vol)
+{
+    if(_InStreamSwitch)
+        return -1;
+    if(_EndpointVolume->SetMasterVolumeLevelScalar(vol, NULL))
+    {
+        return vol;
+    }
+    return -1;
 }
