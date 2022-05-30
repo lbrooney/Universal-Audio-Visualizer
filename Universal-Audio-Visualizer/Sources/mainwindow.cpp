@@ -9,6 +9,11 @@
 #include <QDebug>
 #include "slider.h"
 
+bool redChecked = false;
+bool blueChecked = false;
+bool greenChecked = false;
+bool selectedColor = false;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -45,7 +50,6 @@ OGLWidget* MainWindow::getOGLWidget()
 {
     return openGLWidget;
 }
-
 
 void MainWindow::on_actionFull_Screen_triggered()
 {
@@ -90,18 +94,15 @@ void MainWindow::on_actionClose_triggered()
     close();
 }
 
-
 void MainWindow::on_actionRestart_triggered()
 {
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
 
-
 void MainWindow::on_actionAll_shapes_triggered()
 {
     openGLWidget->loadPreset(1);
-
 }
 
 void MainWindow::on_actionPrism_triggered()
@@ -114,12 +115,10 @@ void MainWindow::on_actionCube_triggered()
     openGLWidget->loadPreset(3);
 }
 
-
 void MainWindow::on_actionSphere_triggered()
 {
     openGLWidget->loadPreset(4);
 }
-
 
 void MainWindow::on_actionWaveform_triggered()
 {
@@ -132,23 +131,55 @@ void MainWindow::on_actionSliders_triggered()
     window->show();
 }
 
-void MainWindow::on_actionRed_triggered()
+bool MainWindow::checkToggled()
 {
-    openGLWidget->rgb_selector=QVector3D(1,0,0);
+    if (openGLWidget->rgb_selector != QVector3D(1, 1, 1) && selectedColor == false)
+    {
+        QMessageBox messageBox;
+        messageBox.critical(0, "Error", "Turn off the tempo changes color button!");
+        messageBox.setFixedSize(500, 200);
+        return 1;
+    }
+    return 0;
 }
 
+void MainWindow::on_actionRed_triggered()
+{
+    if (checkToggled()) return;
+    openGLWidget->rgb_selector = QVector3D(1, 0, 0);
+    redChecked = true;
+    blueChecked = false;
+    greenChecked = false;
+    selectedColor = true;
+}
 
 void MainWindow::on_actionGreen_triggered()
 {
-    openGLWidget->rgb_selector=QVector3D(0,1,0);
+    if (checkToggled()) return;
+    openGLWidget->rgb_selector = QVector3D(0, 1, 0);
+    redChecked = false;
+    blueChecked = false;
+    greenChecked = true;
+    selectedColor = true;
 }
-
 
 void MainWindow::on_actionBlue_triggered()
 {
-    openGLWidget->rgb_selector=QVector3D(0,0,1);
+    if (checkToggled()) return;
+    openGLWidget->rgb_selector = QVector3D(0, 0, 1);
+    redChecked = false;
+    blueChecked = true;
+    greenChecked = false;
+    selectedColor = true;
 }
 
-
-
+void MainWindow::on_actionWhite_triggered()
+{
+    if (checkToggled()) return;
+    openGLWidget->rgb_selector = QVector3D(1, 1, 1);
+    redChecked = false;
+    blueChecked = false;
+    greenChecked = false;
+    selectedColor = true;
+}
 

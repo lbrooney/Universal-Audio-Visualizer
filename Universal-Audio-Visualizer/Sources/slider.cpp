@@ -7,6 +7,11 @@
 
 #define DEFAULT 30
 
+extern bool redChecked;
+extern bool blueChecked;
+extern bool greenChecked;
+extern bool selectedColor;
+
 Slider::Slider(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Slider)
@@ -23,7 +28,7 @@ Slider::Slider(QWidget *parent) :
         std::cout << "ERROR" << std::endl;
     }
     // A clever way to save the state of the toggle button ;)
-    if (openGLWidget->rgb_selector != QVector3D(1, 1, 1))
+    if (openGLWidget->rgb_selector != QVector3D(1, 1, 1) && selectedColor == false)
     {
         ui->checkBox->setCheckState(Qt::Checked);
     }
@@ -88,12 +93,28 @@ void Slider::UpdateColor()
     // (On -> Off)
     else
     {
-       openGLWidget->rgb_selector = QVector3D(1, 1, 1); // Default color is white
+       if (redChecked)
+       {
+           openGLWidget->rgb_selector = QVector3D(1, 0, 0);
+       }
+       else if (blueChecked)
+       {
+           openGLWidget->rgb_selector = QVector3D(0, 0, 1);
+       }
+       else if (greenChecked)
+       {
+           openGLWidget->rgb_selector = QVector3D(0, 1, 0);
+       }
+       else
+       {
+           openGLWidget->rgb_selector = QVector3D(1, 1, 1); // Default color is white
+       }
     }
 }
 
 void Slider::on_checkBox_toggled(bool checked)
 {
+    selectedColor = (checked) ? false : true;
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Slider::UpdateColor);
     timer->start();
