@@ -10,10 +10,10 @@ Slider::Slider(QWidget *parent) :
     ui(new Ui::Slider)
 {
     ui->setupUi(this);
-    /*
+
     setWindowTitle("Sliders");
-    pInterface = ((MainWindow*)parent)->getAudioInterface();
-    openGLWidget = ((MainWindow*)parent)->getOGLWidget();
+    /*pInterface = ((MainWindow*)parent)->getAudioInterface();
+
     if(pInterface != nullptr) {
         pRecorder = pInterface->getRecorder();
     }
@@ -23,6 +23,7 @@ Slider::Slider(QWidget *parent) :
     }
     volumeSetup();
     */
+    openGLWidget = ((MainWindow*)parent)->getOGLWidget();
     scaleSetup();
 }
 

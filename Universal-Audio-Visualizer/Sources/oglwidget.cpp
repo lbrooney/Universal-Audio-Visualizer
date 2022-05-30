@@ -5,6 +5,9 @@ OGLWidget::OGLWidget(QWidget *parent, AudioSystem *p)
     : QOpenGLWidget{parent}
 {
     pSystem = p;
+
+    beatTimer = new QTimer(this);
+    connect(beatTimer, SIGNAL(timeout()), this, SLOT(playBeat()));
 }
 
 OGLWidget::~OGLWidget()
@@ -47,11 +50,25 @@ void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //pSystem->ProcessAudio();
-    //qDebug() << "BPM " << pSystem->GetBPM() << Qt::endl;
+    if(pSystem->GetBPM() != 0 && !beatTimer->isActive() && !playBeatAnim)
+    {
+        smpl_t beatPeriod = 1 / (pSystem->GetBPM() / 60);
+        beatTimer->start(beatPeriod * 1000);
+    }
+
     if(!showSpectrum)
     {
         int objCount = 0;
+        float newScale  = this->scale;
+
+        if(playBeatAnim)
+        {
+            //newScale += this->scale * pRecorder->GetVolume();
+            newScale += this->scale * 0.3;
+            playBeatAnim = false;
+        }
+
+
         for(int i = 0; i < objList.size(); i++)
         {
             double magnitude = objList[i]->m_Magnitude * objList[i]->intensityScale;
@@ -83,7 +100,7 @@ void OGLWidget::paintGL()
             }
             else
             {
-                objList[i]->SetScale(scale);
+                objList[i]->SetScale(newScale);
                 objList[i]->SetColor(determineColor(pSystem->GetBPM()));
                 objList[i]->DrawShape(&mProgram);
                 objCount++;
@@ -91,7 +108,6 @@ void OGLWidget::paintGL()
         }
         if(drawCycleCount >= SHAPEUPDATECYCLE)
             drawCycleCount = 0;
-
     }
     else
     {
@@ -100,7 +116,7 @@ void OGLWidget::paintGL()
             float magnitude;
             if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             {
-                magnitude = pSystem->GetMag().at(objList[i]->freqBin) / 30;
+                magnitude = pSystem->GetMag().at(objList[i]->freqBin) / 20;
             }
             else
             {
@@ -116,7 +132,6 @@ void OGLWidget::paintGL()
         if(drawCycleCount >= SPECTRUMUPDATECYCLE)
             drawCycleCount = 0;
     }
-
     drawCycleCount++;
     update();
 }
@@ -133,6 +148,12 @@ void OGLWidget::initShaders()
     mProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/Shaders/fragment.glsl");
     mProgram.link();
     mProgram.bind();
+}
+
+void OGLWidget::playBeat()
+{
+    beatTimer->stop();
+    playBeatAnim = true;
 }
 
 QVector3D OGLWidget::determineColor(float bpm)
@@ -174,7 +195,6 @@ void OGLWidget::loadPreset(int preset)
         {
             createSphere(0.0f, 0.0f, 1.0f);
         }
-
 
         showSpectrum = false;
         break;
@@ -241,7 +261,7 @@ void OGLWidget::loadPreset(int preset)
     }
     default:
         int binCounter = 0;
-        float xPos = -1.0f;
+        float xPos = -1.75f;
         for(int i = 0; i < 200; i++)
         {
             Cube* s = new Cube(1.0f, 0.0f, 0.0f);
@@ -251,7 +271,7 @@ void OGLWidget::loadPreset(int preset)
             objList.push_back(s);
             s->freqBin = binCounter;
             binCounter += 2;
-            xPos += 0.01f;
+            xPos += 0.05f;
 
         }
         objList[0]->freqBin = 1;
@@ -265,7 +285,7 @@ void OGLWidget::createSphere(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(5000, pSystem->SamplesPerSecond(),
-                                   pSystem->BufferSize());
+                             pSystem->BufferSize());
     objList.push_back(temp);
 
 }
@@ -276,7 +296,7 @@ void OGLWidget::createCube(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(1000, pSystem->SamplesPerSecond(),
-                                   pSystem->BufferSize());
+                             pSystem->BufferSize());
     objList.push_back(temp);
 }
 
@@ -286,6 +306,6 @@ void OGLWidget::createPrism(float r, float g, float b)
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
     temp->AssignFrequencyBin(50, pSystem->SamplesPerSecond(),
-                                   pSystem->BufferSize());
+                             pSystem->BufferSize());
     objList.push_back(temp);
 }

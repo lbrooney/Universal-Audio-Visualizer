@@ -27,32 +27,28 @@ link_directories(lib/fftw/lib
                  lib/aubio/lib)
 
 set(PROJECT_SOURCES
+        Headers/mainwindow.h
+        Headers/oglwidget.h
+        Headers/audiosystem.h
+        Headers/endpointmenu.h
+        Headers/slider.h
+        Headers/Shapes/Shape.h
+        Headers/Shapes/Cube.h
+        Headers/Shapes/Sphere.h
+        Headers/Shapes/Prism.h
+        Headers/stdafx.h
+        Sources/mainwindow.ui
         Sources/main.cpp
         Sources/mainwindow.cpp
-        Headers/mainwindow.h
-        Headers/Shape.h
-        Sources/mainwindow.ui
-        Headers/oglwidget.h
         Sources/oglwidget.cpp
-        Shaders/vertex.glsl
-        Shaders/fragment.glsl
-        Headers/Square.h
-        Headers/Triangle.h
-        Headers/Circle.h
-        Headers/Cube.h
-        Headers/Sphere.h
-        Headers/Prism.h
-        Headers/endpointmenu.h
         Sources/endpointmenu.cpp
         Sources/audiosystem.cpp
-        Headers/audiosystem.h
         Sources/stdafx.cpp
-        Headers/stdafx.h
-        Shaders.qrc
-        Headers/slider.h
         Sources/slider.ui
         Sources/slider.cpp
-
+        Shaders.qrc
+        Shaders/vertex.glsl
+        Shaders/fragment.glsl
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${RUNTIME_OUTPUT_DIRECTORY})

@@ -18,26 +18,28 @@
 #include <thread>
 #include <atomic>
 
-#include "Shape.h"
-#include "Sphere.h"
-#include "Cube.h"
-#include "Prism.h"
-#include "Triangle.h"
-#include "Square.h"
-#include "Circle.h"
+#include "Shapes/Shape.h"
+#include "Shapes/Sphere.h"
+#include "Shapes/Cube.h"
+#include "Shapes/Prism.h"
 #include "audiosystem.h"
 
 const float DEFAULTINTENSITY = 0.5f;
-const uint8_t SHAPEUPDATECYCLE = 5;
+const uint8_t SHAPEUPDATECYCLE = 10;
 const uint8_t SPECTRUMUPDATECYCLE = 3;
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
 {
+    Q_OBJECT
 public:
     OGLWidget(QWidget *parent = nullptr, AudioSystem* p = nullptr);
     void loadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();
+
+public slots:
+    void playBeat();
+
 protected:
     void initializeGL();
     void resizeGL(int w, int h);
@@ -54,7 +56,10 @@ private:
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
     bool showSpectrum = false;
+
     float scale = 0.3;
+    QTimer* beatTimer;
+    bool playBeatAnim = false;
 
     glm::mat4 m_PerspectiveMatrix;
     glm::mat4 m_ViewMatrix;
