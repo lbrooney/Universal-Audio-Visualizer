@@ -96,19 +96,19 @@ void Slider::UpdateColor()
     {
        if (redChecked)
        {
-           openGLWidget->rgb_selector = QVector3D(1, 0, 0);
+           openGLWidget->rgbSelector = QVector3D(1, 0, 0);
        }
        else if (blueChecked)
        {
-           openGLWidget->rgb_selector = QVector3D(0, 0, 1);
+           openGLWidget->rgbSelector = QVector3D(0, 0, 1);
        }
        else if (greenChecked)
        {
-           openGLWidget->rgb_selector = QVector3D(0, 1, 0);
+           openGLWidget->rgbSelector = QVector3D(0, 1, 0);
        }
        else
        {
-           openGLWidget->rgb_selector = QVector3D(1, 1, 1); // Default color is white
+           openGLWidget->rgbSelector = QVector3D(1, 1, 1); // Default color is white
        }
     }
 }
