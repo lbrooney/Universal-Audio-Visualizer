@@ -265,8 +265,8 @@ void OGLWidget::loadPreset(int preset)
     }
     default:
         int binCounter = 0;
-        float xPos = -1.75f;
-        for(int i = 0; i < 200; i++)
+        float xPos = -1.7f;
+        for(int i = 0; i < 75; i++)
         {
             Cube* c = new Cube(1.0f, 0.0f, -3.0f);
 
