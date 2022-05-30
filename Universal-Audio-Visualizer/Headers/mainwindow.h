@@ -9,6 +9,7 @@
 #include "oglwidget.h"
 #include "endpointmenu.h"
 #include "audiosystem.h"
+#include "slider.h"
 
 extern int choose_shape;
 
@@ -27,6 +28,7 @@ private:
     AudioSystem* pSystem = nullptr;
     EndpointMenu* pEndpointMenu = nullptr;
     OGLWidget* openGLWidget;
+    Slider* sliderWindow = nullptr;
 
 #ifdef QT_DEBUG
     QMenu* debug = nullptr;
@@ -34,7 +36,6 @@ private:
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    OGLWidget* getOGLWidget();
     ~MainWindow();
 
 protected:

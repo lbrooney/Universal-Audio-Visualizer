@@ -7,7 +7,6 @@
 #include <iostream>
 #include <QObject>
 #include <QDebug>
-#include "slider.h"
 #include "stdafx.h"
 
 bool redChecked = false;
@@ -31,22 +30,19 @@ MainWindow::MainWindow(QWidget *parent)
     ui->verticalLayout->addWidget(openGLWidget);
     pEndpointMenu = new EndpointMenu("Audio Endpoints", menuBar(), pSystem);
     menuBar()->addMenu(pEndpointMenu);
+    sliderWindow = new Slider(this, pSystem, openGLWidget);
 }
 
 MainWindow::~MainWindow()
 {
     pSystem->Stop();
+    delete sliderWindow;
     delete openGLWidget;
     pEndpointMenu->Shutdown();
     SafeRelease(&pEndpointMenu);
     delete ui;
     pSystem->Shutdown();
     SafeRelease(&pSystem);
-}
-
-OGLWidget* MainWindow::getOGLWidget()
-{
-    return openGLWidget;
 }
 
 void MainWindow::on_actionFull_Screen_triggered()
@@ -125,8 +121,7 @@ void MainWindow::on_actionWaveform_triggered()
 
 void MainWindow::on_actionSliders_triggered()
 {
-    Slider *window = new Slider(this, pSystem);
-    window->show();
+    sliderWindow->show();
 }
 
 bool MainWindow::checkToggled()

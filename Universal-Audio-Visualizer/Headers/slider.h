@@ -2,8 +2,9 @@
 #define SLIDER_H
 
 #include <QDialog>
-#include "mainwindow.h"
 #include "audiosystem.h"
+#include "oglwidget.h"
+
 
 namespace Ui {
 class Slider;
@@ -14,7 +15,7 @@ class Slider : public QDialog
     Q_OBJECT
 
 public:
-    explicit Slider(QWidget *parent = nullptr, AudioSystem *p = nullptr);
+    explicit Slider(QWidget *parent = nullptr, AudioSystem *p = nullptr, OGLWidget *ogl = nullptr);
     ~Slider();
 
 private slots:

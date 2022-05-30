@@ -11,25 +11,18 @@ extern bool blueChecked;
 extern bool greenChecked;
 extern bool selectedColor;
 
-Slider::Slider(QWidget *parent, AudioSystem *p) :
+Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
     QDialog(parent),
     ui(new Ui::Slider),
-    pSystem(p)
+    pSystem(p),
+    openGLWidget(ogl)
 {
     ui->setupUi(this);
 
     setWindowTitle("Sliders");
-    /*pInterface = ((MainWindow*)parent)->getAudioInterface();
-
-    if(pInterface != nullptr) {
-        pRecorder = pInterface->getRecorder();
-    }
-    else
-    */
-    openGLWidget = ((MainWindow*)parent)->getOGLWidget();
     scaleSetup();
     volumeSetup();
-    // A clever way to save the state of the toggle button ;)
+
     if (openGLWidget->rgbSelector != QVector3D(1, 1, 1) && selectedColor == false)
     {
         ui->checkBox->setCheckState(Qt::Checked);
