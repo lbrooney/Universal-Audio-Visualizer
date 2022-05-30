@@ -46,7 +46,7 @@ void OGLWidget::initializeGL()
 
 void OGLWidget::oglsetScale(float scale)
 {
-    this->defaultScale = scale;
+    this->scale = scale;
 }
 
 void OGLWidget::paintGL()
@@ -64,11 +64,11 @@ void OGLWidget::paintGL()
     {
         int objCount = 0;
         int updateCycle = 5;
-        float newScale  = this->defaultScale;
+        float newScale  = this->scale;
 
         if(playBeatAnim)
         {
-            newScale += this->defaultScale * pSystem->GetVolume();
+            newScale += this->scale * pSystem->GetVolume();
             playBeatAnim = false;
         }
         std::vector<double> mag = pSystem->GetMag();
@@ -108,7 +108,7 @@ void OGLWidget::paintGL()
                 objList[i]->SetScale(newScale);;
                 //objList[i]->SetColor(determineColor(pSystem->GetBPM()));
                 objList[i]->SetColor(rgbSelector);
-                objList[i]->DrawShape(&mProgram);
+                objList[i]->DrawShape(&shaderProgram);
                 objCount++;
             }
         }
@@ -163,12 +163,6 @@ void OGLWidget::playBeat()
     playBeatAnim = true;
 }
 
-void OGLWidget::playBeat()
-{
-    beatTimer->stop();
-    playBeatAnim = true;
-}
-
 QVector3D OGLWidget::determineColor(float bpm)
 {
     QVector3D color = QVector3D(1, 1 , 1);
@@ -190,24 +184,24 @@ void OGLWidget::loadPreset(int preset)
     objList.clear();
 
     int count = static_cast<int>(maxMagnitude * DEFAULTINTENSITY);
-    displayWaveform = false;
+    showSpectrum = false;
     switch(preset)
     {
     case 1:
     {
         for(int i = 0; i < count; i++)
         {
-            createPrism(1.0f, 0.0f, 0.0f);
+            createPrism(1.0f, 0.0f, 0.0f, 50);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createCube(0.0f, 1.0f, 0.0f);
+            createCube(0.0f, 1.0f, 0.0f, 1000);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createSphere(0.0f, 0.0f, 1.0f);
+            createSphere(0.0f, 0.0f, 1.0f, 4000);
         }
 
         break;
@@ -216,17 +210,17 @@ void OGLWidget::loadPreset(int preset)
         //Bass with triangle prism
         for(int i = 0; i < count; i++)
         {
-            createPrism(1.0f, 0.0f, 0.0f);
+            createPrism(1.0f, 0.0f, 0.0f, 50);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createPrism(0.0f, 1.0f, 0.0f);
+            createPrism(0.0f, 1.0f, 0.0f, 1000);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createPrism(0.0f, 0.0f, 1.0f);
+            createPrism(0.0f, 0.0f, 1.0f, 4000);
         }
 
         break;
@@ -235,17 +229,17 @@ void OGLWidget::loadPreset(int preset)
         //Mids with cube
         for(int i = 0; i < count; i++)
         {
-            createCube(1.0f, 0.0f, 0.0f);
+            createCube(1.0f, 0.0f, 0.0f, 50);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createCube(0.0f, 1.0f, 0.0f);
+            createCube(0.0f, 1.0f, 0.0f, 1000);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createCube(0.0f, 0.0f, 1.0f);
+            createCube(0.0f, 0.0f, 1.0f, 4000);
         }
 
         break;
@@ -254,17 +248,17 @@ void OGLWidget::loadPreset(int preset)
         //Highs with sphere
         for(int i = 0; i < count; i++)
         {
-            createSphere(1.0f, 0.0f, 0.0f);
+            createSphere(1.0f, 0.0f, 0.0f, 50);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createSphere(0.0f, 1.0f, 0.0f);
+            createSphere(0.0f, 1.0f, 0.0f, 1000);
         }
 
         for(int i = 0; i < count; i++)
         {
-            createSphere(0.0f, 0.0f, 1.0f);
+            createSphere(0.0f, 0.0f, 1.0f, 4000);
         }
 
         break;
@@ -286,36 +280,36 @@ void OGLWidget::loadPreset(int preset)
         }
 
         objList[0]->freqBin = 1;
-        displayWaveform = true;
+        showSpectrum = true;
     }
 }
 
-void OGLWidget::createSphere(float r, float g, float b)
+void OGLWidget::createSphere(float r, float g, float b, int frequency)
 {
     Sphere* temp = new Sphere(r, g, b);
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
-    temp->AssignFrequencyBin(5000, pSystem->SamplesPerSecond(),
+    temp->AssignFrequencyBin(frequency, pSystem->SamplesPerSecond(),
                                    FRAMECOUNT);
     objList.push_back(temp);
 }
 
-void OGLWidget::createCube(float r, float g, float b)
+void OGLWidget::createCube(float r, float g, float b, int frequency)
 {
     Cube *temp = new Cube(r, g, b);
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
-    temp->AssignFrequencyBin(1000, pSystem->SamplesPerSecond(),
+    temp->AssignFrequencyBin(frequency, pSystem->SamplesPerSecond(),
                                    FRAMECOUNT);
     objList.push_back(temp);
 }
 
-void OGLWidget::createPrism(float r, float g, float b)
+void OGLWidget::createPrism(float r, float g, float b, int frequency)
 {
     Prism* temp = new Prism(r, g, b);
     temp->SetScale(0.2f);
     temp->intensityScale = DEFAULTINTENSITY;
-    temp->AssignFrequencyBin(50, pSystem->SamplesPerSecond(),
+    temp->AssignFrequencyBin(frequency, pSystem->SamplesPerSecond(),
                                    FRAMECOUNT);
     objList.push_back(temp);
 }

@@ -47,14 +47,9 @@ protected:
     void paintGL();
     void initShaders();
 
-
 private:
-
-    QTimer* beatTimer;
-    bool playBeatAnim = false;
     AudioSystem* pSystem;
 
-    QOpenGLShaderProgram mProgram;
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
     bool showSpectrum = false;
@@ -68,9 +63,9 @@ private:
     glm::mat4 perspectiveMatrix;
     glm::mat4 viewMatrix;
 
-    void createSphere(float r, float g, float b);
-    void createCube(float r, float g, float b);
-    void createPrism(float r, float g, float b);
+    void createSphere(float r, float g, float b, int frequency);
+    void createCube(float r, float g, float b, int frequency);
+    void createPrism(float r, float g, float b, int frequency);
 };
 
 #endif // OGLWIDGET_H
