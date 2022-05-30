@@ -1,6 +1,6 @@
 #ifndef CUBE_H
 #define CUBE_H
-#include "Shapes/Shape.h"
+#include "Headers/Shapes/Shape.h"
 
 class Cube : public Shape
 {

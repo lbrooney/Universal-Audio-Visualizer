@@ -105,10 +105,10 @@ bool AudioSystem::InitializeAubio()
 {
     // Potenitally lose a little bit of data if _BufferSize > FRAMECOUNT(1024 ATM)
     // but if _BufferSize used then the program just crashes
-    _Mag.resize(FRAMECOUNT);
+    _Mag.resize(FRAMECOUNT / 2);
     _FFTIn = new_fvec(FRAMECOUNT);
     _FFTOut = new_cvec(FRAMECOUNT);
-    _TempoIn = new_fvec(FRAMECOUNT);
+    _TempoIn = new_fvec(FRAMECOUNT / 2);
     _TempoOut = new_fvec(2);
     _FFTObject = new_aubio_fft(FRAMECOUNT);
     _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
@@ -434,6 +434,13 @@ DWORD AudioSystem::DoCaptureThread()
     bool stillPlaying = true;
     HANDLE waitArray[3] = {_ShutdownEvent, _StreamSwitchEvent, _AudioSamplesReadyEvent };
 
+    UINT32 framesAvailable;
+    UINT32 packetLength = 0;
+    BYTE* pData;
+    DWORD flags = AUDCLNT_BUFFERFLAGS_SILENT;
+    int frameCounter = 0;
+        float* byteArray = new float[FRAMECOUNT];
+
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr))
     {
@@ -461,51 +468,106 @@ DWORD AudioSystem::DoCaptureThread()
             }
             break;
         case WAIT_OBJECT_0 + 2:     // _AudioSamplesReadyEvent
-            //
-            //  We need to retrieve the next buffer of samples from the audio capturer.
-            //
-            BYTE *pData;
-            UINT32 framesAvailable;
-            DWORD  flags;
+//            //
+//            //  We need to retrieve the next buffer of samples from the audio capturer.
+//            //
+//            BYTE *pData;
+//            UINT32 framesAvailable;
+//            DWORD  flags;
 
-            //
-            //  Find out how much capture data is available.  We need to make sure we don't run over the length
-            //  of our capture buffer.  We'll discard any samples that don't fit in the buffer.
-            //
-            hr = _CaptureClient->GetBuffer(&pData, &framesAvailable, &flags, NULL, NULL);
-            if (SUCCEEDED(hr))
+//            //
+//            //  Find out how much capture data is available.  We need to make sure we don't run over the length
+//            //  of our capture buffer.  We'll discard any samples that don't fit in the buffer.
+//            //
+//            hr = _CaptureClient->GetBuffer(&pData, &framesAvailable, &flags, NULL, NULL);
+//            if (SUCCEEDED(hr))
+//            {
+//                if (framesAvailable != 0)
+//                {
+//                    //
+//                    //  The flags on capture tell us information about the data.
+//                    //
+//                    //  We only really care about the silent flag since we want to put frames of silence into the buffer
+//                    //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
+//                    //
+//                    std::vector<BYTE> temp = std::vector<BYTE>( FRAMECOUNT * _FrameSize  );
+
+//                    for(int i = 0; i < framesAvailable / FRAMECOUNT; i += 1)
+//                    {
+//                        ZeroMemory(temp.data(), FRAMECOUNT * _FrameSize);
+//                        if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
+//                        {
+//                            std::memcpy(temp.data(), pData, FRAMECOUNT * _FrameSize);
+//                        }
+//                        _AudioQueue.push(temp);
+//                        SetEvent(_AnalysisSamplesReadyEvent);
+//                    }
+//                    ZeroMemory(temp.data(), FRAMECOUNT * _FrameSize);
+//                    std::memcpy(temp.data(), pData, (framesAvailable % FRAMECOUNT) * _FrameSize);
+//                    _AudioQueue.push(temp);
+//                    SetEvent(_AnalysisSamplesReadyEvent);
+
+//                }
+//                hr = _CaptureClient->ReleaseBuffer(framesAvailable);
+//                if (FAILED(hr))
+//                {
+//                    printf("Unable to release capture buffer: %x!\n", hr);
+//                }
+//            }
+            _CaptureClient->GetNextPacketSize(&packetLength);
+            while (packetLength != 0 && stillPlaying)
             {
-                if (framesAvailable != 0)
+                _CaptureClient->GetBuffer(
+                            &pData,
+                            &framesAvailable,
+                            &flags, NULL, NULL);
+                if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
                 {
-                    //
-                    //  The flags on capture tell us information about the data.
-                    //
-                    //  We only really care about the silent flag since we want to put frames of silence into the buffer
-                    //  when we receive silence.  We rely on the fact that a logical bit 0 is silence for both float and int formats.
-                    //
-                    std::vector<BYTE> temp = std::vector<BYTE>( FRAMECOUNT * _FrameSize  );
-
-                    for(int i = 0; i < framesAvailable / FRAMECOUNT; i += 1)
+                    pData = NULL;  // Tell CopyData to write silence.
+                }
+                else
+                {
+                    //copy data the in buffer
+                    const unsigned char *ptr = reinterpret_cast<const unsigned char *>(pData);
+                    for(int i = 0; i < framesAvailable; i++, frameCounter++)
                     {
-                        ZeroMemory(temp.data(), FRAMECOUNT * _FrameSize);
-                        if(!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
+                        if(pData)
                         {
-                            std::memcpy(temp.data(), pData, FRAMECOUNT * _FrameSize);
+                            float sample = *reinterpret_cast<const float*>(ptr);
+                            byteArray[frameCounter] = sample;
                         }
-                        _AudioQueue.push(temp);
-                        SetEvent(_AnalysisSamplesReadyEvent);
-                    }
-                    ZeroMemory(temp.data(), FRAMECOUNT * _FrameSize);
-                    std::memcpy(temp.data(), pData, (framesAvailable % FRAMECOUNT) * _FrameSize);
-                    _AudioQueue.push(temp);
-                    SetEvent(_AnalysisSamplesReadyEvent);
+                        else
+                        {
+                            byteArray[frameCounter] = 0.0f;
+                        }
+                        if(frameCounter == FRAMECOUNT - 1)
+                        {
+                            frameCounter = -1;
+                            dataQueue.push(byteArray);
+                            SetEvent(_AnalysisSamplesReadyEvent);
+                            byteArray = new float[FRAMECOUNT];
+                        }
 
+                        ptr += sizeof(float);
+                    }
                 }
-                hr = _CaptureClient->ReleaseBuffer(framesAvailable);
-                if (FAILED(hr))
+
+                _CaptureClient->ReleaseBuffer(framesAvailable);
+                _CaptureClient->GetNextPacketSize(&packetLength);
+            }
+            //if no audio is playing, fill data buffers with 0
+            if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
+            {
+                while(frameCounter < FRAMECOUNT )
                 {
-                    printf("Unable to release capture buffer: %x!\n", hr);
+                    byteArray[frameCounter] = 0;
+                    frameCounter++;
                 }
+                frameCounter = 0;
+                dataQueue.push(byteArray);
+                SetEvent(_AnalysisSamplesReadyEvent);
+                byteArray = new float[FRAMECOUNT];
+                Sleep(25);
             }
             break;
         }
@@ -990,63 +1052,41 @@ DWORD AudioSystem::DoAnalysisThread()
 
 void AudioSystem::AnalyzeAudio()
 {
-    // have fvec_t of size buffer
-    //fvec_zeros(_FFTIn);
-    //fvec_zeros(_TempoIn);
-    if(!_AudioQueue.empty())
+    float* data = dataQueue.front();
+
+    for(int fftIndex = 0, tempoIndex = 0; fftIndex < FRAMECOUNT; fftIndex++, tempoIndex++)
     {
-        std::vector<BYTE> data = std::vector<BYTE>(_AudioQueue.front());
-        _AudioQueue.pop();
-        uint_t wrapAt = (1 << ( _MixFormat->wBitsPerSample - 1 ) );
-        uint_t wrapWith = (1 << _MixFormat->wBitsPerSample);
-        smpl_t scaler = 1. / wrapAt;
-        int i = 0;
-        int j = 0;
-        while(i < data.size() && j < FRAMECOUNT)
+        //apply Hann window function to fft data
+        float multiplier = 0.5 * (1 - cos(2 * 3.1416 * fftIndex) / (FRAMECOUNT - 1));
+        fvec_set_sample(_FFTIn, data[fftIndex] * multiplier, fftIndex);
 
-        //for (int i, j = 0; i < data.size() && j < FRAMECOUNT; j += 1)
+        //copy tempo data as is
+        fvec_set_sample(_TempoIn, data[fftIndex], tempoIndex);
+        if(tempoIndex == 511)
         {
-
-            for (int k = 0; k < ChannelCount(); k += 1)
-            {
-                uint32_t unsignedVal = 0;
-                for (int b = 0; b < _MixFormat->wBitsPerSample; b+=8 )
-                {
-                    unsignedVal += data.at(i) << b;
-                    //unsignedVal += data[i] << b;
-                    i += 1;
-                }
-                int32_t signedVal = unsignedVal;
-                // FIXME why does 8 bit conversion maps [0;255] to [-128;127]
-                // instead of [0;127] to [0;127] and [128;255] to [-128;-1]
-                if (_MixFormat->wBitsPerSample == 8) signedVal -= wrapAt;
-                else if (unsignedVal >= wrapAt) signedVal = unsignedVal - wrapWith;
-                _FFTIn->data[j] += (smpl_t)(signedVal * scaler); // want to include both signed ints in this
-                _TempoIn->data[j] += (smpl_t)(signedVal * scaler);
+            tempoIndex = -1;
+            aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
+            if (_TempoOut->data[0] != 0) {
+                _BPM = aubio_tempo_get_bpm(_TempoObject);
+#ifdef QT_DEBUG
+                qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(_TempoObject) << Qt::endl;
+#endif
+                //myTempo = (double) aubio_tempo_get_bpm(_TempoObject);
             }
-            _FFTIn->data[j] /= (smpl_t)ChannelCount();
-            _TempoIn->data[j] /= (smpl_t)ChannelCount();
-            // HANN WINDOW FUNCTION
-            double multiplier = 0.5 * (1.0 - cos(2. * M_PI * (smpl_t)j / (smpl_t)FRAMECOUNT));
-            _FFTIn->data[j] *= multiplier;
-            //_TempoIn->data[j] *= multiplier;
-
-            j += 1;
-            //qDebug() << "i : " << i << " j " << j << Qt::endl;
         }
     }
-    fvec_shift(_FFTIn);
-    aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
-    aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
 
-    _BPM = aubio_tempo_get_bpm(_TempoObject);
-    for(int j = 0; j < FRAMECOUNT; j+=1)
+    aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
+    //calculate log magnitude on transformed data
+    for(int j = 0; j < FRAMECOUNT / 4; j+=1)
     {
         float r = _FFTOut->norm[j] * cos(_FFTOut->phas[j]);
         float i = _FFTOut->norm[j] * sin(_FFTOut->phas[j]);;
-        _Mag.at(j) = log(sqrt((r * r) + (i * i))) * 10;
+        _Mag[j] = log(sqrt((r * r) + (i * i))) * 10;
     }
-    return;
+
+    delete[] data;
+    dataQueue.pop();
 }
 
 

@@ -19,10 +19,13 @@
 #include <atomic>
 
 #include "Shapes/Shape.h"
+#include "Shapes/Sphere.h"
+#include "Shapes/Cube.h"
+#include "Shapes/Prism.h"
 #include "audiosystem.h"
 
 const float DEFAULTINTENSITY = 0.5f;
-const uint8_t SHAPEUPDATECYCLE = 5;
+const uint8_t SHAPEUPDATECYCLE = 10;
 const uint8_t SPECTRUMUPDATECYCLE = 3;
 
 class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
@@ -44,27 +47,25 @@ protected:
     void paintGL();
     void initShaders();
 
-
 private:
-
-    QTimer* beatTimer;
-    bool playBeatAnim = false;
     AudioSystem* pSystem;
 
-    QOpenGLShaderProgram mProgram;
     int drawCycleCount = 0;
     double maxMagnitude = 10.0;
-    bool displayWaveform = false;
-    float defaultScale = 0.3;
+    bool showSpectrum = false;
+
+    float scale = 0.3;
+    QTimer* beatTimer;
+    bool playBeatAnim = false;
 
     QOpenGLShaderProgram shaderProgram;
     std::vector<Shape*> objList;
     glm::mat4 perspectiveMatrix;
     glm::mat4 viewMatrix;
 
-    void createSphere(float r, float g, float b);
-    void createCube(float r, float g, float b);
-    void createPrism(float r, float g, float b);
+    void createSphere(float r, float g, float b, int frequency);
+    void createCube(float r, float g, float b, int frequency);
+    void createPrism(float r, float g, float b, int frequency);
 };
 
 #endif // OGLWIDGET_H

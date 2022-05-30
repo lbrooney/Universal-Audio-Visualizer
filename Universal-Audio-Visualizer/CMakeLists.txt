@@ -28,28 +28,28 @@ link_directories(lib/fftw/lib
                  lib/aubio/lib)
 
 set(PROJECT_SOURCES
-        Sources/main.cpp
-        Sources/mainwindow.cpp
         Headers/mainwindow.h
+        Headers/oglwidget.h
+        Headers/audiosystem.h
+        Headers/endpointmenu.h
+        Headers/slider.h
         Headers/Shapes/Shape.h
         Headers/Shapes/Cube.h
         Headers/Shapes/Sphere.h
         Headers/Shapes/Prism.h
+        Headers/stdafx.h
         Sources/mainwindow.ui
-        Headers/oglwidget.h
+        Sources/main.cpp
+        Sources/mainwindow.cpp
         Sources/oglwidget.cpp
-        Shaders/vertex.glsl
-        Shaders/fragment.glsl
-        Headers/endpointmenu.h
         Sources/endpointmenu.cpp
         Sources/audiosystem.cpp
-        Headers/audiosystem.h
         Sources/stdafx.cpp
-        Headers/stdafx.h
-        Shaders.qrc
-        Headers/slider.h
         Sources/slider.ui
         Sources/slider.cpp
+        Shaders.qrc
+        Shaders/vertex.glsl
+        Shaders/fragment.glsl
         Images.qrc
 )
 

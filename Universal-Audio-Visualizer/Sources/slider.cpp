@@ -6,22 +6,27 @@
 
 const int DEFAULTSIZE = 30;
 
-Slider::Slider(QWidget *parent, AudioSystem *p) :
+extern bool redChecked;
+extern bool blueChecked;
+extern bool greenChecked;
+extern bool selectedColor;
+
+Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
     QDialog(parent),
     ui(new Ui::Slider),
-    pSystem(p)
+    pSystem(p),
+    openGLWidget(ogl)
 {
     ui->setupUi(this);
+
     setWindowTitle("Sliders");
-    openGLWidget = ((MainWindow*)parent)->getOGLWidget();
-    ui->textBrowser->setText(QString::number(pSystem->GetBPM()));
-    // A clever way to save the state of the toggle button ;)
-    if (openGLWidget->rgbSelector != QVector3D(1, 1, 1))
+    scaleSetup();
+    volumeSetup();
+
+    if (openGLWidget->rgbSelector != QVector3D(1, 1, 1) && selectedColor == false)
     {
         ui->checkBox->setCheckState(Qt::Checked);
     }
-    volumeSetup();
-    scaleSetup();
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Slider::UpdateText);
     timer->start();
@@ -81,12 +86,28 @@ void Slider::UpdateColor()
     // (On -> Off)
     else
     {
-       openGLWidget->rgbSelector = QVector3D(1, 1, 1); // Default color is white
+       if (redChecked)
+       {
+           openGLWidget->rgbSelector = QVector3D(1, 0, 0);
+       }
+       else if (blueChecked)
+       {
+           openGLWidget->rgbSelector = QVector3D(0, 0, 1);
+       }
+       else if (greenChecked)
+       {
+           openGLWidget->rgbSelector = QVector3D(0, 1, 0);
+       }
+       else
+       {
+           openGLWidget->rgbSelector = QVector3D(1, 1, 1); // Default color is white
+       }
     }
 }
 
 void Slider::on_checkBox_toggled(bool checked)
 {
+    selectedColor = (checked) ? false : true;
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Slider::UpdateColor);
     timer->start();

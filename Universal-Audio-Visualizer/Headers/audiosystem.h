@@ -17,7 +17,7 @@
 #include <vector>
 
 const UINT CBBUFFERSIZE = 5;
-CONST int FRAMECOUNT = 512;
+CONST int FRAMECOUNT = 1024;
 
 //
 //  WASAPI Capture class.
@@ -120,6 +120,7 @@ private:
     bool                InitializeAubio();
     HANDLE              _AnalysisSamplesReadyEvent;
     HANDLE              _AnalysisThread;
+    std::queue<float*> dataQueue;
 
     DWORD                   DoAnalysisThread();
     static DWORD __stdcall  AudioAnalysisThread(LPVOID Context);

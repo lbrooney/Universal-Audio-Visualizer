@@ -9,6 +9,7 @@
 #include "oglwidget.h"
 #include "endpointmenu.h"
 #include "audiosystem.h"
+#include "slider.h"
 
 extern int choose_shape;
 
@@ -22,10 +23,12 @@ private:
     Q_OBJECT
     Ui::MainWindow *ui;
     void fullscreen();
+    bool checkToggled();
     bool isFullscreen = false;
     AudioSystem* pSystem = nullptr;
     EndpointMenu* pEndpointMenu = nullptr;
     OGLWidget* openGLWidget;
+    Slider* sliderWindow = nullptr;
 
 #ifdef QT_DEBUG
     QMenu* debug = nullptr;
@@ -33,7 +36,6 @@ private:
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    OGLWidget* getOGLWidget();
     ~MainWindow();
 
 protected:
@@ -66,5 +68,6 @@ private slots:
 
     void set_shapes_false();
 
+    void on_actionWhite_triggered();
 };
 #endif // MAINWINDOW_H
