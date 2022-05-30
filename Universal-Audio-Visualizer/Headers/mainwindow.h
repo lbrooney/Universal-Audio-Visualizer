@@ -64,5 +64,7 @@ private slots:
 
     void on_actionBlue_triggered();
 
+    void set_shapes_false();
+
 };
 #endif // MAINWINDOW_H

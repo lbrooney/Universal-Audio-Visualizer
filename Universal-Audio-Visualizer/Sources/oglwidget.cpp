@@ -259,7 +259,75 @@ void OGLWidget::loadPreset(int preset)
         {
             createSphere(0.0f, 0.0f, 1.0f);
         }
+        break;
+    }
+    case 5: {
+        //Prisim and Sphere
+        for(int i = 0; i < count; i++)
+        {
+            createPrism(1.0f, 0.0f, 0.0f);
+        }
 
+        for(int i = 0; i < count/2; i++)
+        {
+            createPrism(0.0f, 1.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            createSphere(0.0f, 1.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count; i++)
+        {
+            createSphere(0.0f, 0.0f, 1.0f);
+        }
+        break;
+    }
+    case 6: {
+        //Prisim and Cube
+        for(int i = 0; i < count; i++)
+        {
+            createPrism(1.0f, 0.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            createPrism(0.0f, 1.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            createCube(0.0f, 1.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count; i++)
+        {
+            createCube(0.0f, 0.0f, 1.0f);
+        }
+        break;
+    }
+    case 7:{
+        //Sphere and Cube
+        for(int i = 0; i < count; i++)
+        {
+            createCube(1.0f, 0.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            createCube(0.0f, 1.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            createSphere(0.0f, 1.0f, 0.0f);
+        }
+
+        for(int i = 0; i < count; i++)
+        {
+            createSphere(0.0f, 0.0f, 1.0f);
+        }
         break;
     }
     default:

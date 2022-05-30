@@ -98,29 +98,199 @@ void MainWindow::on_actionRestart_triggered()
 
 void MainWindow::on_actionAll_shapes_triggered()
 {
+    set_shapes_false();
     openGLWidget->loadPreset(1);
-
 }
 
 void MainWindow::on_actionPrism_triggered()
 {
-    openGLWidget->loadPreset(2);
+    auto* sphere_ptr = ui->actionSphere;
+    auto* cube_ptr = ui->actionCube;
+    auto* prism_ptr = ui->actionPrism;
+
+    if(sphere_ptr->isChecked() and cube_ptr->isChecked())
+    {
+        if(!prism_ptr->isChecked())
+        {
+            //Load sphere and cube
+            openGLWidget->loadPreset(7);
+        }
+        else
+        {
+            //All shapes
+            openGLWidget->loadPreset(1);
+        }
+    }
+    else if(sphere_ptr->isChecked())
+    {
+        if(!prism_ptr->isChecked())
+        {
+            // Load sphere
+            openGLWidget->loadPreset(4);
+        }
+        else
+        {
+            //Sphere and prism
+            openGLWidget->loadPreset(5);
+        }
+    }
+    else if(cube_ptr->isChecked())
+    {
+        if(!prism_ptr->isChecked())
+        {
+            // Load sphere
+            openGLWidget->loadPreset(3);
+        }
+        else
+        {
+            //Cube and prism
+            openGLWidget->loadPreset(6);
+        }
+    }
+    else
+    {
+        if(!prism_ptr->isChecked())
+        {
+            //Nothing is checked
+            on_actionWaveform_triggered();
+        }
+        else
+        {
+            //Prism only
+            openGLWidget->loadPreset(2);
+        }
+    }
 }
 
 void MainWindow::on_actionCube_triggered()
 {
-    openGLWidget->loadPreset(3);
+    auto* sphere_ptr = ui->actionSphere;
+    auto* prism_ptr = ui->actionPrism;
+    auto* cube_ptr = ui->actionCube;
+    if(sphere_ptr->isChecked() and prism_ptr->isChecked())
+    {
+        if(!cube_ptr->isChecked())
+        {
+            // Load sphere and prism
+            openGLWidget->loadPreset(5);
+        }
+        else
+        {
+            //All shapes
+            openGLWidget->loadPreset(1);
+        }
+    }
+    else if(sphere_ptr->isChecked())
+    {
+        if(!cube_ptr->isChecked())
+        {
+            // Load sphere
+            openGLWidget->loadPreset(4);
+        }
+        else
+        {
+            // Load cube and sphere
+            openGLWidget->loadPreset(7);
+        }
+    }
+    else if(prism_ptr->isChecked())
+    {
+        if(!cube_ptr->isChecked())
+        {
+            // Load prism
+            openGLWidget->loadPreset(2);
+        }
+        else
+        {
+            //Load prism and cube
+            openGLWidget->loadPreset(6);
+        }
+    }
+    else
+    {
+        if(!cube_ptr->isChecked())
+        {
+            //Nothing is checked
+            on_actionWaveform_triggered();
+        }
+        else
+        {
+            //Cube only
+            openGLWidget->loadPreset(3);
+        }
+    }
 }
-
 
 void MainWindow::on_actionSphere_triggered()
 {
-    openGLWidget->loadPreset(4);
+    auto* sphere_ptr = ui->actionSphere;
+    auto* cube_ptr = ui->actionCube;
+    auto* prism_ptr = ui->actionPrism;
+
+    if(prism_ptr->isChecked() and cube_ptr->isChecked())
+    {
+        if(!sphere_ptr->isChecked())
+        {
+            // Prism and Cube
+            openGLWidget->loadPreset(6);
+        }
+        else
+        {
+            //All shapes
+            openGLWidget->loadPreset(1);
+        }
+    }
+    else if(prism_ptr->isChecked())
+    {
+        if(!sphere_ptr->isChecked())
+        {
+            //Load prism
+            openGLWidget->loadPreset(2);
+        }
+        else
+        {
+            //Sphere and prism
+            openGLWidget->loadPreset(5);
+        }
+    }
+    else if(cube_ptr->isChecked())
+    {
+        if(!sphere_ptr->isChecked())
+        {
+            //Load cube
+            openGLWidget->loadPreset(3);
+        }
+        else
+        {
+            //sphere and cube
+            openGLWidget->loadPreset(7);
+        }
+    }
+    else
+    {
+        if(!sphere_ptr->isChecked())
+        {
+            //Nothing is checked
+            on_actionWaveform_triggered();
+        }
+        else
+        {
+            //Sphere only
+            openGLWidget->loadPreset(4);
+        }
+    }
+}
+
+void MainWindow::set_shapes_false() {
+    ui->actionSphere->setChecked(false);
+    ui->actionCube->setChecked(false);
+    ui->actionPrism->setChecked(false);
 }
 
 
 void MainWindow::on_actionWaveform_triggered()
 {
+    set_shapes_false();
     openGLWidget->loadPreset(0);
 }
 
