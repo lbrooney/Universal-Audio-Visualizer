@@ -25,16 +25,15 @@ Slider::Slider(QWidget *parent, AudioSystem *p) :
         pRecorder = pInterface->getRecorder();
     }
     else
-    ui->textBrowser->setText(QString::number(pSystem->GetBPM()));
-    // A clever way to save the state of the toggle button ;)
-    if (openGLWidget->rgb_selector != QVector3D(1, 1, 1) && selectedColor == false)
-    {
-        ui->checkBox->setCheckState(Qt::Checked);
-    }
-    volumeSetup();
     */
     openGLWidget = ((MainWindow*)parent)->getOGLWidget();
     scaleSetup();
+    volumeSetup();
+    // A clever way to save the state of the toggle button ;)
+    if (openGLWidget->rgbSelector != QVector3D(1, 1, 1) && selectedColor == false)
+    {
+        ui->checkBox->setCheckState(Qt::Checked);
+    }
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Slider::UpdateText);
     timer->start();
