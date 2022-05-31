@@ -1,5 +1,8 @@
 I tested the visualizer module to ensure that the images being produced are accurate with the frequency being picked up from the audio recorder.
-Manual testing of the OpenGl module and the displaying of shapes had to be manually confirmed and couldn't be automated. I ensured that the shapes
-matched the audio as well as the frequency. To do this I used an online frequency generator and compared if the frequency waves displayed on our
-application alligned with the online generator. I also printed the frequency, beat, and tempo currently being sent to the visualizer
-to compare the accuracy of the waves being generated as well as how precise the rythm of the music was being displayed.
+Testing of the OpenGl module and the displaying of shapes were manually performed and verified through a visual inspection. First I tested the shape
+generation to check that shapes are created and tranformed correctly. I manually created each type of shape and then tested the translation, scale,
+and rotation functions to ensure that object transformations worked as expected. After those were verified to be working, I was able to use the
+rotation function to spin the shapes around and make sure that the shapes were generated and shaded correctly. After, I ensured that the shapes
+matched the audio frequencies. To do this I used an online tone generator and compared the frequency waves displayed on our application with the
+online generator. To test the beat and tempo detection, I printed the tempo currently being sent to the visualizer and compared it to the tempo
+of the song which was found online.
