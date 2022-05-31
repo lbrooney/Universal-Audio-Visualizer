@@ -1,6 +1,8 @@
 To test the accuracy of the audio recording module, I first created the recording module to output to a WAV file. In doing so,
-I can guarantee that the audio being captured is accurate to what is being received at the endpoint.
+I can guarantee that the audio being captured is accurate to what is being received at the endpoint. This also included functionality
+for dealing when the default device changed both from the user setting it in software and automatic changes from unplugging a device
 Further testing on the accuracy of data being received and as well as matching the typing of data being passed was manually
 checked through printing the value and typage of variables.
 To test the functionality and the searchability of the endpoint device, I manually played audio while plugging and unplugging
-audio endpoint devices to check of possible errors with the window system.
+audio endpoint devices to check of possible errors with the window system. This also allowed me to test switching from devices
+that weren't the default device.
