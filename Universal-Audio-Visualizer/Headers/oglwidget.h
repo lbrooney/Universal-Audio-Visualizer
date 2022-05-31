@@ -33,11 +33,11 @@ class OGLWidget : public QOpenGLWidget, public QOpenGLExtraFunctions
     Q_OBJECT
 public:
     OGLWidget(QWidget *parent = nullptr, AudioSystem* p = nullptr);
-    void loadPreset(int preset);
+    void LoadPreset(int preset);
     void oglsetScale(float scale);
     ~OGLWidget();
     QVector3D rgbSelector;
-    QVector3D determineColor(float bpm);
+    QVector3D DetermineColor(float bpm);
 public slots:
     void playBeat();
 

@@ -40,7 +40,7 @@ void OGLWidget::initializeGL()
     unsigned int u_ViewMatrix = glGetUniformLocation(shaderProgram.programId(), "u_ViewMatrix");
     glUniformMatrix4fv(u_ViewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
-    loadPreset(0);
+    LoadPreset(0);
 }
 
 void OGLWidget::oglsetScale(float scale)
@@ -163,7 +163,7 @@ void OGLWidget::playBeat()
     playBeatAnim = true;
 }
 
-QVector3D OGLWidget::determineColor(float bpm)
+QVector3D OGLWidget::DetermineColor(float bpm)
 {
     QVector3D color = QVector3D(1, 1 , 1);
     if(bpm < 100.0f)
@@ -189,7 +189,7 @@ QVector3D OGLWidget::determineColor(float bpm)
     return color;
 }
 
-void OGLWidget::loadPreset(int preset)
+void OGLWidget::LoadPreset(int preset)
 {
     objList.clear();
     int count = static_cast<int>(maxMagnitude * DEFAULTINTENSITY);
@@ -199,21 +199,50 @@ void OGLWidget::loadPreset(int preset)
     {
     case 1:
     {
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
-            CreatePrism(1.0f, 0.0f, 0.0f, 50);
+            CreateCube(1.0f, 0.0f, 0.0f, 50);
         }
 
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
             CreateCube(0.0f, 1.0f, 0.0f, 1000);
         }
 
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateCube(0.0f, 0.0f, 1.0f, 4000);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateSphere(1.0f, 0.0f, 0.0f, 50);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateSphere(0.0f, 1.0f, 0.0f, 1000);
+        }
+
+        for(int i = 0; i < count/2; i++)
         {
             CreateSphere(0.0f, 0.0f, 1.0f, 4000);
         }
 
+        for(int i = 0; i < count/2; i++)
+        {
+            CreatePrism(1.0f, 0.0f, 0.0f, 50);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreatePrism(0.0f, 1.0f, 0.0f, 1000);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreatePrism(0.0f, 0.0f, 1.0f, 4000);
+        }
         break;
     }
     case 2:{
@@ -274,7 +303,7 @@ void OGLWidget::loadPreset(int preset)
     }
     case 5: {
         //Prisim and Sphere
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
             CreatePrism(1.0f, 0.0f, 0.0f, 50);
         }
@@ -282,6 +311,16 @@ void OGLWidget::loadPreset(int preset)
         for(int i = 0; i < count/2; i++)
         {
             CreatePrism(0.0f, 1.0f, 0.0f, 1000);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreatePrism(0.0f, 0.0f, 1.0f, 4000);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateSphere(1.0f, 0.0f, 0.0f, 50);
         }
 
         for(int i = 0; i < count/2; i++)
@@ -289,7 +328,7 @@ void OGLWidget::loadPreset(int preset)
             CreateSphere(0.0f, 1.0f, 0.0f, 1000);
         }
 
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
             CreateSphere(0.0f, 0.0f, 1.0f, 4000);
         }
@@ -297,7 +336,7 @@ void OGLWidget::loadPreset(int preset)
     }
     case 6: {
         //Prisim and Cube
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
             CreatePrism(1.0f, 0.0f, 0.0f, 50);
         }
@@ -309,18 +348,10 @@ void OGLWidget::loadPreset(int preset)
 
         for(int i = 0; i < count/2; i++)
         {
-            CreateCube(0.0f, 1.0f, 0.0f, 1000);
+            CreatePrism(0.0f, 0.0f, 1.0f, 4000);
         }
 
-        for(int i = 0; i < count; i++)
-        {
-            CreateCube(0.0f, 0.0f, 1.0f, 4000);
-        }
-        break;
-    }
-    case 7:{
-        //Sphere and Cube
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
             CreateCube(1.0f, 0.0f, 0.0f, 50);
         }
@@ -332,10 +363,38 @@ void OGLWidget::loadPreset(int preset)
 
         for(int i = 0; i < count/2; i++)
         {
+            CreateCube(0.0f, 0.0f, 1.0f, 4000);
+        }
+        break;
+    }
+    case 7:{
+        //Sphere and Cube
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateCube(1.0f, 0.0f, 0.0f, 50);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateCube(0.0f, 1.0f, 0.0f, 1000);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateCube(0.0f, 0.0f, 1.0f, 4000);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
+            CreateSphere(1.0f, 0.0f, 0.0f, 50);
+        }
+
+        for(int i = 0; i < count/2; i++)
+        {
             CreateSphere(0.0f, 1.0f, 0.0f, 1000);
         }
 
-        for(int i = 0; i < count; i++)
+        for(int i = 0; i < count/2; i++)
         {
             CreateSphere(0.0f, 0.0f, 1.0f, 4000);
         }
