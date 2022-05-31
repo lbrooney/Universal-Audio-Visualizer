@@ -11,7 +11,7 @@
 #include <QDebug>
 #include <wchar.h>
 
-const IID IID_IMMDevice = __uuidof(IMMDevice);
+const IID IID_IMMEndpoint = __uuidof(IMMEndpoint);
 
 EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *a)
     : QMenu{title, parent}, aSystem(a), enumerator(nullptr), endpointGroup(nullptr)
@@ -106,6 +106,7 @@ void EndpointMenu::SetNewAudioEndpoint(QAction *a)
 
 void EndpointMenu::AddDevice(QString deviceID)
 {
+    qDebug() << "TEST" << Qt::endl;
     IMMDevice *endpoint = nullptr;
     LPWSTR id = (LPWSTR) calloc(deviceID.size() + 1, sizeof(WCHAR));
     deviceID.toWCharArray(id);
@@ -149,18 +150,19 @@ void EndpointMenu::RemoveDevice(QString deviceID)
     return;
 }
 
- __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR deviceID, DWORD NewState)
+ __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR deviceID, DWORD newState)
 {
     QString ID = QString::fromWCharArray(deviceID, -1);
     IMMDevice* pDevice = nullptr;
     enumerator->GetDevice(deviceID, &pDevice);
     IMMEndpoint* endpoint = nullptr;
-    pDevice->QueryInterface(IID_IMMDevice, (void**)&endpoint);
+
+    pDevice->QueryInterface(IID_IMMEndpoint, (void**)&endpoint);
     EDataFlow dataFlow;
     endpoint->GetDataFlow(&dataFlow);
     if(dataFlow == eRender)
     {
-        switch(NewState)
+        switch(newState)
         {
         case DEVICE_STATE_ACTIVE:
             emit DeviceAdded(ID);
@@ -172,6 +174,7 @@ void EndpointMenu::RemoveDevice(QString deviceID)
     }
     SafeRelease(&endpoint);
     SafeRelease(&pDevice);
+    //*/
     return S_OK;
 }
 

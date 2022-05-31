@@ -806,6 +806,7 @@ __attribute__((nothrow)) HRESULT AudioSystem::OnSessionDisconnected(AudioSession
         //  Note that we don't set the _StreamSwitchCompleteEvent - that will be set when the OnDefaultDeviceChanged event occurs.
         //
         inStreamSwitch = true;
+        defaultSelected = true;
         SetEvent(streamSwitchEvent);
     }
     if(DisconnectReason == DisconnectReasonFormatChanged)
