@@ -54,15 +54,28 @@ void MainWindow::Fullscreen()
 {
     if(isFullscreen == true)
     {
+        if(wasSliderWindowShown)
+        {
+            sliderWindow->move(sliderWindowPos);
+            sliderWindow->show();
+            wasSliderWindowShown = false;
+        }
         ui->menubar->show();
         setStyleSheet("");
         showNormal();
+        this->setFocus();
         isFullscreen = false;
     }
     else
     {
         setStyleSheet("background:transparent;");
         ui->menubar->hide();
+        if(sliderWindow->isVisible())
+        {
+            sliderWindowPos = sliderWindow->pos();
+            sliderWindow->close();
+            wasSliderWindowShown = true;
+        }
         showFullScreen();
         isFullscreen = true;
     }
@@ -295,6 +308,7 @@ void MainWindow::on_actionWaveform_triggered()
 
 void MainWindow::on_actionSliders_triggered()
 {
+    sliderWindow->move(this->pos());
     sliderWindow->show();
 }
 

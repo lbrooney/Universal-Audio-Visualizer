@@ -18,8 +18,8 @@ QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
-private:
     Q_OBJECT
+private:
     Ui::MainWindow *ui;
     void Fullscreen();
     bool checkToggled();
@@ -28,11 +28,9 @@ private:
     EndpointMenu* pEndpointMenu = nullptr;
     OGLWidget* openGLWidget;
     Slider* sliderWindow = nullptr;
+    bool wasSliderWindowShown = false;
+    QPoint sliderWindowPos;
     void SetShapesFalse();
-
-#ifdef QT_DEBUG
-    QMenu* debug = nullptr;
-#endif
 
 public:
     MainWindow(QWidget *parent = nullptr);
