@@ -7,11 +7,11 @@
 
 class EndpointMenu : public QMenu, IMMNotificationClient
 {
-private:
     Q_OBJECT
-    IMMDeviceEnumerator* pEnumerator;
+private:
+    IMMDeviceEnumerator* enumerator;
     QActionGroup* endpointGroup = nullptr;
-    AudioSystem* pSystem = nullptr;
+    AudioSystem* aSystem = nullptr;
     QList<QAction *> actionList;
     LONG _RefCount;
 
@@ -25,19 +25,15 @@ private:
     //
     STDMETHOD(QueryInterface)(REFIID iid, void **pvObject);
 
-    void addEndpointAction(LPWSTR input = nullptr);
-
-protected:
-    void showEvent(QShowEvent *event) override;
 public:
-    EndpointMenu(const QString &title, QWidget *parent = nullptr, AudioSystem *p = nullptr);
+    EndpointMenu(const QString &title, QWidget *parent = nullptr, AudioSystem *a = nullptr);
     virtual ~EndpointMenu();
     STDMETHOD_(ULONG, AddRef)();
     STDMETHOD_(ULONG, Release)();
     void Shutdown();
 
 private slots:
-    void setNewAudioEndpoint(QAction* a);
+    void SetNewAudioEndpoint(QAction* a);
     void AddDevice(QString DeviceId);
     void RemoveDevice(QString DeviceId);
 

@@ -24,29 +24,29 @@ const IID IID_IAudioEndpointVolume = __uuidof(IAudioEndpointVolume);
 //
 
 AudioSystem::AudioSystem() :
-    _RefCount(1),
-    _DeviceEnumerator(nullptr),
-    _Endpoint(nullptr),
-    _AudioClient(nullptr),
-    _CaptureClient(nullptr),
-    _EndpointVolume(nullptr),
-    _CaptureThread(nullptr),
-    _ShutdownEvent(nullptr),
-    _AudioSamplesReadyEvent(nullptr),
-    _MixFormat(nullptr),
-    _StreamSwitchEvent(nullptr),
-    _StreamSwitchCompleteEvent(nullptr),
-    _AudioSessionControl(nullptr),
-    _InStreamSwitch(false),
-    _EndpointID(nullptr),
-    _BPM(0),
-    _FFTIn(nullptr),
-    _FFTOut(nullptr),
-    _TempoIn(nullptr),
-    _TempoOut(nullptr),
-    _FFTObject(nullptr),
-    _TempoObject(nullptr),
-    _AnalysisSamplesReadyEvent(nullptr)
+    refCount(1),
+    deviceEnumerator(nullptr),
+    endpoint(nullptr),
+    audioClient(nullptr),
+    captureClient(nullptr),
+    endpointVolume(nullptr),
+    captureThread(nullptr),
+    shutdownEvent(nullptr),
+    audioSamplesReadyEvent(nullptr),
+    mixFormat(nullptr),
+    streamSwitchEvent(nullptr),
+    streamSwitchCompleteEvent(nullptr),
+    audioSessionControl(nullptr),
+    inStreamSwitch(false),
+    endpointID(nullptr),
+    bpm(0),
+    fftIn(nullptr),
+    fftOut(nullptr),
+    tempoIn(nullptr),
+    tempoOut(nullptr),
+    fftObject(nullptr),
+    tempoObject(nullptr),
+    analysisSamplesReadyEvent(nullptr)
 {
 }
 
@@ -64,7 +64,7 @@ AudioSystem::~AudioSystem(void)
 //
 bool AudioSystem::InitializeAudioEngine()
 {
-    HRESULT hr = _AudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_NOPERSIST, 0, 0, _MixFormat, NULL);
+    HRESULT hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_NOPERSIST, 0, 0, mixFormat, NULL);
 
     if (FAILED(hr))
     {
@@ -75,7 +75,7 @@ bool AudioSystem::InitializeAudioEngine()
     //
     //  Retrieve the buffer size for the audio client.
     //
-    hr = _AudioClient->GetBufferSize(&_BufferSize);
+    hr = audioClient->GetBufferSize(&bufferSize);
     if(FAILED(hr))
     {
         printf("Unable to get audio client buffer: %x. \n", hr);
@@ -84,14 +84,14 @@ bool AudioSystem::InitializeAudioEngine()
 
     //qDebug() << "BUFFER SIZE " << _BufferSize << " FRAMESIZE " << _FrameSize << " CHANNEL COUNT" << ChannelCount() << " BitsPerSample" << _MixFormat->wBitsPerSample << Qt::endl;
 
-    hr = _AudioClient->SetEventHandle(_AudioSamplesReadyEvent);
+    hr = audioClient->SetEventHandle(audioSamplesReadyEvent);
     if (FAILED(hr))
     {
         printf("Unable to set ready event: %x.\n", hr);
         return false;
     }
 
-    hr = _AudioClient->GetService(IID_PPV_ARGS(&_CaptureClient));
+    hr = audioClient->GetService(IID_PPV_ARGS(&captureClient));
     if (FAILED(hr))
     {
         printf("Unable to get new capture client: %x.\n", hr);
@@ -105,13 +105,13 @@ bool AudioSystem::InitializeAubio()
 {
     // Potenitally lose a little bit of data if _BufferSize > FRAMECOUNT(1024 ATM)
     // but if _BufferSize used then the program just crashes
-    _Mag.resize(FRAMECOUNT / 2);
-    _FFTIn = new_fvec(FRAMECOUNT);
-    _FFTOut = new_cvec(FRAMECOUNT);
-    _TempoIn = new_fvec(FRAMECOUNT / 2);
-    _TempoOut = new_fvec(2);
-    _FFTObject = new_aubio_fft(FRAMECOUNT);
-    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
+    mag.resize(FRAMECOUNT / 2);
+    fftIn = new_fvec(FRAMECOUNT);
+    fftOut = new_cvec(FRAMECOUNT);
+    tempoIn = new_fvec(FRAMECOUNT / 2);
+    tempoOut = new_fvec(2);
+    fftObject = new_aubio_fft(FRAMECOUNT);
+    tempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
     return true;
 }
 
@@ -122,14 +122,14 @@ bool AudioSystem::InitializeAubio()
 //
 bool AudioSystem::LoadFormat()
 {
-    HRESULT hr = _AudioClient->GetMixFormat(&_MixFormat);
+    HRESULT hr = audioClient->GetMixFormat(&mixFormat);
     if (FAILED(hr))
     {
         printf("Unable to get mix format on audio client: %x.\n", hr);
         return false;
     }
 
-    _FrameSize = (_MixFormat->wBitsPerSample / 8) * _MixFormat->nChannels;
+    frameSize = (mixFormat->wBitsPerSample / 8) * mixFormat->nChannels;
 
     return true;
 }
@@ -142,22 +142,22 @@ bool AudioSystem::Initialize()
     //
     //  Create our shutdown and samples ready events- we want auto reset events that start in the not-signaled state.
     //
-    _ShutdownEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_ShutdownEvent == nullptr)
+    shutdownEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (shutdownEvent == nullptr)
     {
         printf("Unable to create shutdown event: %d.\n", GetLastError());
         return false;
     }
 
-    _AudioSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_AudioSamplesReadyEvent == nullptr)
+    audioSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (audioSamplesReadyEvent == nullptr)
     {
         printf("Unable to create samples ready event: %d.\n", GetLastError());
         return false;
     }
 
-    _AnalysisSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_AnalysisSamplesReadyEvent == nullptr)
+    analysisSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (analysisSamplesReadyEvent == nullptr)
     {
         printf("Unable to analysis ready event event: %d.\n", GetLastError());
         return false;
@@ -168,8 +168,8 @@ bool AudioSystem::Initialize()
     //  Note that we create this event even if we're not going to stream switch - that's because the event is used
     //  in the main loop of the capturer and thus it has to be set.
     //
-    _StreamSwitchEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_StreamSwitchEvent == nullptr)
+    streamSwitchEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (streamSwitchEvent == nullptr)
     {
         printf("Unable to create default stream switch event: %d.\n", GetLastError());
         return false;
@@ -177,26 +177,26 @@ bool AudioSystem::Initialize()
 
     HRESULT hr;
 
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&_DeviceEnumerator);
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&deviceEnumerator);
     if (FAILED(hr))
     {
         printf("Unable to instantiate device enumerator: %x\n", hr);
         return false;
     }
 
-    hr = _DeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &_Endpoint);
+    hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &endpoint);
     if (FAILED(hr))
     {
         printf("Unable to get default audio endpoint: %x\n", hr);
         return false;
     }
 
-    _DefaultSelected = true;
+    defaultSelected = true;
 
     //
     //  Now activate an IAudioClient object on our preferred endpoint and retrieve the mix format for that endpoint.
     //
-    hr = _Endpoint->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_AudioClient));
+    hr = endpoint->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&audioClient));
     if (FAILED(hr))
     {
         printf("Unable to activate audio client: %x.\n", hr);
@@ -206,7 +206,7 @@ bool AudioSystem::Initialize()
     //
     //  Activate the endpoint volume on the new endpoint.
     //
-    hr = _Endpoint->Activate(IID_IAudioEndpointVolume, CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_EndpointVolume));
+    hr = endpoint->Activate(IID_IAudioEndpointVolume, CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&endpointVolume));
     if (FAILED(hr))
     {
         printf("Unable to activate endpoint volume: %x.\n", hr);
@@ -253,90 +253,90 @@ bool AudioSystem::Initialize()
 //
 void AudioSystem::Shutdown()
 {
-    if (_CaptureThread)
+    if (captureThread)
     {
-        SetEvent(_ShutdownEvent);
-        WaitForSingleObject(_CaptureThread, INFINITE);
-        CloseHandle(_CaptureThread);
-        _CaptureThread = nullptr;
+        SetEvent(shutdownEvent);
+        WaitForSingleObject(captureThread, INFINITE);
+        CloseHandle(captureThread);
+        captureThread = nullptr;
     }
 
-    if (_AnalysisThread)
+    if (analysisThread)
     {
-        SetEvent(_ShutdownEvent);
-        WaitForSingleObject(_AnalysisThread, INFINITE);
-        CloseHandle(_AnalysisThread);
-        _AnalysisThread = nullptr;
+        SetEvent(shutdownEvent);
+        WaitForSingleObject(analysisThread, INFINITE);
+        CloseHandle(analysisThread);
+        analysisThread = nullptr;
     }
 
-    if (_ShutdownEvent)
+    if (shutdownEvent)
     {
-        CloseHandle(_ShutdownEvent);
-        _ShutdownEvent = nullptr;
+        CloseHandle(shutdownEvent);
+        shutdownEvent = nullptr;
     }
-    if (_AudioSamplesReadyEvent)
+    if (audioSamplesReadyEvent)
     {
-        CloseHandle(_AudioSamplesReadyEvent);
-        _AudioSamplesReadyEvent = nullptr;
+        CloseHandle(audioSamplesReadyEvent);
+        audioSamplesReadyEvent = nullptr;
     }
-    if (_AnalysisSamplesReadyEvent)
+    if (analysisSamplesReadyEvent)
     {
-        CloseHandle(_AnalysisSamplesReadyEvent);
-        _AnalysisSamplesReadyEvent = nullptr;
+        CloseHandle(analysisSamplesReadyEvent);
+        analysisSamplesReadyEvent = nullptr;
     }
-    if (_StreamSwitchEvent)
+    if (streamSwitchEvent)
     {
-        CloseHandle(_StreamSwitchEvent);
-        _StreamSwitchEvent = nullptr;
+        CloseHandle(streamSwitchEvent);
+        streamSwitchEvent = nullptr;
     }
 
-    SafeRelease(&_Endpoint);
-    SafeRelease(&_EndpointVolume);
-    SafeRelease(&_AudioClient);
-    SafeRelease(&_CaptureClient);
+    SafeRelease(&endpoint);
+    SafeRelease(&endpointVolume);
+    SafeRelease(&audioClient);
+    SafeRelease(&captureClient);
 
     // aubio resources
-    if(_FFTIn)
+    if(fftIn)
     {
-        del_fvec(_FFTIn);
-        _FFTIn = nullptr;
+        del_fvec(fftIn);
+        fftIn = nullptr;
     }
-    if(_FFTOut)
+    if(fftOut)
     {
-        del_cvec(_FFTOut);
-        _FFTOut = nullptr;
+        del_cvec(fftOut);
+        fftOut = nullptr;
     }
-    if(_TempoIn)
+    if(tempoIn)
     {
-        del_fvec(_TempoIn);
-        _TempoIn = nullptr;
+        del_fvec(tempoIn);
+        tempoIn = nullptr;
     }
-    if(_TempoOut)
+    if(tempoOut)
     {
-        del_fvec(_TempoOut);
-        _TempoOut = nullptr;
+        del_fvec(tempoOut);
+        tempoOut = nullptr;
     }
-    if(_FFTObject)
+    if(fftObject)
     {
-        del_aubio_fft(_FFTObject);
-        _FFTObject = nullptr;
+        del_aubio_fft(fftObject);
+        fftObject = nullptr;
     }
-    if(_TempoObject)
+    if(tempoObject)
     {
-        del_aubio_tempo(_TempoObject);
-        _TempoObject = nullptr;
-    }
-
-    if (_EndpointID)
-    {
-        free(_EndpointID);
-        _EndpointID = nullptr;
+        del_aubio_tempo(tempoObject);
+        tempoObject = nullptr;
     }
 
-    if (_MixFormat)
+    if (endpointID)
     {
-        CoTaskMemFree(_MixFormat);
-        _MixFormat = nullptr;
+        free(endpointID);
+        endpointID = nullptr;
+    }
+
+    if (mixFormat)
+    {
+        CoTaskMemFree(mixFormat);
+        mixFormat = nullptr;
     }
 
     TerminateStreamSwitch();
@@ -353,15 +353,15 @@ bool AudioSystem::Start()
     //
     //  Now create the thread which is going to drive the capture.
     //
-    _CaptureThread = CreateThread(NULL, 0, WASAPICaptureThread, this, 0, NULL);
-    if (_CaptureThread == nullptr)
+    captureThread = CreateThread(NULL, 0, WASAPICaptureThread, this, 0, NULL);
+    if (captureThread == nullptr)
     {
         printf("Unable to create transport thread: %x.", GetLastError());
         return false;
     }
 
-    _AnalysisThread = CreateThread(NULL, 0, AudioAnalysisThread, this, 0, NULL);
-    if (_AnalysisThread == nullptr)
+    analysisThread = CreateThread(NULL, 0, AudioAnalysisThread, this, 0, NULL);
+    if (analysisThread == nullptr)
     {
         printf("Unable to create analysis thread: %x.", GetLastError());
         return false;
@@ -370,7 +370,7 @@ bool AudioSystem::Start()
     //
     //  We're ready to go, start capturing!
     //
-    hr = _AudioClient->Start();
+    hr = audioClient->Start();
     if (FAILED(hr))
     {
         printf("Unable to start capture client: %x.\n", hr);
@@ -391,31 +391,31 @@ void AudioSystem::Stop()
     //  Tell the capture thread to shut down, wait for the thread to complete then clean up all the stuff we
     //  allocated in Start().
     //
-    if (_ShutdownEvent)
+    if (shutdownEvent)
     {
-        SetEvent(_ShutdownEvent);
+        SetEvent(shutdownEvent);
     }
 
-    hr = _AudioClient->Stop();
+    hr = audioClient->Stop();
     if (FAILED(hr))
     {
         printf("Unable to stop audio client: %x\n", hr);
     }
 
-    if (_CaptureThread)
+    if (captureThread)
     {
-        WaitForSingleObject(_CaptureThread, INFINITE);
+        WaitForSingleObject(captureThread, INFINITE);
 
-        CloseHandle(_CaptureThread);
-        _CaptureThread = nullptr;
+        CloseHandle(captureThread);
+        captureThread = nullptr;
     }
 
-    if (_AnalysisThread)
+    if (analysisThread)
     {
-        WaitForSingleObject(_AnalysisThread, INFINITE);
+        WaitForSingleObject(analysisThread, INFINITE);
 
-        CloseHandle(_AnalysisThread);
-        _AnalysisThread = nullptr;
+        CloseHandle(analysisThread);
+        analysisThread = nullptr;
     }
 }
 
@@ -432,7 +432,7 @@ DWORD AudioSystem::WASAPICaptureThread(LPVOID Context)
 DWORD AudioSystem::DoCaptureThread()
 {
     bool stillPlaying = true;
-    HANDLE waitArray[3] = {_ShutdownEvent, _StreamSwitchEvent, _AudioSamplesReadyEvent };
+    HANDLE waitArray[3] = {shutdownEvent, streamSwitchEvent, audioSamplesReadyEvent };
 
     UINT32 framesAvailable;
     UINT32 packetLength = 0;
@@ -514,10 +514,10 @@ DWORD AudioSystem::DoCaptureThread()
 //                    printf("Unable to release capture buffer: %x!\n", hr);
 //                }
 //            }
-            _CaptureClient->GetNextPacketSize(&packetLength);
+            captureClient->GetNextPacketSize(&packetLength);
             while (packetLength != 0 && stillPlaying)
             {
-                _CaptureClient->GetBuffer(
+                captureClient->GetBuffer(
                             &pData,
                             &framesAvailable,
                             &flags, NULL, NULL);
@@ -544,7 +544,7 @@ DWORD AudioSystem::DoCaptureThread()
                         {
                             frameCounter = -1;
                             dataQueue.push(byteArray);
-                            SetEvent(_AnalysisSamplesReadyEvent);
+                            SetEvent(analysisSamplesReadyEvent);
                             byteArray = new float[FRAMECOUNT];
                         }
 
@@ -552,8 +552,8 @@ DWORD AudioSystem::DoCaptureThread()
                     }
                 }
 
-                _CaptureClient->ReleaseBuffer(framesAvailable);
-                _CaptureClient->GetNextPacketSize(&packetLength);
+                captureClient->ReleaseBuffer(framesAvailable);
+                captureClient->GetNextPacketSize(&packetLength);
             }
             //if no audio is playing, fill data buffers with 0
             if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
@@ -565,7 +565,7 @@ DWORD AudioSystem::DoCaptureThread()
                 }
                 frameCounter = 0;
                 dataQueue.push(byteArray);
-                SetEvent(_AnalysisSamplesReadyEvent);
+                SetEvent(analysisSamplesReadyEvent);
                 byteArray = new float[FRAMECOUNT];
                 Sleep(25);
             }
@@ -583,7 +583,7 @@ DWORD AudioSystem::DoCaptureThread()
 //
 bool AudioSystem::InitializeStreamSwitch()
 {
-    HRESULT hr = _AudioClient->GetService(IID_PPV_ARGS(&_AudioSessionControl));
+    HRESULT hr = audioClient->GetService(IID_PPV_ARGS(&audioSessionControl));
     if (FAILED(hr))
     {
         printf("Unable to retrieve session control: %x\n", hr);
@@ -593,8 +593,8 @@ bool AudioSystem::InitializeStreamSwitch()
     //
     //  Create the stream switch complete event- we want a manual reset event that starts in the not-signaled state.
     //
-    _StreamSwitchCompleteEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    if (_StreamSwitchCompleteEvent == nullptr)
+    streamSwitchCompleteEvent = CreateEventEx(NULL, NULL, CREATE_EVENT_INITIAL_SET | CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    if (streamSwitchCompleteEvent == nullptr)
     {
         printf("Unable to create stream switch complete event: %d.\n", GetLastError());
         return false;
@@ -605,14 +605,14 @@ bool AudioSystem::InitializeStreamSwitch()
     //
     //  A stream switch is initiated when we receive a session disconnect notification or we receive a default device changed notification.
     //
-    hr = _AudioSessionControl->RegisterAudioSessionNotification(this);
+    hr = audioSessionControl->RegisterAudioSessionNotification(this);
     if (FAILED(hr))
     {
         printf("Unable to register for stream switch notifications: %x\n", hr);
         return false;
     }
 
-    hr = _DeviceEnumerator->RegisterEndpointNotificationCallback(this);
+    hr = deviceEnumerator->RegisterEndpointNotificationCallback(this);
     if (FAILED(hr))
     {
         printf("Unable to register for stream switch notifications: %x\n", hr);
@@ -624,26 +624,26 @@ bool AudioSystem::InitializeStreamSwitch()
 
 void AudioSystem::TerminateStreamSwitch()
 {
-    HRESULT hr = _AudioSessionControl->UnregisterAudioSessionNotification(this);
+    HRESULT hr = audioSessionControl->UnregisterAudioSessionNotification(this);
     if (FAILED(hr))
     {
         printf("Unable to unregister for session notifications: %x\n", hr);
     }
 
-    hr = _DeviceEnumerator->UnregisterEndpointNotificationCallback(this);
+    hr = deviceEnumerator->UnregisterEndpointNotificationCallback(this);
     if (FAILED(hr))
     {
         printf("Unable to unregister for endpoint notifications: %x\n", hr);
     }
 
-    if (_StreamSwitchCompleteEvent)
+    if (streamSwitchCompleteEvent)
     {
-        CloseHandle(_StreamSwitchCompleteEvent);
-        _StreamSwitchCompleteEvent = nullptr;
+        CloseHandle(streamSwitchCompleteEvent);
+        streamSwitchCompleteEvent = nullptr;
     }
 
-    SafeRelease(&_AudioSessionControl);
-    SafeRelease(&_DeviceEnumerator);
+    SafeRelease(&audioSessionControl);
+    SafeRelease(&deviceEnumerator);
 }
 
 //
@@ -670,7 +670,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Step 1.  Stop capturing.
     //
-    hr = _AudioClient->Stop();
+    hr = audioClient->Stop();
     DWORD waitResult;
     if (FAILED(hr))
     {
@@ -681,18 +681,18 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Step 2.  Release our resources.  Note that we don't release the mix format, we need it for step 6.
     //
-    hr = _AudioSessionControl->UnregisterAudioSessionNotification(this);
+    hr = audioSessionControl->UnregisterAudioSessionNotification(this);
     if (FAILED(hr))
     {
         printf("Unable to stop audio client during stream switch: %x\n", hr);
         goto ErrorExit;
     }
 
-    SafeRelease(&_AudioSessionControl);
-    SafeRelease(&_CaptureClient);
-    SafeRelease(&_AudioClient);
-    SafeRelease(&_EndpointVolume);
-    SafeRelease(&_Endpoint);
+    SafeRelease(&audioSessionControl);
+    SafeRelease(&captureClient);
+    SafeRelease(&audioClient);
+    SafeRelease(&endpointVolume);
+    SafeRelease(&endpoint);
 
     // aubio resources
     /*
@@ -722,10 +722,10 @@ bool AudioSystem::HandleStreamSwitchEvent()
         _FFTObject = nullptr;
     }
     */
-    if(_TempoObject)
+    if(tempoObject)
     {
-        del_aubio_tempo(_TempoObject);
-        _TempoObject = nullptr;
+        del_aubio_tempo(tempoObject);
+        tempoObject = nullptr;
     }
 
     //
@@ -741,7 +741,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //  real audio application implementing stream switching would re-format their
     //  pipeline to deliver the new format).
     //
-    waitResult = WaitForSingleObject(_StreamSwitchCompleteEvent, 500);
+    waitResult = WaitForSingleObject(streamSwitchCompleteEvent, 500);
     if (waitResult == WAIT_TIMEOUT)
     {
         printf("Stream switch timeout - aborting...\n");
@@ -752,9 +752,9 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //  Step 4.  If we can't get the new endpoint, we need to abort the stream switch.  If there IS a new device,
     //          we should be able to retrieve it.
     //
-    if(_DefaultSelected)
+    if(defaultSelected)
     {
-        hr = _DeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &_Endpoint);
+        hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &endpoint);
         if (FAILED(hr))
         {
             printf("Unable to retrieve new default device during stream switch: %x\n", hr);
@@ -763,7 +763,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
     }
     else
     {
-        hr = _DeviceEnumerator->GetDevice(_EndpointID, &_Endpoint);
+        hr = deviceEnumerator->GetDevice(endpointID, &endpoint);
         if (FAILED(hr))
         {
             printf("Unable to retrieve new device during stream switch: %x\n", hr);
@@ -773,7 +773,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Step 5 - Re-instantiate the audio client on the new endpoint.
     //
-    hr = _Endpoint->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_AudioClient));
+    hr = endpoint->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&audioClient));
     if (FAILED(hr))
     {
         printf("Unable to activate audio client on the new endpoint: %x.\n", hr);
@@ -782,7 +782,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Re-instantiate the endpoint volume on the new endpoint.
     //
-    hr = _Endpoint->Activate(IID_IAudioEndpointVolume, CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&_EndpointVolume));
+    hr = endpoint->Activate(IID_IAudioEndpointVolume, CLSCTX_INPROC_SERVER, NULL, reinterpret_cast<void **>(&endpointVolume));
     if (FAILED(hr))
     {
         printf("Unable to activate endpoint volume on the new endpoint: %x.\n", hr);
@@ -791,15 +791,15 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Step 6 - Retrieve the new mix format.
     //
-    CoTaskMemFree(_MixFormat);
-    hr = _AudioClient->GetMixFormat(&_MixFormat);
+    CoTaskMemFree(mixFormat);
+    hr = audioClient->GetMixFormat(&mixFormat);
     if (FAILED(hr))
     {
         printf("Unable to retrieve mix format for new audio client: %x.\n", hr);
         goto ErrorExit;
     }
 
-    _FrameSize = (_MixFormat->wBitsPerSample / 8) * _MixFormat->nChannels;
+    frameSize = (mixFormat->wBitsPerSample / 8) * mixFormat->nChannels;
 
 
 
@@ -817,7 +817,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
              << _MixFormat->wBitsPerSample
              << " SAMPS PER SEC " << SamplesPerSecond() << Qt::endl;*/
 
-    _TempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
+    tempoObject = new_aubio_tempo("default", FRAMECOUNT, FRAMECOUNT / 2, SamplesPerSecond() );
 
     /*
     if (!InitializeAubio())
@@ -829,13 +829,13 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Step 8: Re-register for session disconnect notifications.
     //
-    hr = _AudioClient->GetService(IID_PPV_ARGS(&_AudioSessionControl));
+    hr = audioClient->GetService(IID_PPV_ARGS(&audioSessionControl));
     if (FAILED(hr))
     {
         printf("Unable to retrieve session control on new audio client: %x\n", hr);
         goto ErrorExit;
     }
-    hr = _AudioSessionControl->RegisterAudioSessionNotification(this);
+    hr = audioSessionControl->RegisterAudioSessionNotification(this);
     if (FAILED(hr))
     {
         printf("Unable to retrieve session control on new audio client: %x\n", hr);
@@ -845,22 +845,22 @@ bool AudioSystem::HandleStreamSwitchEvent()
     //
     //  Reset the stream switch complete event because it's a manual reset event.
     //
-    ResetEvent(_StreamSwitchCompleteEvent);
+    ResetEvent(streamSwitchCompleteEvent);
     //
     //  And we're done.  Start capturing again.
     //
-    hr = _AudioClient->Start();
+    hr = audioClient->Start();
     if (FAILED(hr))
     {
         printf("Unable to start the new audio client: %x\n", hr);
         goto ErrorExit;
     }
 
-    _InStreamSwitch = false;
+    inStreamSwitch = false;
     return true;
 
 ErrorExit:
-    _InStreamSwitch = false;
+    inStreamSwitch = false;
     return false;
 }
 
@@ -882,20 +882,20 @@ __attribute__((nothrow)) HRESULT AudioSystem::OnSessionDisconnected(AudioSession
        //
        //  Note that we don't set the _StreamSwitchCompleteEvent - that will be set when the OnDefaultDeviceChanged event occurs.
        //
-       _InStreamSwitch = true;
-       SetEvent(_StreamSwitchEvent);
+       inStreamSwitch = true;
+       SetEvent(streamSwitchEvent);
    }
    if (DisconnectReason == DisconnectReasonFormatChanged)
    {
-       _InStreamSwitch = true;
+       inStreamSwitch = true;
        //
        //  The stream was disconnected because the format changed on our capture device.
        //
        //  We want to flag that we're in a stream switch and then set the stream switch event (which breaks out of the capturer).  We also
        //  want to set the _StreamSwitchCompleteEvent because we're not going to see a default device changed event after this.
        //
-       SetEvent(_StreamSwitchEvent);
-       SetEvent(_StreamSwitchCompleteEvent);
+       SetEvent(streamSwitchEvent);
+       SetEvent(streamSwitchCompleteEvent);
    }
    return S_OK;
 }
@@ -905,7 +905,7 @@ __attribute__((nothrow)) HRESULT AudioSystem::OnSessionDisconnected(AudioSession
 //
 __attribute__((nothrow)) HRESULT AudioSystem::OnDefaultDeviceChanged(EDataFlow Flow, ERole Role, LPCWSTR /*NewDefaultDeviceId*/)
 {
-   if (Flow == eRender && Role == eConsole && _DefaultSelected)
+   if (Flow == eRender && Role == eConsole && defaultSelected)
    {
        //
        //  The default capture device for our configured role was changed.
@@ -914,17 +914,17 @@ __attribute__((nothrow)) HRESULT AudioSystem::OnDefaultDeviceChanged(EDataFlow F
        //  We also we want to set the stream switch complete event.  That will signal the capture thread that it's ok to re-initialize the
        //  audio capturer.
        //
-       if (!_InStreamSwitch)
+       if (!inStreamSwitch)
        {
-           _InStreamSwitch = true;
-           SetEvent(_StreamSwitchEvent);
+           inStreamSwitch = true;
+           SetEvent(streamSwitchEvent);
        }
-       SetEvent(_StreamSwitchCompleteEvent);
+       SetEvent(streamSwitchCompleteEvent);
    }
    return S_OK;
 }
 
-bool AudioSystem::selectedDefault()
+bool AudioSystem::SelectedDefault()
 {
 /*
     if(_DefaultSelected)
@@ -932,42 +932,42 @@ bool AudioSystem::selectedDefault()
         return false;
     }
 */
-   if (!_InStreamSwitch)
+   if (!inStreamSwitch)
    {
-    _InStreamSwitch = true;
-    _DefaultSelected = true;
-    SetEvent(_StreamSwitchEvent);
+    inStreamSwitch = true;
+    defaultSelected = true;
+    SetEvent(streamSwitchEvent);
    }
-   SetEvent(_StreamSwitchCompleteEvent);
+   SetEvent(streamSwitchCompleteEvent);
    return true;
 }
 
 
-bool AudioSystem::selectedEndpoint(LPWSTR input)
+bool AudioSystem::SelectedEndpoint(LPWSTR input)
 {
-   if (!_InStreamSwitch)
+   if (!inStreamSwitch)
    {
-       _InStreamSwitch = true;
-       _DefaultSelected = false;
-       if(_EndpointID)
+       inStreamSwitch = true;
+       defaultSelected = false;
+       if(endpointID)
        {
-           if(wcscmp(input, _EndpointID)) // if they are different then free and swap!
+           if(wcscmp(input, endpointID)) // if they are different then free and swap!
            {
-               free(_EndpointID);
-               _EndpointID = _wcsdup(input);
+               free(endpointID);
+               endpointID = _wcsdup(input);
            }
        }
        else
        {
-           _EndpointID = _wcsdup(input);
+           endpointID = _wcsdup(input);
        }
-       SetEvent(_StreamSwitchEvent);
+       SetEvent(streamSwitchEvent);
        // no need to compare just copy in and call event
        // copy
        // call event
 
    }
-   SetEvent(_StreamSwitchCompleteEvent);
+   SetEvent(streamSwitchCompleteEvent);
    return true;
 }
 
@@ -1006,12 +1006,12 @@ bool AudioSystem::selectedEndpoint(LPWSTR input)
 
  __attribute__((nothrow)) ULONG AudioSystem::AddRef()
 {
-    return InterlockedIncrement(&_RefCount);
+    return InterlockedIncrement(&refCount);
 }
 
  __attribute__((nothrow)) ULONG AudioSystem::Release()
 {
-    ULONG returnValue = InterlockedDecrement(&_RefCount);
+    ULONG returnValue = InterlockedDecrement(&refCount);
     if (returnValue == 0)
     {
         delete this;
@@ -1031,7 +1031,7 @@ DWORD AudioSystem::AudioAnalysisThread(LPVOID Context)
 DWORD AudioSystem::DoAnalysisThread()
 {
     bool stillPlaying = true;
-    HANDLE waitArray[2] = {_ShutdownEvent, _AnalysisSamplesReadyEvent };
+    HANDLE waitArray[2] = {shutdownEvent, analysisSamplesReadyEvent };
 
     while (stillPlaying)
     {
@@ -1058,16 +1058,16 @@ void AudioSystem::AnalyzeAudio()
     {
         //apply Hann window function to fft data
         float multiplier = 0.5 * (1 - cos(2 * 3.1416 * fftIndex) / (FRAMECOUNT - 1));
-        fvec_set_sample(_FFTIn, data[fftIndex] * multiplier, fftIndex);
+        fvec_set_sample(fftIn, data[fftIndex] * multiplier, fftIndex);
 
         //copy tempo data as is
-        fvec_set_sample(_TempoIn, data[fftIndex], tempoIndex);
+        fvec_set_sample(tempoIn, data[fftIndex], tempoIndex);
         if(tempoIndex == 511)
         {
             tempoIndex = -1;
-            aubio_tempo_do(_TempoObject, _TempoIn, _TempoOut);
-            if (_TempoOut->data[0] != 0) {
-                _BPM = aubio_tempo_get_bpm(_TempoObject);
+            aubio_tempo_do(tempoObject, tempoIn, tempoOut);
+            if (tempoOut->data[0] != 0) {
+                bpm = aubio_tempo_get_bpm(tempoObject);
 #ifdef QT_DEBUG
                 qDebug() << "Realtime Tempo: " << aubio_tempo_get_bpm(_TempoObject) << Qt::endl;
 #endif
@@ -1076,13 +1076,13 @@ void AudioSystem::AnalyzeAudio()
         }
     }
 
-    aubio_fft_do(_FFTObject, _FFTIn, _FFTOut);
+    aubio_fft_do(fftObject, fftIn, fftOut);
     //calculate log magnitude on transformed data
     for(int j = 0; j < FRAMECOUNT / 4; j+=1)
     {
-        float r = _FFTOut->norm[j] * cos(_FFTOut->phas[j]);
-        float i = _FFTOut->norm[j] * sin(_FFTOut->phas[j]);;
-        _Mag[j] = log(sqrt((r * r) + (i * i))) * 10;
+        float r = fftOut->norm[j] * cos(fftOut->phas[j]);
+        float i = fftOut->norm[j] * sin(fftOut->phas[j]);;
+        mag[j] = log(sqrt((r * r) + (i * i))) * 10;
     }
 
     delete[] data;
@@ -1092,33 +1092,33 @@ void AudioSystem::AnalyzeAudio()
 
 smpl_t AudioSystem::GetBPM()
 {
-    return _BPM;
+    return bpm;
 }
 
 std::vector<double>& AudioSystem::GetMag()
 {
-    return _Mag;
+    return mag;
 }
 
 smpl_t AudioSystem::GetBeatPeriod()
 {
-    return aubio_tempo_get_period_s(_TempoObject);
+    return aubio_tempo_get_period_s(tempoObject);
 }
 
 float AudioSystem::GetVolume()
 {
-    if(_InStreamSwitch)
+    if(inStreamSwitch)
         return 0;
     float vol;
-    _EndpointVolume->GetMasterVolumeLevelScalar(&vol);
+    endpointVolume->GetMasterVolumeLevelScalar(&vol);
     return vol;
 }
 
 float AudioSystem::SetVolume(float vol)
 {
-    if(_InStreamSwitch)
+    if(inStreamSwitch)
         return -1;
-    if(_EndpointVolume->SetMasterVolumeLevelScalar(vol, NULL))
+    if(endpointVolume->SetMasterVolumeLevelScalar(vol, NULL))
     {
         return vol;
     }

@@ -13,11 +13,9 @@
 
 const IID IID_IMMDevice = __uuidof(IMMDevice);
 
-EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *p)
-    : QMenu{title, parent}
+EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *a)
+    : QMenu{title, parent}, aSystem(a)
 {
-    pSystem = p;
-
     endpointGroup = new QActionGroup(this);
     endpointGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
     QAction *temp = new QAction(
@@ -28,26 +26,26 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *p
     actionList.push_back(temp);
     endpointGroup->addAction(temp);
     this->addAction(temp);
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&enumerator);
     if (FAILED(hr))
     {
         printf("Unable to instantiate device enumerator: %x\n", hr);
     }
 
-    IMMDeviceCollection* pCollection = nullptr;
-    IMMDevice* pEndpoint = nullptr;
+    IMMDeviceCollection* collection = nullptr;
+    IMMDevice* endpoint = nullptr;
 
-    pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pCollection);
+    enumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &collection);
     UINT count = 0;
-    pCollection->GetCount(&count);
+    collection->GetCount(&count);
     for (UINT i = 0; i < count; i+=1) {
-        IMMDevice* pEndpoint = nullptr;
-        pCollection->Item(i, &pEndpoint);
+        IMMDevice* endpoint = nullptr;
+        collection->Item(i, &endpoint);
         LPWSTR id = nullptr;
-        pEndpoint->GetId(&id);
+        endpoint->GetId(&id);
         IPropertyStore* pProps = nullptr;
         PROPVARIANT varName;
-        pEndpoint->OpenPropertyStore(
+        endpoint->OpenPropertyStore(
                     STGM_READ, &pProps);
         PropVariantInit(&varName);
         pProps->GetValue(PKEY_Device_FriendlyName, &varName);
@@ -61,16 +59,16 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *p
         CoTaskMemFree(id);
         PropVariantClear(&varName);
         SafeRelease(&pProps);
-        SafeRelease(&pEndpoint);
+        SafeRelease(&endpoint);
     }
-    SafeRelease(&pCollection);
-    hr = pEnumerator->RegisterEndpointNotificationCallback(this);
+    SafeRelease(&collection);
+    hr = enumerator->RegisterEndpointNotificationCallback(this);
     if (FAILED(hr))
     {
         printf("Unable to register for stream switch notifications: %x\n", hr);
     }
 
-    connect(endpointGroup, SIGNAL(triggered(QAction*)), this, SLOT(setNewAudioEndpoint(QAction*)));
+    connect(endpointGroup, SIGNAL(triggered(QAction*)), this, SLOT(SetNewAudioEndpoint(QAction*)));
     connect(this, SIGNAL(DeviceAdded(QString)), this, SLOT(AddDevice(QString)));
     connect(this, SIGNAL(DeviceRemoved(QString)), this, SLOT(RemoveDevice(QString)));
     return;
@@ -85,48 +83,43 @@ EndpointMenu::~EndpointMenu()
 
 void EndpointMenu::Shutdown()
 {
-    HRESULT hr = pEnumerator->UnregisterEndpointNotificationCallback(this);
+    HRESULT hr = enumerator->UnregisterEndpointNotificationCallback(this);
     if (FAILED(hr))
     {
         printf("Unable to unregister for endpoint notifications: %x\n", hr);
     }
-    SafeRelease(&pEnumerator);
+    SafeRelease(&enumerator);
 }
 
-void EndpointMenu::showEvent(QShowEvent *event)
-{
-    return;
-}
-
-void EndpointMenu::setNewAudioEndpoint(QAction* a)
+void EndpointMenu::SetNewAudioEndpoint(QAction* a)
 {
     if(a->objectName().compare("Default") == 0)
     {
-        pSystem->selectedDefault();
+        aSystem->SelectedDefault();
     }
     else
     {
         LPWSTR id = (LPWSTR) calloc((a->objectName().size() + 1), sizeof(WCHAR));
         a->objectName().toWCharArray(id);
-        pSystem->selectedEndpoint(id);
+        aSystem->SelectedEndpoint(id);
         free(id);
     }
 }
 
 void EndpointMenu::AddDevice(QString DeviceId)
 {
-    IMMDevice* pEndpoint = nullptr;
+    IMMDevice* endpoint = nullptr;
     LPWSTR id = (LPWSTR) calloc(DeviceId.size() + 1, sizeof(WCHAR));
     DeviceId.toWCharArray(id);
-    pSystem->selectedEndpoint(id);
-    pEnumerator->GetDevice(id, &pEndpoint);
+    aSystem->SelectedEndpoint(id);
+    enumerator->GetDevice(id, &endpoint);
     free(id);
-    IPropertyStore* pProps = nullptr;
+    IPropertyStore* props = nullptr;
     PROPVARIANT varName;
-    pEndpoint->OpenPropertyStore(
-                STGM_READ, &pProps);
+    endpoint->OpenPropertyStore(
+                STGM_READ, &props);
     PropVariantInit(&varName);
-    pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+    props->GetValue(PKEY_Device_FriendlyName, &varName);
     QAction *temp = new QAction(
                 QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
     temp->setCheckable(true);
@@ -135,8 +128,8 @@ void EndpointMenu::AddDevice(QString DeviceId)
     endpointGroup->addAction(temp);
     this->addAction(temp);
     PropVariantClear(&varName);
-    SafeRelease(&pProps);
-    SafeRelease(&pEndpoint);
+    SafeRelease(&props);
+    SafeRelease(&endpoint);
 }
 
 void EndpointMenu::RemoveDevice(QString DeviceId)
@@ -162,12 +155,12 @@ void EndpointMenu::RemoveDevice(QString DeviceId)
 {
     QString ID = QString::fromWCharArray(DeviceId, -1);
     IMMDevice* pDevice = nullptr;
-    pEnumerator->GetDevice(DeviceId, &pDevice);
-    IMMEndpoint* pEndpoint = nullptr;
-    pDevice->QueryInterface(IID_IMMDevice, (void**)&pEndpoint);
-    EDataFlow pDataFlow;
-    pEndpoint->GetDataFlow(&pDataFlow);
-    if(pDataFlow == eRender)
+    enumerator->GetDevice(DeviceId, &pDevice);
+    IMMEndpoint* endpoint = nullptr;
+    pDevice->QueryInterface(IID_IMMDevice, (void**)&endpoint);
+    EDataFlow dataFlow;
+    endpoint->GetDataFlow(&dataFlow);
+    if(dataFlow == eRender)
     {
         switch(NewState)
         {
@@ -179,7 +172,7 @@ void EndpointMenu::RemoveDevice(QString DeviceId)
             break;
         }
     }
-    SafeRelease(&pEndpoint);
+    SafeRelease(&endpoint);
     SafeRelease(&pDevice);
     return S_OK;
 }
