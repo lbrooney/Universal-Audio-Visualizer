@@ -1,0 +1,6 @@
+To test the buttons in the user interace, I printed out the result of the processed data and compared it with what was being 
+displayed. Functionality of the buttons was checked manually by clicking all the possible combinations of existing buttons and
+newly added features to ensure that the code doesn't conflict with existing functionality.
+To check the color module that picks up the tempo, I played varying types of music and checked if the color changing
+is capable of picking up on the tempo. This was then run for an extended periods of time to make sure it didn't enduce new
+system crashes or interferes with existing code.
