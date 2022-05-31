@@ -153,28 +153,27 @@ void EndpointMenu::RemoveDevice(QString deviceID)
  __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR deviceID, DWORD newState)
 {
     QString ID = QString::fromWCharArray(deviceID, -1);
-    IMMDevice* pDevice = nullptr;
-    enumerator->GetDevice(deviceID, &pDevice);
-    IMMEndpoint* endpoint = nullptr;
+    IMMDevice *device = nullptr;
+    enumerator->GetDevice(deviceID, &device);
+    IMMEndpoint *endpoint = nullptr;
 
-    pDevice->QueryInterface(IID_IMMEndpoint, (void**)&endpoint);
+    device->QueryInterface(IID_IMMEndpoint, (void**)&endpoint);
     EDataFlow dataFlow;
     endpoint->GetDataFlow(&dataFlow);
-    if(dataFlow == eRender)
+    if(dataFlow == eRender) // check that device is rendering device not capturing(mic)
     {
         switch(newState)
         {
-        case DEVICE_STATE_ACTIVE:
+        case DEVICE_STATE_ACTIVE: // eithers it active now, which means plugged in
             emit DeviceAdded(ID);
             break;
-        default:
+        default: // or its been DEVICE_STATE_DISABLED(disabled in device manager/in sound settings), DEVICE_STATE_NOTPRESENT(uninstalled in device manager), DEVICE_STATE_UNPLUGGED (unplugged from device)
             emit DeviceRemoved(ID);
             break;
         }
     }
     SafeRelease(&endpoint);
-    SafeRelease(&pDevice);
-    //*/
+    SafeRelease(&device);
     return S_OK;
 }
 
