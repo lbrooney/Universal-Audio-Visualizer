@@ -26,26 +26,25 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *a
     endpointGroup->addAction(temp);
     this->addAction(temp);
     HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&enumerator);
-    if (FAILED(hr))
+    if(FAILED(hr))
     {
         printf("Unable to instantiate device enumerator: %x\n", hr);
     }
 
-    IMMDeviceCollection* collection = nullptr;
-    IMMDevice* endpoint = nullptr;
+    IMMDeviceCollection *collection = nullptr;
 
     enumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &collection);
     UINT count = 0;
     collection->GetCount(&count);
-    for (UINT i = 0; i < count; i+=1) {
+    for(UINT i = 0; i < count; i+=1)
+    {
         IMMDevice* endpoint = nullptr;
         collection->Item(i, &endpoint);
         LPWSTR id = nullptr;
         endpoint->GetId(&id);
-        IPropertyStore* pProps = nullptr;
+        IPropertyStore *pProps = nullptr;
         PROPVARIANT varName;
-        endpoint->OpenPropertyStore(
-                    STGM_READ, &pProps);
+        endpoint->OpenPropertyStore(STGM_READ, &pProps);
         PropVariantInit(&varName);
         pProps->GetValue(PKEY_Device_FriendlyName, &varName);
         QAction *temp = new QAction(
@@ -62,12 +61,12 @@ EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *a
     }
     SafeRelease(&collection);
     hr = enumerator->RegisterEndpointNotificationCallback(this);
-    if (FAILED(hr))
+    if(FAILED(hr))
     {
         printf("Unable to register for stream switch notifications: %x\n", hr);
     }
 
-    connect(endpointGroup, SIGNAL(triggered(QAction*)), this, SLOT(SetNewAudioEndpoint(QAction*)));
+    connect(endpointGroup, SIGNAL(triggered(QAction *)), this, SLOT(SetNewAudioEndpoint(QAction *)));
     connect(this, SIGNAL(DeviceAdded(QString)), this, SLOT(AddDevice(QString)));
     connect(this, SIGNAL(DeviceRemoved(QString)), this, SLOT(RemoveDevice(QString)));
     return;
@@ -90,7 +89,7 @@ void EndpointMenu::Shutdown()
     SafeRelease(&enumerator);
 }
 
-void EndpointMenu::SetNewAudioEndpoint(QAction* a)
+void EndpointMenu::SetNewAudioEndpoint(QAction *a)
 {
     if(a->objectName().compare("Default") == 0)
     {
@@ -105,24 +104,22 @@ void EndpointMenu::SetNewAudioEndpoint(QAction* a)
     }
 }
 
-void EndpointMenu::AddDevice(QString DeviceId)
+void EndpointMenu::AddDevice(QString deviceID)
 {
-    IMMDevice* endpoint = nullptr;
-    LPWSTR id = (LPWSTR) calloc(DeviceId.size() + 1, sizeof(WCHAR));
-    DeviceId.toWCharArray(id);
+    IMMDevice *endpoint = nullptr;
+    LPWSTR id = (LPWSTR) calloc(deviceID.size() + 1, sizeof(WCHAR));
+    deviceID.toWCharArray(id);
     aSystem->SelectedEndpoint(id);
     enumerator->GetDevice(id, &endpoint);
     free(id);
-    IPropertyStore* props = nullptr;
+    IPropertyStore *props = nullptr;
     PROPVARIANT varName;
-    endpoint->OpenPropertyStore(
-                STGM_READ, &props);
+    endpoint->OpenPropertyStore(STGM_READ, &props);
     PropVariantInit(&varName);
     props->GetValue(PKEY_Device_FriendlyName, &varName);
-    QAction *temp = new QAction(
-                QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
+    QAction *temp = new QAction(QString::fromWCharArray(varName.pwszVal, -1), endpointGroup);
     temp->setCheckable(true);
-    temp->setObjectName(DeviceId);
+    temp->setObjectName(deviceID);
     actionList.push_back(temp);
     endpointGroup->addAction(temp);
     this->addAction(temp);
@@ -131,17 +128,19 @@ void EndpointMenu::AddDevice(QString DeviceId)
     SafeRelease(&endpoint);
 }
 
-void EndpointMenu::RemoveDevice(QString DeviceId)
+void EndpointMenu::RemoveDevice(QString deviceID)
 {
     QAction *temp = nullptr;
-    for (int i = 0; i < actionList.size(); i += 1)
+    for(int i = 0; i < actionList.size(); i += 1)
     {
-        if(actionList.at(i)->objectName().compare(DeviceId) == 0)
+        if(actionList.at(i)->objectName().compare(deviceID) == 0)
         {
             temp = actionList.at(i);
             actionList.removeAt(i);
             if(temp->isChecked())
+            {
                 actionList.front()->setChecked(true);
+            }
             break;
         }
     }
@@ -150,11 +149,11 @@ void EndpointMenu::RemoveDevice(QString DeviceId)
     return;
 }
 
- __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR DeviceId, DWORD NewState)
+ __attribute__((nothrow)) HRESULT EndpointMenu::OnDeviceStateChanged (LPCWSTR deviceID, DWORD NewState)
 {
-    QString ID = QString::fromWCharArray(DeviceId, -1);
+    QString ID = QString::fromWCharArray(deviceID, -1);
     IMMDevice* pDevice = nullptr;
-    enumerator->GetDevice(DeviceId, &pDevice);
+    enumerator->GetDevice(deviceID, &pDevice);
     IMMEndpoint* endpoint = nullptr;
     pDevice->QueryInterface(IID_IMMDevice, (void**)&endpoint);
     EDataFlow dataFlow;
