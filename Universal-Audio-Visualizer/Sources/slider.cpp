@@ -19,8 +19,8 @@ Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
 {
     ui->setupUi(this);
     setWindowTitle("Sliders");
-    scaleSetup();
-    volumeSetup();
+    ScaleSetup();
+    VolumeSetup();
 
     if (openGLWidget->rgbSelector != QVector3D(1, 1, 1) && selectedColor == false)
     {
@@ -32,7 +32,7 @@ Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
     timer->start();
 }
 
-void Slider::scaleSetup()
+void Slider::ScaleSetup()
 {
     auto *scale = ui->scaleSlider;
     scale->setRange(0, 100);
@@ -40,7 +40,7 @@ void Slider::scaleSetup()
     scale->setTracking(true);
 }
 
-void Slider::volumeSetup()
+void Slider::VolumeSetup()
 {
     auto *volSlider = ui->volumeSlider;
     float volume = pSystem->GetVolume() * 100;
@@ -63,7 +63,7 @@ void Slider::on_volumeSlider_sliderMoved(int position)
 void Slider::on_scaleSlider_sliderMoved(int position)
 {
     float scale = float(position)/100;
-    openGLWidget->oglsetScale(scale);
+    openGLWidget->OglSetScale(scale);
 }
 
 void Slider::UpdateText()
