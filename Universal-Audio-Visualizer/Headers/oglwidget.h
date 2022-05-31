@@ -45,7 +45,7 @@ protected:
     void initializeGL();
     void resizeGL(int w, int h);
     void paintGL();
-    void initShaders();
+    void InitShaders();
 
 private:
     AudioSystem* pSystem;
@@ -63,9 +63,9 @@ private:
     glm::mat4 perspectiveMatrix;
     glm::mat4 viewMatrix;
 
-    void createSphere(float r, float g, float b, int frequency);
-    void createCube(float r, float g, float b, int frequency);
-    void createPrism(float r, float g, float b, int frequency);
+    void CreateSphere(float r, float g, float b, int frequency);
+    void CreateCube(float r, float g, float b, int frequency);
+    void CreatePrism(float r, float g, float b, int frequency);
 };
 
 #endif // OGLWIDGET_H

@@ -18,7 +18,6 @@ Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
     openGLWidget(ogl)
 {
     ui->setupUi(this);
-
     setWindowTitle("Sliders");
     scaleSetup();
     volumeSetup();
@@ -27,6 +26,7 @@ Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
     {
         ui->checkBox->setCheckState(Qt::Checked);
     }
+
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Slider::UpdateText);
     timer->start();
@@ -34,19 +34,19 @@ Slider::Slider(QWidget *parent, AudioSystem *p, OGLWidget *ogl) :
 
 void Slider::scaleSetup()
 {
-    auto* ptr = ui->scaleSlider;
-    ptr->setRange(0, 100);
-    ptr->setValue(DEFAULTSIZE);
-    ptr->setTracking(true);
+    auto *scale = ui->scaleSlider;
+    scale->setRange(0, 100);
+    scale->setValue(DEFAULTSIZE);
+    scale->setTracking(true);
 }
 
 void Slider::volumeSetup()
 {
-    auto *ptr = ui->volumeSlider;
+    auto *volSlider = ui->volumeSlider;
     float volume = pSystem->GetVolume() * 100;
-    ptr->setRange(0, 100);
-    ptr->setValue(volume);
-    ptr->setTracking(true);
+    volSlider->setRange(0, 100);
+    volSlider->setValue(volume);
+    volSlider->setTracking(true);
 }
 
 Slider::~Slider()
@@ -57,12 +57,7 @@ Slider::~Slider()
 void Slider::on_volumeSlider_sliderMoved(int position)
 {
     float vol = float(position)/100;
-    //std::cout << "pos" << position << std::endl;
-    float result = pSystem->SetVolume(vol);
-    if(result == -1)
-    {
-        //std::cout << "error with set volume" << std::endl;
-    }
+    pSystem->SetVolume(vol);
 }
 
 void Slider::on_scaleSlider_sliderMoved(int position)
