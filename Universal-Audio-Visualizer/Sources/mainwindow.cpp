@@ -97,7 +97,7 @@ void MainWindow::on_actionRestart_triggered()
 void MainWindow::on_actionAll_shapes_triggered()
 {
     set_shapes_false();
-    openGLWidget->loadPreset(1);
+    openGLWidget->LoadPreset(1);
 }
 
 void MainWindow::on_actionPrism_triggered()
@@ -111,12 +111,12 @@ void MainWindow::on_actionPrism_triggered()
         if(!prism_ptr->isChecked())
         {
             //Load sphere and cube
-            openGLWidget->loadPreset(7);
+            openGLWidget->LoadPreset(7);
         }
         else
         {
             //All shapes
-            openGLWidget->loadPreset(1);
+            openGLWidget->LoadPreset(1);
         }
     }
     else if(sphere_ptr->isChecked())
@@ -124,12 +124,12 @@ void MainWindow::on_actionPrism_triggered()
         if(!prism_ptr->isChecked())
         {
             // Load sphere
-            openGLWidget->loadPreset(4);
+            openGLWidget->LoadPreset(4);
         }
         else
         {
             //Sphere and prism
-            openGLWidget->loadPreset(5);
+            openGLWidget->LoadPreset(5);
         }
     }
     else if(cube_ptr->isChecked())
@@ -137,12 +137,12 @@ void MainWindow::on_actionPrism_triggered()
         if(!prism_ptr->isChecked())
         {
             // Load sphere
-            openGLWidget->loadPreset(3);
+            openGLWidget->LoadPreset(3);
         }
         else
         {
             //Cube and prism
-            openGLWidget->loadPreset(6);
+            openGLWidget->LoadPreset(6);
         }
     }
     else
@@ -155,7 +155,7 @@ void MainWindow::on_actionPrism_triggered()
         else
         {
             //Prism only
-            openGLWidget->loadPreset(2);
+            openGLWidget->LoadPreset(2);
         }
     }
 }
@@ -170,12 +170,12 @@ void MainWindow::on_actionCube_triggered()
         if(!cube_ptr->isChecked())
         {
             // Load sphere and prism
-            openGLWidget->loadPreset(5);
+            openGLWidget->LoadPreset(5);
         }
         else
         {
             //All shapes
-            openGLWidget->loadPreset(1);
+            openGLWidget->LoadPreset(1);
         }
     }
     else if(sphere_ptr->isChecked())
@@ -183,12 +183,12 @@ void MainWindow::on_actionCube_triggered()
         if(!cube_ptr->isChecked())
         {
             // Load sphere
-            openGLWidget->loadPreset(4);
+            openGLWidget->LoadPreset(4);
         }
         else
         {
             // Load cube and sphere
-            openGLWidget->loadPreset(7);
+            openGLWidget->LoadPreset(7);
         }
     }
     else if(prism_ptr->isChecked())
@@ -196,12 +196,12 @@ void MainWindow::on_actionCube_triggered()
         if(!cube_ptr->isChecked())
         {
             // Load prism
-            openGLWidget->loadPreset(2);
+            openGLWidget->LoadPreset(2);
         }
         else
         {
             //Load prism and cube
-            openGLWidget->loadPreset(6);
+            openGLWidget->LoadPreset(6);
         }
     }
     else
@@ -214,7 +214,7 @@ void MainWindow::on_actionCube_triggered()
         else
         {
             //Cube only
-            openGLWidget->loadPreset(3);
+            openGLWidget->LoadPreset(3);
         }
     }
 }
@@ -230,12 +230,12 @@ void MainWindow::on_actionSphere_triggered()
         if(!sphere_ptr->isChecked())
         {
             // Prism and Cube
-            openGLWidget->loadPreset(6);
+            openGLWidget->LoadPreset(6);
         }
         else
         {
             //All shapes
-            openGLWidget->loadPreset(1);
+            openGLWidget->LoadPreset(1);
         }
     }
     else if(prism_ptr->isChecked())
@@ -243,12 +243,12 @@ void MainWindow::on_actionSphere_triggered()
         if(!sphere_ptr->isChecked())
         {
             //Load prism
-            openGLWidget->loadPreset(2);
+            openGLWidget->LoadPreset(2);
         }
         else
         {
             //Sphere and prism
-            openGLWidget->loadPreset(5);
+            openGLWidget->LoadPreset(5);
         }
     }
     else if(cube_ptr->isChecked())
@@ -256,12 +256,12 @@ void MainWindow::on_actionSphere_triggered()
         if(!sphere_ptr->isChecked())
         {
             //Load cube
-            openGLWidget->loadPreset(3);
+            openGLWidget->LoadPreset(3);
         }
         else
         {
             //sphere and cube
-            openGLWidget->loadPreset(7);
+            openGLWidget->LoadPreset(7);
         }
     }
     else
@@ -274,7 +274,7 @@ void MainWindow::on_actionSphere_triggered()
         else
         {
             //Sphere only
-            openGLWidget->loadPreset(4);
+            openGLWidget->LoadPreset(4);
         }
     }
 }
@@ -288,7 +288,7 @@ void MainWindow::set_shapes_false() {
 void MainWindow::on_actionWaveform_triggered()
 {
     set_shapes_false();
-    openGLWidget->loadPreset(0);
+    openGLWidget->LoadPreset(0);
 }
 
 void MainWindow::on_actionSliders_triggered()

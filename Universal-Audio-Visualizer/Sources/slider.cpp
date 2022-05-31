@@ -76,7 +76,7 @@ void Slider::UpdateColor()
     // (Off -> On)
     if (ui->checkBox->isChecked())
     {
-        openGLWidget->rgbSelector = openGLWidget->determineColor(pSystem->GetBPM());
+        openGLWidget->rgbSelector = openGLWidget->DetermineColor(pSystem->GetBPM());
     }
     // (On -> Off)
     else
