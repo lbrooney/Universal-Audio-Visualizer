@@ -33,13 +33,13 @@ public:
     void Shutdown();
 
 private slots:
-    void SetNewAudioEndpoint(QAction* a);
-    void AddDevice(QString DeviceId);
-    void RemoveDevice(QString DeviceId);
+    void SetNewAudioEndpoint(QAction *a);
+    void AddDevice(QString deviceID);
+    void RemoveDevice(QString deviceID);
 
 signals:
-    void DeviceAdded(QString DeviceId);
-    void DeviceRemoved(QString DeviceId);
+    void DeviceAdded(QString deviceID);
+    void DeviceRemoved(QString deviceID);
 
 };
 
