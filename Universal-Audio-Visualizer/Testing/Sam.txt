@@ -1,0 +1,4 @@
+To test the manual color module, I went through all the possible combination of color switches, switching back and forth as well as 
+pressing other menu functionality to check for any crashes that may occur in the system. To test the closing, restart, and menu modules,
+after implmenetation I checked for functionality and exit error code to check for any errors and possible memory leaks that
+may not have been properly freed.
