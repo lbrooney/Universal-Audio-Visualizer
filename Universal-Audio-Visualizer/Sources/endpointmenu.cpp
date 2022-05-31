@@ -106,7 +106,6 @@ void EndpointMenu::SetNewAudioEndpoint(QAction *a)
 
 void EndpointMenu::AddDevice(QString deviceID)
 {
-    qDebug() << "TEST" << Qt::endl;
     IMMDevice *endpoint = nullptr;
     LPWSTR id = (LPWSTR) calloc(deviceID.size() + 1, sizeof(WCHAR));
     deviceID.toWCharArray(id);
