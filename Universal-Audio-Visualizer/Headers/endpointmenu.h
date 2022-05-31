@@ -9,17 +9,17 @@ class EndpointMenu : public QMenu, IMMNotificationClient
 {
     Q_OBJECT
 private:
-    IMMDeviceEnumerator* enumerator;
-    QActionGroup* endpointGroup = nullptr;
-    AudioSystem* aSystem = nullptr;
-    QList<QAction *> actionList;
+    IMMDeviceEnumerator *enumerator;
+    QActionGroup        *endpointGroup;
+    AudioSystem         *aSystem;
+    QList<QAction *>    actionList;
     LONG _RefCount;
 
-    STDMETHOD(OnDeviceStateChanged) (LPCWSTR /*DeviceId*/, DWORD /*NewState*/);
-    STDMETHOD(OnDeviceAdded) (LPCWSTR /*DeviceId*/) { return S_OK; }
-    STDMETHOD(OnDeviceRemoved) (LPCWSTR /*DeviceId(*/) { return S_OK; }
-    STDMETHOD(OnDefaultDeviceChanged) (EDataFlow Flow, ERole Role, LPCWSTR NewDefaultDeviceId) { return S_OK; }
-    STDMETHOD(OnPropertyValueChanged) (LPCWSTR /*DeviceId*/, const PROPERTYKEY /*Key*/){return S_OK; }
+    STDMETHOD(OnDeviceStateChanged)     (LPCWSTR /*DeviceId*/, DWORD /*NewState*/);
+    STDMETHOD(OnDeviceAdded)            (LPCWSTR /*DeviceId*/) { return S_OK; }
+    STDMETHOD(OnDeviceRemoved)          (LPCWSTR /*DeviceId(*/) { return S_OK; }
+    STDMETHOD(OnDefaultDeviceChanged)   (EDataFlow Flow, ERole Role, LPCWSTR NewDefaultDeviceId) { return S_OK; }
+    STDMETHOD(OnPropertyValueChanged)   (LPCWSTR /*DeviceId*/, const PROPERTYKEY /*Key*/){return S_OK; }
     //
     //  IUnknown
     //

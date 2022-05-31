@@ -14,12 +14,11 @@
 const IID IID_IMMDevice = __uuidof(IMMDevice);
 
 EndpointMenu::EndpointMenu(const QString &title, QWidget *parent, AudioSystem *a)
-    : QMenu{title, parent}, aSystem(a)
+    : QMenu{title, parent}, aSystem(a), enumerator(nullptr), endpointGroup(nullptr)
 {
     endpointGroup = new QActionGroup(this);
     endpointGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
-    QAction *temp = new QAction(
-                "Default", endpointGroup);
+    QAction *temp = new QAction("Default", endpointGroup);
     temp->setObjectName("Default");
     temp->setCheckable(true);
     temp->setChecked(true);

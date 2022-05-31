@@ -666,7 +666,7 @@ bool AudioSystem::HandleStreamSwitchEvent()
 {
     HRESULT hr;
 
-    assert(_InStreamSwitch);
+    assert(InStreamSwitch);
     //
     //  Step 1.  Stop capturing.
     //
