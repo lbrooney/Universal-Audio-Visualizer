@@ -47,10 +47,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionFull_Screen_triggered()
 {
-    fullscreen();
+    Fullscreen();
 }
 
-void MainWindow::fullscreen()
+void MainWindow::Fullscreen()
 {
     if(isFullscreen == true)
     {
@@ -75,7 +75,7 @@ void MainWindow::keyPressEvent(QKeyEvent *keyevent)
         case Qt::Key_Escape: case Qt::Key_F11:
             if(isFullscreen == true)
             {
-                fullscreen();
+                Fullscreen();
             }
             break;
         default:
@@ -96,19 +96,19 @@ void MainWindow::on_actionRestart_triggered()
 
 void MainWindow::on_actionAll_shapes_triggered()
 {
-    set_shapes_false();
+    SetShapesFalse();
     openGLWidget->LoadPreset(1);
 }
 
 void MainWindow::on_actionPrism_triggered()
 {
-    auto* sphere_ptr = ui->actionSphere;
-    auto* cube_ptr = ui->actionCube;
-    auto* prism_ptr = ui->actionPrism;
+    auto* sphere = ui->actionSphere;
+    auto* cube = ui->actionCube;
+    auto* prism = ui->actionPrism;
 
-    if(sphere_ptr->isChecked() and cube_ptr->isChecked())
+    if(sphere->isChecked() and cube->isChecked())
     {
-        if(!prism_ptr->isChecked())
+        if(!prism->isChecked())
         {
             //Load sphere and cube
             openGLWidget->LoadPreset(7);
@@ -119,9 +119,9 @@ void MainWindow::on_actionPrism_triggered()
             openGLWidget->LoadPreset(1);
         }
     }
-    else if(sphere_ptr->isChecked())
+    else if(sphere->isChecked())
     {
-        if(!prism_ptr->isChecked())
+        if(!prism->isChecked())
         {
             // Load sphere
             openGLWidget->LoadPreset(4);
@@ -132,9 +132,9 @@ void MainWindow::on_actionPrism_triggered()
             openGLWidget->LoadPreset(5);
         }
     }
-    else if(cube_ptr->isChecked())
+    else if(cube->isChecked())
     {
-        if(!prism_ptr->isChecked())
+        if(!prism->isChecked())
         {
             // Load sphere
             openGLWidget->LoadPreset(3);
@@ -147,7 +147,7 @@ void MainWindow::on_actionPrism_triggered()
     }
     else
     {
-        if(!prism_ptr->isChecked())
+        if(!prism->isChecked())
         {
             //Nothing is checked
             on_actionWaveform_triggered();
@@ -162,12 +162,13 @@ void MainWindow::on_actionPrism_triggered()
 
 void MainWindow::on_actionCube_triggered()
 {
-    auto* sphere_ptr = ui->actionSphere;
-    auto* prism_ptr = ui->actionPrism;
-    auto* cube_ptr = ui->actionCube;
-    if(sphere_ptr->isChecked() and prism_ptr->isChecked())
+    auto* sphere = ui->actionSphere;
+    auto* prism = ui->actionPrism;
+    auto* cube = ui->actionCube;
+
+    if(sphere->isChecked() and prism->isChecked())
     {
-        if(!cube_ptr->isChecked())
+        if(!cube->isChecked())
         {
             // Load sphere and prism
             openGLWidget->LoadPreset(5);
@@ -178,9 +179,9 @@ void MainWindow::on_actionCube_triggered()
             openGLWidget->LoadPreset(1);
         }
     }
-    else if(sphere_ptr->isChecked())
+    else if(sphere->isChecked())
     {
-        if(!cube_ptr->isChecked())
+        if(!cube->isChecked())
         {
             // Load sphere
             openGLWidget->LoadPreset(4);
@@ -191,9 +192,9 @@ void MainWindow::on_actionCube_triggered()
             openGLWidget->LoadPreset(7);
         }
     }
-    else if(prism_ptr->isChecked())
+    else if(prism->isChecked())
     {
-        if(!cube_ptr->isChecked())
+        if(!cube->isChecked())
         {
             // Load prism
             openGLWidget->LoadPreset(2);
@@ -206,7 +207,7 @@ void MainWindow::on_actionCube_triggered()
     }
     else
     {
-        if(!cube_ptr->isChecked())
+        if(!cube->isChecked())
         {
             //Nothing is checked
             on_actionWaveform_triggered();
@@ -221,13 +222,13 @@ void MainWindow::on_actionCube_triggered()
 
 void MainWindow::on_actionSphere_triggered()
 {
-    auto* sphere_ptr = ui->actionSphere;
-    auto* cube_ptr = ui->actionCube;
-    auto* prism_ptr = ui->actionPrism;
+    auto* sphere = ui->actionSphere;
+    auto* cube = ui->actionCube;
+    auto* prism = ui->actionPrism;
 
-    if(prism_ptr->isChecked() and cube_ptr->isChecked())
+    if(prism->isChecked() and cube->isChecked())
     {
-        if(!sphere_ptr->isChecked())
+        if(!sphere->isChecked())
         {
             // Prism and Cube
             openGLWidget->LoadPreset(6);
@@ -238,9 +239,9 @@ void MainWindow::on_actionSphere_triggered()
             openGLWidget->LoadPreset(1);
         }
     }
-    else if(prism_ptr->isChecked())
+    else if(prism->isChecked())
     {
-        if(!sphere_ptr->isChecked())
+        if(!sphere->isChecked())
         {
             //Load prism
             openGLWidget->LoadPreset(2);
@@ -251,9 +252,9 @@ void MainWindow::on_actionSphere_triggered()
             openGLWidget->LoadPreset(5);
         }
     }
-    else if(cube_ptr->isChecked())
+    else if(cube->isChecked())
     {
-        if(!sphere_ptr->isChecked())
+        if(!sphere->isChecked())
         {
             //Load cube
             openGLWidget->LoadPreset(3);
@@ -266,7 +267,7 @@ void MainWindow::on_actionSphere_triggered()
     }
     else
     {
-        if(!sphere_ptr->isChecked())
+        if(!sphere->isChecked())
         {
             //Nothing is checked
             on_actionWaveform_triggered();
@@ -279,7 +280,8 @@ void MainWindow::on_actionSphere_triggered()
     }
 }
 
-void MainWindow::set_shapes_false() {
+void MainWindow::SetShapesFalse()
+{
     ui->actionSphere->setChecked(false);
     ui->actionCube->setChecked(false);
     ui->actionPrism->setChecked(false);
@@ -287,7 +289,7 @@ void MainWindow::set_shapes_false() {
 
 void MainWindow::on_actionWaveform_triggered()
 {
-    set_shapes_false();
+    SetShapesFalse();
     openGLWidget->LoadPreset(0);
 }
 
@@ -298,7 +300,7 @@ void MainWindow::on_actionSliders_triggered()
 
 bool MainWindow::checkToggled()
 {
-    if (openGLWidget->rgbSelector != QVector3D(1, 1, 1) && selectedColor == false)
+    if(openGLWidget->rgbSelector != QVector3D(1, 1, 1) && selectedColor == false)
     {
         QMessageBox messageBox;
         messageBox.critical(0, "Error", "Turn off the tempo changes color button!");
@@ -310,7 +312,10 @@ bool MainWindow::checkToggled()
 
 void MainWindow::on_actionRed_triggered()
 {
-    if (checkToggled()) return;
+    if(checkToggled())
+    {
+        return;
+    }
     openGLWidget->rgbSelector = QVector3D(1, 0, 0);
     redChecked = true;
     blueChecked = false;
@@ -320,7 +325,10 @@ void MainWindow::on_actionRed_triggered()
 
 void MainWindow::on_actionGreen_triggered()
 {
-    if (checkToggled()) return;
+    if(checkToggled())
+    {
+        return;
+    }
     openGLWidget->rgbSelector = QVector3D(0, 1, 0);
     redChecked = false;
     blueChecked = false;
@@ -330,7 +338,10 @@ void MainWindow::on_actionGreen_triggered()
 
 void MainWindow::on_actionBlue_triggered()
 {
-    if (checkToggled()) return;
+    if(checkToggled())
+    {
+        return;
+    }
     openGLWidget->rgbSelector = QVector3D(0, 0, 1);
     redChecked = false;
     blueChecked = true;
@@ -340,7 +351,10 @@ void MainWindow::on_actionBlue_triggered()
 
 void MainWindow::on_actionWhite_triggered()
 {
-    if (checkToggled()) return;
+    if(checkToggled())
+    {
+        return;
+    }
     openGLWidget->rgbSelector = QVector3D(1, 1, 1);
     redChecked = false;
     blueChecked = false;
