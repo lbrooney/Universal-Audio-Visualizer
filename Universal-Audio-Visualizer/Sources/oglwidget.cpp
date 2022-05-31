@@ -9,7 +9,7 @@ OGLWidget::OGLWidget(QWidget *parent, AudioSystem *p)
 {
     pSystem = p;
     beatTimer = new QTimer(this);
-    connect(beatTimer, SIGNAL(timeout()), this, SLOT(playBeat()));
+    connect(beatTimer, SIGNAL(timeout()), this, SLOT(PlayBeat()));
     rgbSelector = QVector3D(1,1,1);
 }
 
@@ -43,7 +43,7 @@ void OGLWidget::initializeGL()
     LoadPreset(0);
 }
 
-void OGLWidget::oglsetScale(float scale)
+void OGLWidget::OglSetScale(float scale)
 {
     this->scale = scale;
 }
@@ -57,7 +57,6 @@ void OGLWidget::paintGL()
         smpl_t beatPeriod = 1 / (pSystem->GetBPM() / 60);
         beatTimer->start(beatPeriod * 1000);
     }
-
 
     if(!showSpectrum)
     {
@@ -92,7 +91,6 @@ void OGLWidget::paintGL()
                 float zPos = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
                 zPos *= -2;
                 objList[i]->SetTranslation(xPos, yPos, zPos);
-
             }
             //if object count exceeds current max, skip to next object type
             if(objCount >= magnitude)
@@ -157,7 +155,7 @@ void OGLWidget::InitShaders()
     shaderProgram.bind();
 }
 
-void OGLWidget::playBeat()
+void OGLWidget::PlayBeat()
 {
     beatTimer->stop();
     playBeatAnim = true;

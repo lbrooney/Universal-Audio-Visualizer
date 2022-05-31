@@ -29,8 +29,8 @@ private:
     OGLWidget* openGLWidget = nullptr;
     AudioSystem *pSystem = nullptr;
     Ui::Slider *ui;
-    void volumeSetup();
-    void scaleSetup();
+    void VolumeSetup();
+    void ScaleSetup();
     void UpdateText();
     void UpdateColor();
 };
