@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 #include <QBuffer>
-#include <fftw3.h>
 #include <QKeyEvent>
 #include <QtWidgets>
 #include "oglwidget.h"

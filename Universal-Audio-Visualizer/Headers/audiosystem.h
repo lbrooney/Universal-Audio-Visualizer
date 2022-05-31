@@ -30,16 +30,16 @@ public:
     void Shutdown();
     bool Start();
     void Stop();
-    WORD ChannelCount() { return _MixFormat->nChannels; }
-    UINT32 SamplesPerSecond() { return _MixFormat->nSamplesPerSec; }
-    UINT32 BytesPerSample() { return _MixFormat->wBitsPerSample / 8; }
-    size_t FrameSize() { return _FrameSize; }
-    WAVEFORMATEX *MixFormat() { return _MixFormat; }
-    UINT32 BufferSize() { return _BufferSize; }
+    WORD ChannelCount() { return mixFormat->nChannels; }
+    UINT32 SamplesPerSecond() { return mixFormat->nSamplesPerSec; }
+    UINT32 BytesPerSample() { return mixFormat->wBitsPerSample / 8; }
+    size_t FrameSize() { return frameSize; }
+    WAVEFORMATEX *MixFormat() { return mixFormat; }
+    UINT32 BufferSize() { return bufferSize; }
     STDMETHOD_(ULONG, AddRef)();
     STDMETHOD_(ULONG, Release)();
-    bool selectedDefault();
-    bool selectedEndpoint(LPWSTR input);
+    bool SelectedDefault();
+    bool SelectedEndpoint(LPWSTR input);
     smpl_t GetBPM();
     smpl_t GetBeatPeriod();
     std::vector<double>& GetMag();
@@ -49,35 +49,35 @@ public:
 
 private:
     ~AudioSystem(void);  // Destructor is private to prevent accidental deletion.
-    LONG                _RefCount;
+    LONG                refCount;
     //
     //  Core Audio Capture member variables.
     //
-    IMMDeviceEnumerator  *_DeviceEnumerator;
-    IMMDevice            *_Endpoint;
-    LPWSTR               _EndpointID;
-    IAudioClient         *_AudioClient;
-    IAudioCaptureClient  *_CaptureClient;
-    IAudioEndpointVolume *_EndpointVolume;
+    IMMDeviceEnumerator  *deviceEnumerator;
+    IMMDevice            *endpoint;
+    LPWSTR               endpointID;
+    IAudioClient         *audioClient;
+    IAudioCaptureClient  *captureClient;
+    IAudioEndpointVolume *endpointVolume;
 
-    HANDLE               _CaptureThread;
-    HANDLE               _ShutdownEvent;
-    HANDLE               _AudioSamplesReadyEvent;
-    WAVEFORMATEX         *_MixFormat;
-    size_t               _FrameSize;
-    UINT32               _BufferSize;
+    HANDLE               captureThread;
+    HANDLE               shutdownEvent;
+    HANDLE               audioSamplesReadyEvent;
+    WAVEFORMATEX         *mixFormat;
+    size_t               frameSize;
+    UINT32               bufferSize;
 
-    std::queue<std::vector<BYTE>> _AudioQueue;
+    std::queue<std::vector<BYTE>> audioQueue;
     static DWORD __stdcall WASAPICaptureThread(LPVOID Context);
     DWORD DoCaptureThread();
     //
     //  Stream switch related members and methods.
     //
-    HANDLE                  _StreamSwitchEvent;          // Set when the current session is disconnected or the default device changes.
-    HANDLE                  _StreamSwitchCompleteEvent;  // Set when the default device changed.
-    IAudioSessionControl    *_AudioSessionControl;
-    bool                    _InStreamSwitch;
-    bool                    _DefaultSelected;
+    HANDLE                  streamSwitchEvent;          // Set when the current session is disconnected or the default device changes.
+    HANDLE                  streamSwitchCompleteEvent;  // Set when the default device changed.
+    IAudioSessionControl    *audioSessionControl;
+    bool                    inStreamSwitch;
+    bool                    defaultSelected;
 
     bool InitializeStreamSwitch();
     void TerminateStreamSwitch();
@@ -109,19 +109,19 @@ private:
     //
     // Aubio Stuff.
     //
-    smpl_t              _BPM;
-    fvec_t              *_FFTIn;
-    cvec_t              *_FFTOut;
-    fvec_t              *_TempoIn;
-    fvec_t              *_TempoOut;
-    aubio_fft_t         *_FFTObject;
-    aubio_tempo_t       *_TempoObject;
-    std::vector<double> _Mag;
-    bool                InitializeAubio();
-    HANDLE              _AnalysisSamplesReadyEvent;
-    HANDLE              _AnalysisThread;
-    std::queue<float*> dataQueue;
+    smpl_t              bpm;
+    fvec_t              *fftIn;
+    cvec_t              *fftOut;
+    fvec_t              *tempoIn;
+    fvec_t              *tempoOut;
+    aubio_fft_t         *fftObject;
+    aubio_tempo_t       *tempoObject;
+    std::vector<double> mag;
+    HANDLE              analysisSamplesReadyEvent;
+    HANDLE              analysisThread;
+    std::queue<float*>  dataQueue;
 
+    bool                InitializeAubio();
     DWORD                   DoAnalysisThread();
     static DWORD __stdcall  AudioAnalysisThread(LPVOID Context);
     void                    AnalyzeAudio();
