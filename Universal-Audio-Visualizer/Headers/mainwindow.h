@@ -21,13 +21,14 @@ class MainWindow : public QMainWindow
 private:
     Q_OBJECT
     Ui::MainWindow *ui;
-    void fullscreen();
+    void Fullscreen();
     bool checkToggled();
     bool isFullscreen = false;
     AudioSystem* pSystem = nullptr;
     EndpointMenu* pEndpointMenu = nullptr;
     OGLWidget* openGLWidget;
     Slider* sliderWindow = nullptr;
+    void SetShapesFalse();
 
 #ifdef QT_DEBUG
     QMenu* debug = nullptr;
@@ -64,8 +65,6 @@ private slots:
     void on_actionGreen_triggered();
 
     void on_actionBlue_triggered();
-
-    void set_shapes_false();
 
     void on_actionWhite_triggered();
 };
