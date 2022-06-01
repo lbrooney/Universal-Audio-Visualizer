@@ -1,5 +1,8 @@
 I tested the functionality of the slider, menu, and how the data is processed. For the slider I gave the user interface all the combination of 
 different inputs to see if it was able to change to each selection flawlessly and without creating errors. For the top menu I also had to
-manually test the functionality and if any new tabs crashed as a result of the user. For both the menu and slider, any new functionality was also left
-to run over an extended period of time to see if new bugs or crashes occured. Lastly, for the processing of the data it was manually tested through
+manually test the functionality and if any new tabs crashed as a result of the user. Initially I also created the test to output to a wav file
+to confirm functionality of the older recording system. This worked and accurately recorded the audio. However, as we would later find out wouldn't
+be efficient enough to be used by the application.
+For both the menu and slider, any new functionality was also left to run over an extended period of time to see if new bugs or crashes occured. 
+Lastly, for the processing of the data it was manually tested through
 semaphores and print statements to see if it could keep up with the audio being recorded.
